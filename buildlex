@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo "Building lex..."
+
+lex src/lex.l &&
+mv lex.yy.c bin/lex.yy.c
+exit 0
+
+exit 1

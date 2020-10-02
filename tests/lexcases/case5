@@ -1,0 +1,5 @@
+var myVar : float;
+var myOtherVar : int;
+
+myVar = 10e+2
+myOtherVar = 20

@@ -1,0 +1,10 @@
+lit_int 4
+lit_int 522
+-
+lit_int 323
+lit_float 4.000
+lit_float 4.045
+lit_int 2147483647
+lit_int 2147483648
+-
+lit_int 2147483648

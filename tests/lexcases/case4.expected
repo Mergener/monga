@@ -1,0 +1,13 @@
+function
+identifier foo
+(
+identifier int
+identifier a
+)
+:
+identifier int
+{
+return
+lit_int 4
+;
+}

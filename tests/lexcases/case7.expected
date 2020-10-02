@@ -1,0 +1,12 @@
+function
+identifier func
+(
+{
+lit_float 10000.000
+-
+lit_int 5
+!
+(
+)
+}
+)

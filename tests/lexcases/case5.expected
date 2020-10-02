@@ -1,0 +1,16 @@
+var
+identifier myVar
+:
+identifier float
+;
+var
+identifier myOtherVar
+:
+identifier int
+;
+identifier myVar
+=
+lit_float 1000.000
+identifier myOtherVar
+=
+lit_int 20

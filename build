@@ -1,0 +1,11 @@
+#!/bin/bash
+
+./buildlex &&
+./buildyacc &&
+echo "Building executable..." &&
+gcc -Wall -o bin/monga \
+          -Isrc -Ibin/include \
+		  bin/lex.yy.c src/main.c src/error.c src/lex.c src/alloc.c &&
+exit 0
+
+exit 1
