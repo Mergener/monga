@@ -1,55 +1,150 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "lex.h"
 #include "parser.h"
 #include "error.h"
 
-extern FILE* yyin;
+enum ExecutionMode {
+	NONE,
+	LEX_DUMP,
+	AST_DUMP,
+	COMPILER
+};
 
-/*
-	External LEX and YACC procedures
+struct LexDumpArgs {
+	const char* inputFilePath;
+};
+
+struct AstDumpArgs {
+	const char* inputFilePath;
+};
+
+/** Structured arguments provided to the program. */
+struct ProgramArgs {
+	/** The selected execution mode. */
+	enum ExecutionMode execMode;
+
+	union {
+		/** LexDump args. Available if execMode == LEX_DUMP. */
+		struct LexDumpArgs lexDump;
+		/** ASTDump args. Available if execMode == AST_DUMP. */
+		struct AstDumpArgs astDump;
+	} args;
+};
+
+/** 
+ * Error to be thrown when more than one execution mode has been specified in args. 
+ * 
+ * @param arg0 The first command line argument passed to Monga.
 */
+static void ErrorOneExecMode(const char* arg0) {
+	fprintf(stderr, "Only one execution mode can be selected (-l, -p or -o). Use %s --h for help.\n", arg0);
+	exit(EXIT_FAILURE);
+}
 
-int yylex();
-int yyparse();
+/**
+ * Parses user specified command line arguments and generates a ProgramArgs struct from them. 
+ * If any of the arguments is invalid, the program exits and returns EXIT_FAILURE.
+ * 
+ * @param argc The number of specified arguments.
+ * @param argv Pointer to an array of arguments.
+ */
+static struct ProgramArgs ParseArgs(int argc, char** argv) {
+	struct ProgramArgs ret;
 
-int main(int argc, char* argv[]) {
-	int tk;
-	bool usedCustomInput = false;
+	ret.execMode = NONE;
 
-	if (argc > 1) {
-		yyin = fopen(argv[1], "r");
+	for (int i = 1; i < argc; ++i) {
+		// Lex dump mode
+		if (!strcmp(argv[i], "-l")) {
+			
+			if (ret.execMode != NONE) {
+				ErrorOneExecMode(argv[0]);
+			}
 
-		if (yyin == NULL) {
+			ret.execMode = LEX_DUMP;
+
+			++i;
+			if (i == argc || argv[i][0] == '-') {
+				// No file argument for lex mode provided.
+				fprintf(stderr, "Expected an input source file for Lex Dump mode.\n");
+				exit(EXIT_FAILURE);
+			}
+
+			ret.args.lexDump.inputFilePath = argv[i];
+		}
+		// AST dump mode
+		else if (!strcmp(argv[i], "-p")) {
+
+			if (ret.execMode != NONE) {
+				ErrorOneExecMode(argv[0]);
+			}
+
+			ret.execMode = AST_DUMP;
+
+			++i;
+			if (i == argc || argv[i][0] == '-') {
+				// No file argument for lex mode provided.
+				perror("Expected an input source file for AST Dump mode.\n");
+				exit(EXIT_FAILURE);
+			}
+
+			ret.args.astDump.inputFilePath = argv[i];
+		}
+	}
+
+	return ret;
+}
+
+static void RunLexDump(const struct LexDumpArgs* args) {
+	FILE* inputStream;
+
+	if (args->inputFilePath == NULL) {
+		inputStream = stdin;
+	} else {
+		inputStream = fopen(args->inputFilePath, "r");
+
+		if (inputStream == NULL) {
+			fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
 			Mon_Fatal(MON_ERR_FILENOTFOUND);
 		}
-
-		usedCustomInput = true;
 	}
 
-	do {
-		tk = yylex();
+	Mon_DumpLex(inputStream, stdout);
+}
 
-		if (tk == MON_TK_EOF) {
+static void Run(const struct ProgramArgs* args) {
+
+	switch (args->execMode) {
+
+		case LEX_DUMP:
+			RunLexDump(&args->args.lexDump);
 			break;
-		}
 
-		printf("%s", Mon_GetTokenName(tk));
+		case AST_DUMP:
+			break;
 
-		if (tk == MON_TK_LIT_INT) {
-			printf(" %ld\n", tkval.integer);
-		} else if (tk == MON_TK_LIT_FLOAT) {
-			printf(" %.3f\n", tkval.real);
-		} else if (tk == MON_TK_IDENTIFIER) {
-			printf(" %s\n", tkval.identifier.name);
-		} else {
-			printf("\n");
-		}
+		case COMPILER:
+			break;
 
-	} while (true);
+		default:
+			break;
 
-	if (usedCustomInput) {
-		fclose(yyin);
 	}
+}
+
+int main(int argc, char* argv[]) {
+	if (argc == 1) {
+		fprintf(stderr, "Invalid arguments for Monga. Use %s --h for help.\n", argv[0]);
+		return EXIT_FAILURE;
+	}
+
+	struct ProgramArgs args = ParseArgs(argc, argv);
+
+	Run(&args);
+
+	return EXIT_SUCCESS;
 }
