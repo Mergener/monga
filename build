@@ -2,10 +2,49 @@
 
 ./buildlex &&
 ./buildyacc &&
-echo "Building executable..." &&
-gcc -Wall -o bin/monga \
-          -Isrc -Ibin/include \
-		  bin/lex.yy.c src/main.c src/error.c src/lex.c src/alloc.c &&
+echo "Building library..." &&
+
+COMPILER_ARGS="-Wall -Ibin/include"
+SRC_PATH="src"
+GEN_SRC_PATH="bin"
+
+# generate object files
+for file in $SRC_PATH/*.c; do
+	if [ $file = $SRC_PATH/main.c ]
+	then
+		continue
+	fi
+
+	echo "Compiling $file..."
+	gcc $COMPILER_ARGS -fpic -c -Ibin/include $file
+done
+for file in $GEN_SRC_PATH/*.c; do
+	echo "Compiling $file..."
+	gcc $COMPILER_ARGS "-I$SRC_PATH" -fpic -c -Ibin/include $file
+done
+
+wait
+
+# add them to single string to be fed into gcc
+objects=""
+for file in "./*.o"; do
+	objects+=" $file"
+done
+
+# generate library
+ar rcs bin/libmonga.a $objects
+
+# remove object files
+for o in $objects; do
+	rm $o
+done
+
+wait
+
+# generate executable
+echo "Building executable..."
+gcc $COMPILER_ARGS -I$SRC_PATH -L./bin -o bin/monga "$SRC_PATH/main.c" -lmonga -static -lfl -ly
+
 exit 0
 
 exit 1
