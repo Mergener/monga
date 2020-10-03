@@ -36,17 +36,17 @@ sudo apt install gcc
 
 ### Building
 
-The top-level scripts ```build```, ```buildlex``` and ```buildyacc``` are respectively responsible for building the entire monga compiler, the lexical analyser and the parser. Running them with all the pre-requisites being met should generate Lex/Yacc sources (and other outputs) on ```bin/```.
+The top-level scripts ```buildall```, ```buildlex``` and ```buildyacc``` are respectively responsible for building the entire monga compiler, the lexical analyser and the parser. Running them with all the pre-requisites being met should generate Lex/Yacc sources (and other outputs) on ```bin/```.
 
 To run them, simply use:
 
 ```sh
 ./buildlex
 ./buildyacc
-./build
+./buildall
 ```
 
-Note: ```./build``` automatically runs ```./buildlex``` and ```./buildyacc```.
+Note: ```./buildall``` automatically runs ```./buildlex``` and ```./buildyacc```.
 
 The ```bin/monga``` file is the generated executable file for the Monga compiler.
 
