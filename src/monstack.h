@@ -11,9 +11,9 @@ C_LINKAGE_BEGIN
 
 typedef struct {
 
-	void** _arr;
-	int    _count;
-	int    _cap;
+	const void** _arr;
+	int          _count;
+	int          _cap;
 
 } Mon_Stack;
 
