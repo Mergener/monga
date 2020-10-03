@@ -2,8 +2,9 @@ from subprocess import Popen, PIPE
 import os
 import sys
 
-monga_path = "../bin/monga"
-cases_path = "cases"
+MONGA_PATH = '../bin/monga'
+LEX_CASES_PATH = 'lexcases'
+YACC_CASES_PATH = 'yacccases'
 
 def test_file(program_args, input_file_path):
 	# Get Monga output for input file
@@ -11,28 +12,52 @@ def test_file(program_args, input_file_path):
 	(output, _) = process.communicate()
 	process.wait()
 
-	output = output[:-1]
+	output = output.rstrip()
 
 	# Read expected output file
 	expected_out = ""
 	with open(input_file_path + ".expected", "r") as expected_file_handle:
 		expected_out = expected_file_handle.read()
+	expected_out = expected_out.rstrip()
 
 	# Compare two outputs:
 	equal = expected_out == output
 
-	if equal:
-		print(f"[Test] {input_file_path} (SUCCESS)")
-	else:
-		print(f"[Test] {input_file_path} (FAILED)\n-> Expected:\n[{expected_out}]\n-> Got:\n[{output}]")
+	testCaseCmd = ' '.join(program_args)
 
-def test_lex(input_file_path):
+	if equal:
+		print(f"[Test] {testCaseCmd} (SUCCESS)")
+	else:
+		print(f"[Test] {testCaseCmd} (FAILED)\n-> Expected:\n[{expected_out}]\n-> Got:\n[{output}]")
+
+def test_lex(monga_path, input_file_path):
 	test_file([monga_path, '-l', input_file_path], input_file_path)
 
-def test_all():
-	for file in os.listdir(cases_path):
-		if not file.endswith(".expected"):
-			input_file_path = os.path.join(cases_path, file)
-			test_lex(input_file_path)
+def test_yacc(monga_path, input_file_path):
+	test_file([monga_path, '-p', input_file_path], input_file_path)
 
-test_all()
+def test_all_lex(monga_path, lex_cases_path):
+	print('Testing Lex...')
+
+	for file in os.listdir(lex_cases_path):
+		if not file.endswith(".expected"):
+			input_file_path = os.path.join(lex_cases_path, file)
+			test_lex(monga_path, input_file_path)
+
+	print('Lex tests finished.')
+
+def test_all_yacc(monga_path, yacc_cases_path):
+	print('Testing Yacc...')
+
+	for file in os.listdir(yacc_cases_path):
+		if not file.endswith(".expected"):
+			input_file_path = os.path.join(yacc_cases_path, file)
+			test_lex(monga_path, input_file_path)
+
+	print('Yacc tests finished.')
+
+def test_all(monga_path):
+	test_all_lex(monga_path, LEX_CASES_PATH)
+	test_all_yacc(monga_path, YACC_CASES_PATH)
+
+test_all(MONGA_PATH)
