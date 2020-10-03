@@ -52,9 +52,12 @@ Mon_RetCode Mon_StackPop(Mon_Stack* stack, void** ret) {
 		}
 	}
 
-	Mon_RetCode ret = Mon_StackPeek(stack, ret);
-	stack->_count--;
-	return ret;
+	if (stack->_count <= 0) {
+		return MON_ERR_EMPTY_COLLECTION;
+	}
+
+	*ret = stack->_arr[stack->_count--];
+	return MON_SUCCESS;
 }
 
 Mon_RetCode Mon_StackPeek(const Mon_Stack* stack, void** ret) {
