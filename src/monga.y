@@ -40,7 +40,7 @@
 
 %%
 
-program : definitions 
+program : definitions
         | /* nothing */
         ;
 

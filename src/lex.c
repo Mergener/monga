@@ -1,9 +1,40 @@
 #include "lex.h"
 
 #include <stdbool.h>
+#include <stdatomic.h>
 
-static bool s_AsciiInitialized = false;
+extern FILE* yyin;
+extern Mon_TkVal yylval;
+extern int yylex();
+
+static atomic_bool s_AsciiInitialized = false;
 static char s_Ascii[512];
+
+static atomic_bool s_Busy = false;
+
+void Mon_DumpLex(FILE* inputFile, FILE* outputFile) {
+	while (s_Busy);
+	s_Busy = true;
+
+	yyin = inputFile;
+
+	Mon_TkType tkType;
+	do {
+		tkType = yylex();
+
+		if (tkType == MON_TK_LIT_FLOAT) {
+			fprintf(outputFile, "%s %.3f\n", Mon_GetTokenName(tkType), yylval.real);
+		} else if (tkType == MON_TK_LIT_INT) {
+			fprintf(outputFile, "%s %ld\n", Mon_GetTokenName(tkType), yylval.integer);
+		} else if (tkType == MON_TK_IDENTIFIER) {
+			fprintf(outputFile, "%s %s\n", Mon_GetTokenName(tkType), yylval.identifier.name);
+		} else {
+			fprintf(outputFile, "%s\n", Mon_GetTokenName(tkType));
+		}
+	} while (tkType != MON_TK_EOF);
+
+	s_Busy = false;
+}
 
 const char* Mon_GetTokenName(Mon_TkType tkType) {
 	if (!s_AsciiInitialized) {
@@ -11,6 +42,7 @@ const char* Mon_GetTokenName(Mon_TkType tkType) {
 			s_Ascii[i] = i / 2;
 			s_Ascii[i+1] = '\0';
 		}
+		s_AsciiInitialized = true;
 	}
 
 	switch (tkType) {

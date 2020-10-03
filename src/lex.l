@@ -6,8 +6,6 @@
 
 #include "alloc.h"
 
-Mon_TkVal tkval;
-
 static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 
 %}
@@ -34,28 +32,28 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 "||"             { return MON_TK_OP_OR; }
 
 [a-zA-Z][a-zA-Z_0-9]* {
-	tkval = MakeIdentifier(yytext, yyleng);
+	yylval = MakeIdentifier(yytext, yyleng);
 
 	return MON_TK_IDENTIFIER;
 }
 
 [0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+ {
-	tkval.real = strtof(yytext, NULL);
+	yylval.real = strtof(yytext, NULL);
 	return MON_TK_LIT_FLOAT;
 }
 
 [0-9]+ {
-	tkval.integer = strtol(yytext, NULL, 10);
+	yylval.integer = strtol(yytext, NULL, 10);
 	return MON_TK_LIT_INT;
 }
 
 0x[0-9a-fA-F]+ {
-	tkval.integer = strtol(yytext, NULL, 16);
+	yylval.integer = strtol(yytext, NULL, 16);
 	return MON_TK_LIT_INT;
 }
 
 [0-9]+(\.[0-9]+) {
-	tkval.real = strtof(yytext, NULL);
+	yylval.real = strtof(yytext, NULL);
 	return MON_TK_LIT_FLOAT;
 }
 
