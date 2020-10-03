@@ -73,7 +73,7 @@ bool Mon_StackEmpty(const Mon_Stack* stack) {
 	return stack->_count == 0;
 }
 
-MON_API void MON_CALL Mon_StackClear(Mon_Stack* stack) {
+void Mon_StackClear(Mon_Stack* stack) {
 	stack->_count = 0;
 }
 
