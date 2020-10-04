@@ -36,11 +36,14 @@
 
 %{
 #include <monga.tab.h>
+#include <stdio.h>
+
+int yylex();
 %}
 
 %%
 
-program : definitions
+program : definitions 
         | /* nothing */
         ;
 
@@ -48,30 +51,40 @@ definitions : definition
             | definitions definition
             ;
 
-definition : def_variable | def_function | def_type ;
+definition : def_variable | def_function | def_type 
+           ;
 
-def_variable : MON_TK_VAR MON_TK_IDENTIFIER ':' type ';' ;
+def_variable : MON_TK_VAR MON_TK_IDENTIFIER ':' type ';' 
+             ;
+
+opt_variable_defs : /* nothing */
+                  | variable_defs
+                  ;
 
 variable_defs : def_variable
               | variable_defs def_variable
               ;
 
-type : MON_TK_IDENTIFIER ;
+type : MON_TK_IDENTIFIER
+     ; 
 
-def_type : MON_TK_TYPE MON_TK_IDENTIFIER '=' typedesc ;
+def_type : MON_TK_TYPE MON_TK_IDENTIFIER '=' typedesc 
+         ;
 
 typedesc : MON_TK_IDENTIFIER 
          | '[' typedesc ']' 
          | '{' fields '}'
          ;
 
-field : MON_TK_IDENTIFIER ':' type ';' ;
+field : MON_TK_IDENTIFIER ':' type ';' 
+      ;
 
 fields : field
        | fields field
        ;
 
-def_function : MON_TK_FUNCTION MON_TK_IDENTIFIER '(' opt_parameters ')' opt_ret_type block ;
+def_function : MON_TK_FUNCTION MON_TK_IDENTIFIER '(' opt_parameters ')' opt_ret_type block 
+             ;
 
 opt_ret_type : /* nothing */
              | ':' type
@@ -81,11 +94,14 @@ parameters : parameter
            | parameters ',' parameter
            ;
 
-opt_parameters : /* nothing */ | parameters ;
+opt_parameters : /* nothing */ | parameters 
+               ;
 
-parameter : MON_TK_IDENTIFIER ':' type ;
+parameter : MON_TK_IDENTIFIER ':' type 
+          ;
 
-block : '{' variable_defs opt_statements '}' ;
+block : '{' opt_variable_defs opt_statements '}' 
+      ;
 
 statement : MON_TK_IF cond block opt_else
           | MON_TK_WHILE cond block
@@ -176,7 +192,8 @@ cond_or : cond_and
         | cond_or MON_TK_OP_OR cond_and
         ;
 
-call : MON_TK_IDENTIFIER '(' opt_exps ')' ;
+call : MON_TK_IDENTIFIER '(' opt_exps ')' 
+     ;
 
 exps : exp
      | exps ',' exp

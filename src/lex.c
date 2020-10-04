@@ -3,8 +3,12 @@
 #include <stdbool.h>
 #include <stdatomic.h>
 
-extern FILE* yyin;
+#include "grammar.tab.h"
+
+typedef YYSTYPE Mon_TkVal;
 extern Mon_TkVal yylval;
+
+extern FILE* yyin;
 extern int yylex();
 
 static atomic_bool s_AsciiInitialized = false;

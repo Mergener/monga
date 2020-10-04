@@ -6,7 +6,6 @@
 #define MIN_SIZE DEFAULT_SIZE
 
 Mon_RetCode Mon_StackInit(Mon_Stack* stack) {
-
 	stack->_cap = DEFAULT_SIZE * sizeof(void*);
 	stack->_arr = Mon_Alloc(stack->_cap);
 	stack->_count = 0;

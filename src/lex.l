@@ -6,6 +6,11 @@
 
 #include "alloc.h"
 
+#include "grammar.tab.h"
+
+typedef YYSTYPE Mon_TkVal;
+extern Mon_TkVal yylval;
+
 static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 
 %}

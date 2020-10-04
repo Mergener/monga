@@ -1,21 +1,24 @@
-#ifndef MON_AST_H
-#define MON_AST_H
+#ifndef MON_AST_DEFINITION_NODE_H
+#define MON_AST_DEFINITION_NODE_H
 
-#include "defines.h"
+#include "../defines.h"
 
 #include <stdlib.h>
 
-//
-//	Definition nodes
-//
+C_LINKAGE_BEGIN
 
 typedef enum {
 
+	/** Variable definition node. */
 	MON_AST_DEF_VAR,
+
+	/** Function definition node. */
 	MON_AST_DEF_FUNC,
+
+	/** Type definition node. */
 	MON_AST_DEF_TYPE
 
-} Mon_AstDefType;
+} Mon_AstDefKind;
 
 typedef struct {
 	const char* varName;
@@ -25,22 +28,26 @@ typedef struct {
 typedef struct {
 	const char* funcName;
 	size_t      funcNameLength;
-} Mon_AstVarFunc;
+} Mon_AstFuncDef;
 
 typedef struct {
 	const char* typeName;
 	size_t      typeNameLength;
-} Mon_AstVarType;
+} Mon_AstTypeDef;
 
 typedef struct {
 	union {
 		Mon_AstVarDef  variable;
-		Mon_AstVarFunc function;
-		Mon_AstVarType type;
+		Mon_AstFuncDef function;
+		Mon_AstTypeDef type;
 	} definition;
 
-	Mon_AstDefType defKind;
+	Mon_AstDefKind defKind;
 
 } Mon_AstDef;
 
-#endif // MON_AST_H
+
+
+C_LINKAGE_END
+
+#endif // MON_AST_DEFINITION_NODE_H

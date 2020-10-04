@@ -6,14 +6,9 @@
 #include <stdio.h>
 #include <limits.h>
 
-#include <monga.tab.h>
-
 #define MON_TK_EOF 0
 
-typedef enum yytokentype Mon_TkType;
-typedef YYSTYPE Mon_TkVal;
-
-extern Mon_TkVal tkval;
+typedef int Mon_TkType;
 
 /**
  * Dumps all tokens found in an input file to another output file. 

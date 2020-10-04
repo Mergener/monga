@@ -1,0 +1,63 @@
+#!/bin/bash
+
+#####################################################
+
+# Path to library source code root
+SRC_PATH="src"
+
+# Path to folder containing library headers meant to be exported to the build directory
+EXPORT_HEADERS_PATH=$SRC_PATH/include
+
+# Path to LEX/YACC generated source code
+GEN_SRC_PATH="bin/gensrc"
+
+# Path to create the monga lib
+OUT_PATH="bin/builds/libmonga"
+
+# Extra arguments passed to the compiler
+COMPILER_ARGS="-Wall -I$GEN_SRC_PATH -I$GEN_SRC_PATH/include -I$EXPORT_HEADERS_PATH -I$SRC_PATH"
+
+#####################################################
+
+./buildlex &&
+./buildyacc &&
+echo "Building library..."
+
+# generate object files
+for file in $SRC_PATH/*.c; do
+	if [ $file = $SRC_PATH/main.c ]
+	then
+		continue
+	fi
+
+	echo "Compiling $file..."
+	gcc $COMPILER_ARGS -fpic -c $file
+done
+for file in $GEN_SRC_PATH/*.c; do
+	echo "Compiling $file..."
+	gcc $COMPILER_ARGS -fpic -c $file
+done
+
+wait
+
+# add them to single string to be fed into gcc
+objects=""
+for file in "./*.o"; do
+	objects+=" $file"
+done
+
+# generate library
+ar rcs $OUT_PATH/libmonga.a $objects
+
+# remove object files
+for o in $objects; do
+	rm $o
+done
+
+# copy headers from source path to build/include and delete previous ones
+for h in $OUT_PATH/include/*.h; do
+	rm $h
+done
+for h in $EXPORT_HEADERS_PATH/*.h; do
+	cp $h $OUT_PATH/include
+done

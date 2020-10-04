@@ -2,11 +2,11 @@
 
 echo "Building yacc..."
 
-bison src/monga.y -d -v -g &&
-mv monga.dot bin/monga.dot &&
-mv monga.output bin/monga.output &&
-mv monga.tab.c bin/monga.tab.c &&
-mv monga.tab.h bin/include/monga.tab.h &&
+bison src/grammar.y -d -v -g &&
+mv grammar.dot bin/grammar.dot &&
+mv grammar.output bin/grammar.output &&
+mv grammar.tab.c bin/gensrc/grammar.tab.c &&
+mv grammar.tab.h bin/gensrc/grammar.tab.h &&
 exit 0
 
 exit 1

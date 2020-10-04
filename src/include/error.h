@@ -3,6 +3,8 @@
 
 #include "defines.h"
 
+C_LINKAGE_BEGIN
+
 enum {
 
 	MON_SUCCESS = 0,
@@ -17,5 +19,7 @@ enum {
 typedef int Mon_RetCode;
 
 MON_API void MON_CALL Mon_Fatal(Mon_RetCode code);
+
+C_LINKAGE_END
 
 #endif // MON_ERROR_H
