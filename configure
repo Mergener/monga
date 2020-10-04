@@ -1,0 +1,17 @@
+#!/bin/bash
+
+mkdir bin
+
+cd bin
+
+mkdir builds
+mkdir gensrc
+
+cd builds
+
+mkdir libmonga
+mkdir monga
+
+cd libmonga
+
+mkdir include
