@@ -24,6 +24,18 @@
 %token MON_TK_OP_OR
 %token MON_TK_OP_NOT
 
+%{
+#include <monga.tab.h>
+#include <stdio.h>
+
+#include "ast.h"
+#include "monstack.h"
+
+
+int yylex();
+
+%}
+
 %union {
     struct {
             const char* name;
@@ -32,18 +44,14 @@
     
     long integer;
     double real;
+
+    Mon_AstDef* defNode;
 }
 
-%{
-#include <monga.tab.h>
-#include <stdio.h>
-
-int yylex();
-%}
 
 %%
 
-program : definitions 
+program : definitions
         | /* nothing */
         ;
 
@@ -51,7 +59,9 @@ definitions : definition
             | definitions definition
             ;
 
-definition : def_variable | def_function | def_type 
+definition : def_variable { $$ = $1 }
+           | def_function { $$ = $1 }
+           | def_type     { $$ = $1 }
            ;
 
 def_variable : MON_TK_VAR MON_TK_IDENTIFIER ':' type ';' 
@@ -68,7 +78,7 @@ variable_defs : def_variable
 type : MON_TK_IDENTIFIER
      ; 
 
-def_type : MON_TK_TYPE MON_TK_IDENTIFIER '=' typedesc 
+def_type : MON_TK_TYPE MON_TK_IDENTIFIER '=' typedesc { $$ = ; }
          ;
 
 typedesc : MON_TK_IDENTIFIER 
@@ -106,7 +116,7 @@ block : '{' opt_variable_defs opt_statements '}'
 statement : MON_TK_IF cond block opt_else
           | MON_TK_WHILE cond block
           | var '=' exp ';'
-          | MON_TK_RETURN [ exp ] ';'
+          | MON_TK_RETURN opt_exp ';'
           | call ';'
           | '@' exp ';'
           | block 
@@ -131,6 +141,10 @@ var : MON_TK_IDENTIFIER
 
 numeral : MON_TK_LIT_FLOAT
         | MON_TK_LIT_INT
+        ;
+
+opt_exp : /* nothing */
+        | exp
         ;
 
 exp : exp_conditional

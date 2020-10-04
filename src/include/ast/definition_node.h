@@ -46,8 +46,6 @@ typedef struct {
 
 } Mon_AstDef;
 
-
-
 C_LINKAGE_END
 
 #endif // MON_AST_DEFINITION_NODE_H

@@ -1,3 +1,14 @@
-bin/*
 .vscode
 */__pycache__
+
+*.dot
+*.output
+
+*.o
+*.a
+
+bin/gensrc/*.c
+bin/gensrc/*.h
+bin/builds/libmonga/include/*.c
+bin/builds/libmonga/include/*.h
+bin/builds/monga/monga
