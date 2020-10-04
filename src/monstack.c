@@ -20,7 +20,7 @@ Mon_RetCode Mon_StackInit(Mon_Stack* stack) {
 Mon_RetCode Mon_StackPush(Mon_Stack* stack, const void* obj) {
 	if (stack->_count == stack->_cap) {
 		int newCap = stack->_cap * 2;
-		void** newMem = Mon_Realloc(stack->_arr, newCap);
+		const void** newMem = Mon_Realloc(stack->_arr, newCap);
 
 		if (newMem == NULL) {
 			return MON_ERR_NOMEM;
@@ -36,14 +36,14 @@ Mon_RetCode Mon_StackPush(Mon_Stack* stack, const void* obj) {
 	return MON_SUCCESS;
 }
 
-Mon_RetCode Mon_StackPop(Mon_Stack* stack, void** ret) {
+Mon_RetCode Mon_StackPop(Mon_Stack* stack, const void** ret) {
 	if (stack->_cap > MIN_SIZE && stack->_count <= stack->_cap/3) {
 		// In pop operation, it is not strictly necessary to resize the array.
 		// So, if reallocation fails, we just keep the original one.
 
 		int halfCap = stack->_cap/2;
 		int newCap = halfCap > MIN_SIZE ? halfCap : MIN_SIZE;
-		void** newMem = Mon_Realloc(stack->_arr, newCap);
+		const void** newMem = Mon_Realloc(stack->_arr, newCap);
 
 		if (newMem != NULL) {
 			stack->_arr = newMem;
@@ -59,12 +59,13 @@ Mon_RetCode Mon_StackPop(Mon_Stack* stack, void** ret) {
 	return MON_SUCCESS;
 }
 
-Mon_RetCode Mon_StackPeek(const Mon_Stack* stack, void** ret) {
+Mon_RetCode Mon_StackPeek(const Mon_Stack* stack, const void** ret) {
 	if (stack->_count <= 0) {
 		return MON_ERR_EMPTY_COLLECTION;
 	}
 
 	*ret = stack->_arr[stack->_count - 1];
+	return MON_SUCCESS;
 }
 
 int Mon_StackGetCount(const Mon_Stack* stack) {
