@@ -1,5 +1,12 @@
 #!/bin/bash
 
+chmod +x buildlex
+chmod +x buildyacc
+chmod +x buildlib
+chmod +x buildexec
+chmod +x buildall
+chmod +x testall
+
 mkdir bin
 
 cd bin
