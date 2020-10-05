@@ -47,14 +47,14 @@ def test_all_lex(monga_path, lex_cases_path):
 	print('Lex tests finished.')
 
 def test_all_astdump(monga_path, astdump_cases_path):
-	print('Testing Yacc...')
+	print('Testing Ast Dumping...')
 
 	for file in os.listdir(astdump_cases_path):
 		if not file.endswith(".expected"):
 			input_file_path = os.path.join(astdump_cases_path, file)
 			test_astdump(monga_path, input_file_path)
 
-	print('Yacc tests finished.')
+	print('Ast Dumping tests finished.')
 
 def test_all(monga_path):
 	test_all_lex(monga_path, LEX_CASES_PATH)
