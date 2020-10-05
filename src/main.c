@@ -127,7 +127,7 @@ static void RunAstDump(const struct AstDumpArgs* args) {
 
 		if (inputStream == NULL) {
 			fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
-			Mon_Fatal(MON_ERR_FILENOTFOUND);
+			exit(MON_ERR_FILENOTFOUND);
 		}
 	}
 

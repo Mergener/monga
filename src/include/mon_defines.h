@@ -2,21 +2,21 @@
 #define MON_DEFINES_H
 
 #if defined(_MSC_VER)
-    #define EXPORT __declspec(dllexport)
-    #define IMPORT __declspec(dllimport)
+    #define MON_EXPORT __declspec(dllexport)
+    #define MON_IMPORT __declspec(dllimport)
 #elif defined(__GNUC__)
-    #define EXPORT __attribute__((visibility("default")))
-    #define IMPORT
+    #define MON_EXPORT __attribute__((visibility("default")))
+    #define MON_IMPORT
 #else
-    #define EXPORT
-    #define IMPORT
+    #define MON_EXPORT
+    #define MON_IMPORT
     #pragma warning Unknown dynamic link import/export semantics.
 #endif
 
 #ifdef MON_COMPILING_LIB
-	#define MON_PUBLIC EXPORT
+	#define MON_PUBLIC MON_EXPORT
 #else
-	#define MON_PUBLIC IMPORT
+	#define MON_PUBLIC MON_IMPORT
 #endif
 #define MON_PRIVATE
 
