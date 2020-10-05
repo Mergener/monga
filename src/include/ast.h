@@ -49,7 +49,7 @@ typedef struct {
  *		MON_ERR_BAD_ARG :: Either ast was NULL, outputStream was NULL or fmt wasn't valid (part of the Mon_AstDumpFormat enumeration).
  *  
  */
-MON_API Mon_RetCode MON_CALL Mon_DumpAst(const Mon_Ast* ast, 
+MON_PUBLIC Mon_RetCode MON_CALL Mon_DumpAst(const Mon_Ast* ast, 
                                          FILE* outputStream, 
 								         Mon_AstDumpFormat fmt,
 										 Mon_AstDumpFlags flags);
@@ -58,7 +58,7 @@ MON_API Mon_RetCode MON_CALL Mon_DumpAst(const Mon_Ast* ast,
  * 	Releases all resources used by the given AST and sets
  *	its rootDefinition pointer to NULL.
  */
-MON_API void MON_CALL Mon_AstFinalize(Mon_Ast* ast);
+MON_PUBLIC void MON_CALL Mon_AstFinalize(Mon_Ast* ast);
 
 C_LINKAGE_END
 

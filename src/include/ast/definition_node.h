@@ -73,7 +73,7 @@ typedef struct Mon_AstDef_ {
  * 	@remarks The 'next' node pointer is initialized to NULL.
  * 
  */
-MON_API Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
+MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
                                                size_t varNameLen);
 
 /**
@@ -88,7 +88,7 @@ MON_API Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
  * 	@remarks The 'next' node pointer is initialized to NULL.
  * 
  */
-MON_API Mon_AstDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
+MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
                                                size_t funcNameLen);
 
 C_LINKAGE_END

@@ -31,10 +31,10 @@ typedef struct {
  * 	@return True if the allocator was accepted, false if one of its function pointers
  * 	was NULL.
  */ 
-MON_API bool MON_CALL Mon_SetAllocator(Mon_Allocator allocator);
-MON_API void* MON_CALL Mon_Alloc(size_t s);
-MON_API void* MON_CALL Mon_Realloc(void* oldMem, size_t s);
-MON_API void  MON_CALL Mon_Free(void* mem);
+MON_PUBLIC bool MON_CALL Mon_SetAllocator(Mon_Allocator allocator);
+MON_PUBLIC void* MON_CALL Mon_Alloc(size_t s);
+MON_PUBLIC void* MON_CALL Mon_Realloc(void* oldMem, size_t s);
+MON_PUBLIC void  MON_CALL Mon_Free(void* mem);
 
 C_LINKAGE_END
 

@@ -24,6 +24,6 @@
  *	thread to wait until it is terminated.
  *
  */
-MON_API Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst);
 
 #endif // PARSER_H

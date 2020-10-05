@@ -26,7 +26,7 @@ typedef struct {
  *		MON_SUCCESS :: Stack initialized succesfully.
  *		MON_ERR_NOMEM :: Not enough memory to initialize the stack.
  */
-MON_API Mon_RetCode MON_CALL Mon_StackInit(Mon_Stack* stack);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_StackInit(Mon_Stack* stack);
 
 /**
  * 	Pushes an element onto a stack.
@@ -38,7 +38,7 @@ MON_API Mon_RetCode MON_CALL Mon_StackInit(Mon_Stack* stack);
  *		MON_SUCCESS :: Element pushed succesfully.
  *		MON_ERR_NOMEM :: Not enough memory to initialize the stack.
  */ 
-MON_API Mon_RetCode MON_CALL Mon_StackPush(Mon_Stack* stack, const void* obj);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_StackPush(Mon_Stack* stack, const void* obj);
 
 /**
  * 	Pops an element from a stack.
@@ -50,7 +50,7 @@ MON_API Mon_RetCode MON_CALL Mon_StackPush(Mon_Stack* stack, const void* obj);
  *		MON_SUCCESS :: Element popped succesfully.
  *		MON_ERR_EMPTY_COLLECTION :: The stack was empty.
  */ 
-MON_API Mon_RetCode MON_CALL Mon_StackPop(Mon_Stack* stack, const void** ret);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_StackPop(Mon_Stack* stack, const void** ret);
 
 /**
  * 	Peeks at an element in a stack.
@@ -62,7 +62,7 @@ MON_API Mon_RetCode MON_CALL Mon_StackPop(Mon_Stack* stack, const void** ret);
  *		MON_SUCCESS :: Element peeked succesfully.
  *		MON_ERR_EMPTY_COLLECTION :: The stack was empty.
  */ 
-MON_API Mon_RetCode MON_CALL Mon_StackPeek(const Mon_Stack* stack, const void** ret);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_StackPeek(const Mon_Stack* stack, const void** ret);
 
 /**
  * 	Gets the number of elements in a stack.
@@ -71,7 +71,7 @@ MON_API Mon_RetCode MON_CALL Mon_StackPeek(const Mon_Stack* stack, const void** 
  * 
  *	@return The number of elements in the specified stack.
  */ 
-MON_API int MON_CALL Mon_StackGetCount(const Mon_Stack* stack);
+MON_PUBLIC int MON_CALL Mon_StackGetCount(const Mon_Stack* stack);
 
 /**
  * 	Checks whether a stack is empty.
@@ -80,19 +80,19 @@ MON_API int MON_CALL Mon_StackGetCount(const Mon_Stack* stack);
  * 
  *	@return True if the stack is empty, false otherwise.
  */ 
-MON_API bool MON_CALL Mon_StackEmpty(const Mon_Stack* stack);
+MON_PUBLIC bool MON_CALL Mon_StackEmpty(const Mon_Stack* stack);
 
 /**
  * 	Clears a stack, removing all its elements.
  * 
  * 	@param stack The stack.
  */ 
-MON_API void MON_CALL Mon_StackClear(Mon_Stack* stack);
+MON_PUBLIC void MON_CALL Mon_StackClear(Mon_Stack* stack);
 
 /**
  *	Finalizes a stack, cleaning up any resources used by it.
  */ 
-MON_API void MON_CALL Mon_StackFinalize(Mon_Stack* stack);
+MON_PUBLIC void MON_CALL Mon_StackFinalize(Mon_Stack* stack);
 
 C_LINKAGE_END
 

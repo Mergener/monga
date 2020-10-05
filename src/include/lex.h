@@ -23,7 +23,7 @@ typedef int Mon_TkType;
  * @param inputFile The file to be scanned by the lexer.
  * @param outputFile The file to dump the tokens to.
  */
-MON_API void MON_CALL Mon_DumpLex(FILE* inputFile, FILE* outputFile);
+MON_PUBLIC void MON_CALL Mon_DumpLex(FILE* inputFile, FILE* outputFile);
 
 /**
  * Returns a human readable string representation of a token type.
@@ -41,6 +41,6 @@ MON_API void MON_CALL Mon_DumpLex(FILE* inputFile, FILE* outputFile);
  * If the specified type doesn't match any of the descriptions above, the returned
  * value is "unknown".
  */
-MON_API const char* MON_CALL Mon_GetTokenName(Mon_TkType tkType);
+MON_PUBLIC const char* MON_CALL Mon_GetTokenName(Mon_TkType tkType);
 
 #endif // LEX_H

@@ -12,13 +12,14 @@ enum {
 	MON_ERR_FILENOTFOUND,
 	MON_ERR_SYNTAX,
 	MON_ERR_BAD_ARG,
-	MON_ERR_EMPTY_COLLECTION
+	MON_ERR_EMPTY_COLLECTION,
+	MON_ERR_IO
 
 };
 
 typedef int Mon_RetCode;
 
-MON_API void MON_CALL Mon_Fatal(Mon_RetCode code);
+MON_PUBLIC void MON_CALL Mon_Fatal(Mon_RetCode code);
 
 C_LINKAGE_END
 
