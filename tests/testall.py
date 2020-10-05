@@ -2,7 +2,7 @@ from subprocess import Popen, PIPE
 import os
 import sys
 
-MONGA_PATH = '../bin/monga'
+MONGA_PATH = '../bin/builds/monga/monga'
 LEX_CASES_PATH = 'lexcases'
 YACC_CASES_PATH = 'yacccases'
 
@@ -52,7 +52,7 @@ def test_all_yacc(monga_path, yacc_cases_path):
 	for file in os.listdir(yacc_cases_path):
 		if not file.endswith(".expected"):
 			input_file_path = os.path.join(yacc_cases_path, file)
-			test_lex(monga_path, input_file_path)
+			test_yacc(monga_path, input_file_path)
 
 	print('Yacc tests finished.')
 
