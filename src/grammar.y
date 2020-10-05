@@ -12,7 +12,7 @@
 
 #include "grammar.tab.h"
 
-#define DEBUGF(...) printf(__VA_ARGS__)
+#define DEBUGF(...) printf(__VA_ARGS__); printf("\n")
 #define THROW_IF_ALLOC_FAIL(var)
 
 int yylex();
