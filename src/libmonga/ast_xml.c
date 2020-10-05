@@ -65,15 +65,15 @@ static void XmlDumpTypeNode(AstDumpContext* ctx, const Mon_AstTypeDef* typeDef) 
 static void XmlDumpDefNode(AstDumpContext* ctx, const Mon_AstDef* defNode) {
     switch (defNode->defKind) {
         case MON_AST_DEF_FUNC:
-            XmlDumpFuncNode(ctx, &defNode->definition.function);
+            XmlDumpFuncNode(ctx, defNode->definition.function);
             break;
 
         case MON_AST_DEF_VAR:
-            XmlDumpVarNode(ctx, &defNode->definition.variable);			
+            XmlDumpVarNode(ctx, defNode->definition.variable);			
             break;
 
         case MON_AST_DEF_TYPE:
-            XmlDumpTypeNode(ctx, &defNode->definition.type);
+            XmlDumpTypeNode(ctx, defNode->definition.type);
             break;
 
         default:

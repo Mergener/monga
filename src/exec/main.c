@@ -132,7 +132,7 @@ static void RunAstDump(const struct AstDumpArgs* args) {
     }
 
     Mon_Ast ast;
-    Mon_RetCode ret = Mon_Parse(inputStream, &ast);
+    Mon_RetCode ret = Mon_Parse(inputStream, &ast, MON_PARSEFLAGS_DUMPREDUCES);
 
     if (ret == MON_SUCCESS) {
         Mon_DumpAst(&ast, stdout, MON_ASTDUMP_XML, MON_ASTDUMP_FLAGS_PRETTYPRINT);

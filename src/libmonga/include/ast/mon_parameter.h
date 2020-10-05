@@ -8,6 +8,7 @@
 
 C_LINKAGE_BEGIN
 
+/** A parameter node. Can be chained to other parameters. */
 typedef struct Mon_AstParam_ {
 
     char*  name;

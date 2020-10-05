@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include "ast/mon_definition_node.h"
+#include "ast/mon_definition.h"
 #include "ast/mon_parameter.h"
 
 C_LINKAGE_BEGIN

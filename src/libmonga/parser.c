@@ -16,9 +16,14 @@ extern FILE* yyin;
  */
 Mon_Ast* mon_TargetAst;
 
+/**
+ * True if the user wants to dump reduction rules when parsing.
+ */
+bool mon_DumpReduces = false;
+
 static atomic_bool s_Busy = false;
 
-Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst) {
+Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
     if (f == NULL || outAst == NULL) {
         return MON_ERR_BAD_ARG;
     }
@@ -28,6 +33,8 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst) {
     s_Busy = true;
 
     mon_TargetAst = outAst;
+    mon_DumpReduces = (flags & MON_PARSEFLAGS_DUMPREDUCES) != 0;
+
     yyin = f;
 
     Mon_RetCode retCode;

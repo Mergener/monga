@@ -4,9 +4,23 @@
 #include "mon_defines.h"
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "mon_ast.h"
 #include "mon_error.h"
+
+enum {
+
+	MON_PARSEFLAGS_NONE = 0,
+
+	/** 
+	 * Whenever the Monga parser automaton reduces a rule, the reduced
+	 * rule will be dumped to stdout.
+	 */
+	MON_PARSEFLAGS_DUMPREDUCES = (1 << 0)
+
+};
+typedef uint32_t Mon_ParseFlags;
 
 /**
  *	Parses the specified input stream that contains Monga code and generates 
@@ -24,6 +38,6 @@
  *	thread to wait until the ongoing parsing finishes.
  *
  */
-MON_PUBLIC Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags);
 
 #endif // PARSER_H

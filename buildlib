@@ -15,7 +15,7 @@ GEN_SRC_PATH="bin/gensrc"
 OUT_PATH="bin/builds/libmonga"
 
 # Extra arguments passed to the compiler
-COMPILER_ARGS="-Wall -I$GEN_SRC_PATH -I$EXPORT_HEADERS_PATH -I$SRC_PATH -DMON_COMPILING_LIB"
+COMPILER_ARGS="-Wall -Werror -I$GEN_SRC_PATH -I$EXPORT_HEADERS_PATH -I$SRC_PATH -DMON_COMPILING_LIB"
 
 #####################################################
 
@@ -42,6 +42,7 @@ for file in "./*.o"; do
 done
 
 # generate library
+rm $OUT_PATH/libmonga.a
 ar rcs $OUT_PATH/libmonga.a $objects
 
 # remove object files
