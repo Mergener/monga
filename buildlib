@@ -3,7 +3,7 @@
 #####################################################
 
 # Path to library source code root
-SRC_PATH="src"
+SRC_PATH="src/libmonga"
 
 # Path to folder containing library headers meant to be exported to the build directory
 EXPORT_HEADERS_PATH=$SRC_PATH/include
@@ -25,11 +25,6 @@ echo "Building library..."
 
 # generate object files
 for file in $(find $SRC_PATH -name "*.c"); do
-	if [ $file = $SRC_PATH/main.c ]
-	then
-		continue
-	fi
-
 	echo "Compiling $file..."
 	gcc $COMPILER_ARGS -fpic -c $file
 done

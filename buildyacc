@@ -2,7 +2,7 @@
 
 echo "Building yacc..."
 
-bison src/grammar.y -d -v -g &&
+bison src/libmonga/grammar.y -d -v -g &&
 mv grammar.dot bin/grammar.dot &&
 mv grammar.output bin/grammar.output &&
 mv grammar.tab.c bin/gensrc/grammar.tab.c &&

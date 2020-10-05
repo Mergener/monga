@@ -2,7 +2,7 @@
 
 echo "Building lex..."
 
-lex src/lex.l &&
+lex src/libmonga/lex.l &&
 mv lex.yy.c bin/gensrc/lex.yy.c
 exit 0
 

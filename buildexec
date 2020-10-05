@@ -6,7 +6,7 @@
 OUT_PATH="bin/builds/monga"
 
 # Executable source files
-SRC_FILES="src/main.c"
+SRC_FILES="src/exec/*.c"
 
 # Compilation args
 COMPILER_ARGS="-Wall -Ibin/builds/libmonga/include"

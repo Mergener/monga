@@ -25,18 +25,18 @@ typedef enum {
 /** Contains data that defines a variable, regardless of its scope. */
 typedef struct {
     
-    const char* varName;
-    size_t      varNameLength;
+    char*  varName;
+    size_t varNameLength;
 
-    const char* typeName;
-    size_t		typeNameLength;
+    char* typeName;
+    size_t typeNameLength;
 
 } Mon_AstVarDef;
 
 /** Contains data that defines a function, regardless of its scope. */
 typedef struct {
-    const char*   funcName;
-    size_t        funcNameLength;
+    char*  funcName;
+    size_t funcNameLength;
 
     /** 
      * Pointer to the first parameter node in a null-terminated chain of nodes. 
@@ -47,8 +47,8 @@ typedef struct {
 
 /** Contains data that defines a type, regardless of its scope. */
 typedef struct {
-    const char* typeName;
-    size_t      typeNameLength;
+    char*  typeName;
+    size_t typeNameLength;
 } Mon_AstTypeDef;
 
 typedef struct Mon_AstDef_ {
