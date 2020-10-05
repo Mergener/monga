@@ -498,7 +498,7 @@ cond_or:
 
 call: 
     MON_TK_IDENTIFIER '(' opt_exps ')'  {
-        DEBUGF("MON_TK_IDENTIFIER r1");
+        DEBUGF("call r1");
     }
 ;
 
