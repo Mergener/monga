@@ -1,4 +1,4 @@
-function hello() {
+function hello(a : int, b : float) {
 	print(4);
 }
 

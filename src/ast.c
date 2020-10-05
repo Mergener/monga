@@ -18,6 +18,7 @@ Mon_RetCode Mon_DumpAst(const Mon_Ast* ast,
 	}
 
 	AstDumpContext ctx;
+	ctx.ioErr = false;
 	ctx.indentLevel = 0;
 	ctx.outFile = outputStream;
 	ctx.dumpFlags = flags;
@@ -30,6 +31,8 @@ Mon_RetCode Mon_DumpAst(const Mon_Ast* ast,
 		default:
 			return MON_ERR_BAD_ARG;
 	}
+
+	fflush(ctx.outFile);
 
 	if (!ctx.ioErr) {
 		return MON_SUCCESS;

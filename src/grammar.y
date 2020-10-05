@@ -57,18 +57,20 @@ extern Mon_Ast* mon_TargetAst;
 %union {
     struct {
             const char* name;
-            unsigned length;
+            unsigned    length;
     } identifier;
     
-    long integer;
+    long   integer;
     double real;
 
-    Mon_Ast* ast;
-    Mon_AstDef* defNode;
+    Mon_Ast*      ast;
+    Mon_AstDef*   defNode;
+    Mon_AstParam* paramNode;
 }
 
-%type <identifier> MON_TK_IDENTIFIER
-%type <defNode> definition definitions def_variable def_function def_type
+%type <identifier> MON_TK_IDENTIFIER type
+%type <defNode>    definition definitions def_variable def_function def_type
+%type <paramNode>  parameter parameters opt_parameters
 
 %%
 
@@ -125,7 +127,7 @@ def_variable:
     MON_TK_VAR MON_TK_IDENTIFIER ':' type ';' {
         DEBUGF("def_variable r1");
 
-        $$ = Mon_AstVarDefNew($2.name, $2.length);
+        $$ = Mon_AstVarDefNew($2.name, $2.length, $4.name, $4.length);
 
         THROW_IF_ALLOC_FAIL($$);
     }
@@ -151,7 +153,9 @@ variable_defs:
 ;
 
 type: MON_TK_IDENTIFIER {
-    DEBUGF("MON_TK_IDENTIFIER r1");
+    DEBUGF("type r1");
+
+    $$ = $1;
 }
 ; 
 
@@ -195,7 +199,8 @@ def_function:
     MON_TK_FUNCTION MON_TK_IDENTIFIER '(' opt_parameters ')' opt_ret_type block {
         DEBUGF("def_function r1");
 
-        $$ = Mon_AstFuncDefNew($2.name, $2.length);
+        $$ = Mon_AstFuncDefNew($2.name, $2.length, $4);
+
         THROW_IF_ALLOC_FAIL($$);
     }
 ;
@@ -213,26 +218,38 @@ opt_ret_type:
 parameters: 
     parameter {
         DEBUGF("parameters r1");
+
+        $$ = $1;
     }
 
     | parameters ',' parameter {
         DEBUGF("parameters r2");
+
+        $$ = $1;
+        $1->next = $3;
     }
 ;
 
 opt_parameters: 
     /* nothing */ {
         DEBUGF("opt_parameters r1");
+
+        $$ = NULL;
     }
 
     | parameters {
         DEBUGF("opt_parameters r1");
+
+        $$ = $1;
     }
 ;
 
 parameter: 
     MON_TK_IDENTIFIER ':' type {
         DEBUGF("parameter r1");
+
+        $$ = Mon_AstParamNew($1.name, $1.length, $3.name, $3.length);
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 

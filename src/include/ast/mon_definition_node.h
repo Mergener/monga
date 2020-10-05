@@ -5,6 +5,8 @@
 
 #include <stdlib.h>
 
+#include "mon_parameter.h"
+
 C_LINKAGE_BEGIN
 
 typedef enum {
@@ -22,14 +24,25 @@ typedef enum {
 
 /** Contains data that defines a variable, regardless of its scope. */
 typedef struct {
+	
 	const char* varName;
 	size_t      varNameLength;
+
+	const char* typeName;
+	size_t		typeNameLength;
+
 } Mon_AstVarDef;
 
 /** Contains data that defines a function, regardless of its scope. */
 typedef struct {
-	const char* funcName;
-	size_t      funcNameLength;
+	const char*   funcName;
+	size_t        funcNameLength;
+
+	/** 
+	 * Pointer to the first parameter node in a null-terminated chain of nodes. 
+	 * NULL if the function has no parameters.
+	 */
+	Mon_AstParam* firstParam;
 } Mon_AstFuncDef;
 
 /** Contains data that defines a type, regardless of its scope. */
@@ -74,13 +87,16 @@ typedef struct Mon_AstDef_ {
  * 
  */
 MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
-                                                 size_t varNameLen);
+                                                 size_t varNameLen,
+												 const char* typeName,
+												 size_t typeNameLen);
 
 /**
  *	Constructs and returns a definition node for a function definition.
  *
  * 	@param funcName The function's name.
  * 	@param funcNameLen The function's name length (excluding the null termination byte)
+ * 	@param firstParam Pointer to the first parameter node. May be NULL if function has no parameters.
  * 
  * 	@return If succesful, returns a definition node, with defKind set to MON_AST_DEF_FUNC and definition 
  * 	field filled with 'function' data. If allocation fails, returns NULL.
@@ -89,7 +105,8 @@ MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
  * 
  */
 MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
-                                               	  size_t funcNameLen);
+                                               	  size_t funcNameLen,
+												  Mon_AstParam* firstParam);
 
 C_LINKAGE_END
 
