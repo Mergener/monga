@@ -20,8 +20,8 @@
  *		MON_ERR_NOMEM     :: Parsing failed due to lack of available memory.
  *		MON_ERR_BAD_ARG   :: Either 'f' or 'outAst' (or both) were NULL.
  *
- *	@remarks If an ongoing parse is being executed, this call will block the calling
- *	thread to wait until it is terminated.
+ *	@remarks If an parse is currently being executed in this process, this call will block the calling
+ *	thread to wait until the ongoing parsing finishes.
  *
  */
 MON_PUBLIC Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst);
