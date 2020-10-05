@@ -15,7 +15,9 @@ GEN_SRC_PATH="bin/gensrc"
 OUT_PATH="bin/builds/libmonga"
 
 # Extra arguments passed to the compiler
-COMPILER_ARGS="-Wall -I$GEN_SRC_PATH -I$GEN_SRC_PATH/include -I$EXPORT_HEADERS_PATH -I$SRC_PATH"
+COMPILER_ARGS="-Wall -I$GEN_SRC_PATH -I$EXPORT_HEADERS_PATH -I$SRC_PATH"
+
+echo $COMPILER_ARGS
 
 #####################################################
 
@@ -24,7 +26,7 @@ COMPILER_ARGS="-Wall -I$GEN_SRC_PATH -I$GEN_SRC_PATH/include -I$EXPORT_HEADERS_P
 echo "Building library..."
 
 # generate object files
-for file in $SRC_PATH/*.c; do
+for file in $(find $SRC_PATH -name "*.c"); do
 	if [ $file = $SRC_PATH/main.c ]
 	then
 		continue
@@ -55,9 +57,5 @@ for o in $objects; do
 done
 
 # copy headers from source path to build/include and delete previous ones
-for h in $OUT_PATH/include/*.h; do
-	rm $h
-done
-for h in $EXPORT_HEADERS_PATH/*.h; do
-	cp $h $OUT_PATH/include
-done
+rm -R $OUT_PATH/include
+cp -R $EXPORT_HEADERS_PATH $OUT_PATH/include
