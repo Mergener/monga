@@ -105,8 +105,17 @@ MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
  * 
  */
 MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
-                                                     size_t funcNameLen,
+                                                  size_t funcNameLen,
                                                   Mon_AstParam* firstParam);
+
+/**
+ *  Destroys a definition node, releasing its memory.
+ * 
+ *  @param def The definition node to be destroyed.
+ *  @param rec If true, all the definition nodes in the definition chain will be destroyed,
+ *  as well as any AST nodes in the def's subtree. If false, only def's own resources are deallocated.
+ */
+MON_PUBLIC void MON_CALL Mon_AstDefDestroy(Mon_AstDef* def, bool rec);
 
 C_LINKAGE_END
 

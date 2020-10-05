@@ -42,5 +42,7 @@ Mon_RetCode Mon_DumpAst(const Mon_Ast* ast,
 }
 
 void Mon_AstFinalize(Mon_Ast* ast) {
-    // TO-DO
+    if (ast != NULL) {
+        Mon_AstDefDestroy(ast->rootDefinition, true);
+    }
 }

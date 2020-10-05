@@ -62,3 +62,34 @@ Mon_AstDef* Mon_AstFuncDefNew(const char* funcName,
 
     return ret;
 }
+
+void Mon_AstDefDestroy(Mon_AstDef* def, bool rec) {
+    switch (def->defKind) {
+        case MON_AST_DEF_FUNC:
+            Mon_Free(def->definition.function.funcName);
+            
+            if (rec) {
+                Mon_AstParamDestroy(def->definition.function.firstParam, true);
+            }
+            break;
+
+        case MON_AST_DEF_TYPE:
+            Mon_Free(def->definition.type.typeName);
+            break;
+        
+        case MON_AST_DEF_VAR:
+            Mon_Free(def->definition.variable.typeName);
+            Mon_Free(def->definition.variable.varName);
+            break;
+
+        default:
+            break;
+    }
+
+    Mon_AstDef* next = def->next;
+    Mon_Free(def);
+
+    if (rec && next != NULL) {
+        Mon_AstDefDestroy(next, true);
+    }
+}

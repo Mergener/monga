@@ -58,6 +58,8 @@ MON_PUBLIC Mon_RetCode MON_CALL Mon_DumpAst(const Mon_Ast* ast,
 /**
  * 	Releases all resources used by the given AST and sets
  *	its rootDefinition pointer to NULL.
+ *
+ *  @remarks Does not free the specified AST object.
  */
 MON_PUBLIC void MON_CALL Mon_AstFinalize(Mon_Ast* ast);
 
