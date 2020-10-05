@@ -116,6 +116,30 @@ static void RunLexDump(const struct LexDumpArgs* args) {
 	Mon_DumpLex(inputStream, stdout);
 }
 
+static void RunAstDump(const struct AstDumpArgs* args) {
+	FILE* inputStream;
+
+	if (args->inputFilePath == NULL) {
+		inputStream = stdin;
+	} else {
+		inputStream = fopen(args->inputFilePath, "r");
+
+		if (inputStream == NULL) {
+			fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
+			Mon_Fatal(MON_ERR_FILENOTFOUND);
+		}
+	}
+
+	Mon_Ast ast;
+	Mon_RetCode ret = Mon_Parse(inputStream, &ast);
+
+	if (ret == MON_SUCCESS) {
+		printf("Parsing ended: success.\n");
+	} else {
+		fprintf(stderr, "Parsing ended with errors.\n");
+	}
+}
+
 static void Run(const struct ProgramArgs* args) {
 
 	switch (args->execMode) {
@@ -125,9 +149,11 @@ static void Run(const struct ProgramArgs* args) {
 			break;
 
 		case AST_DUMP:
+			RunAstDump(&args->args.astDump);
 			break;
 
 		case COMPILER:
+			fprintf(stderr, "Cannot execute in compilation mode; compiler not yet implemented.\n");
 			break;
 
 		default:

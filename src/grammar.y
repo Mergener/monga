@@ -1,11 +1,16 @@
+// The following is needed since the YACC generated header file must
+// be aware of types defined in these headers.
+%code requires {
+#include "ast.h"
+#include "monstack.h"
+}
+
 %{
 
-#include <monga.tab.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ast.h"
-#include "monstack.h"
+#include "grammar.tab.h"
 
 #define DEBUGF(...) printf(__VA_ARGS__)
 #define THROW_IF_ALLOC_FAIL(var)

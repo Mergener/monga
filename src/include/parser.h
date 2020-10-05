@@ -5,9 +5,8 @@
 
 #include <stdio.h>
 
+#include "ast.h"
 #include "error.h"
-
-typedef struct Mon_Ast_ Mon_Ast;
 
 /**
  *	Parses the specified input stream that contains Monga code and generates 
@@ -20,6 +19,10 @@ typedef struct Mon_Ast_ Mon_Ast;
  *		MON_SUCCESS       :: Parsing finished gracefully.
  *		MON_ERR_NOMEM     :: Parsing failed due to lack of available memory.
  *		MON_ERR_BAD_ARG   :: Either 'f' or 'outAst' (or both) were NULL.
+ *
+ *	@remarks If an ongoing parse is being executed, this call will block the calling
+ *	thread to wait until it is terminated.
+ *
  */
 MON_API Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst);
 

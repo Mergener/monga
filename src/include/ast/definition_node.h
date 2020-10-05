@@ -38,7 +38,7 @@ typedef struct {
 	size_t      typeNameLength;
 } Mon_AstTypeDef;
 
-typedef struct {
+typedef struct Mon_AstDef_ {
 
 	union {
 
@@ -57,7 +57,7 @@ typedef struct {
 	Mon_AstDefKind defKind;
 
 	/** Next definition. May be NULL. */
-	Mon_AstDef* next;
+	struct Mon_AstDef_* next;
 
 } Mon_AstDef;
 

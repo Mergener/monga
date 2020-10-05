@@ -3,9 +3,16 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 
-#include <monga.tab.h>
+#include "grammar.tab.h"
 
 #include "error.h"
+
+/**
+ *	The user provided AST object to be filled.
+ *	
+ *	Set by Mon_Parse procedure.
+ */
+Mon_Ast* mon_TargetAst;
 
 static atomic_bool s_Busy = false;
 
@@ -17,6 +24,8 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst) {
 	// Wait until an ongoing parsing is finished.
 	while (s_Busy);
 	s_Busy = true;
+
+	mon_TargetAst = outAst;
 
 	Mon_RetCode retCode;
 
