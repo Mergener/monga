@@ -10,19 +10,19 @@ C_LINKAGE_BEGIN
 
 typedef struct Mon_AstParam_ {
 
-	char*  name;
-	size_t nameLen;
-	char*  typeName;
-	size_t typeNameLen;
+    char*  name;
+    size_t nameLen;
+    char*  typeName;
+    size_t typeNameLen;
 
-	struct Mon_AstParam_* next;
+    struct Mon_AstParam_* next;
 
 } Mon_AstParam;
 
 MON_PUBLIC Mon_AstParam* MON_CALL Mon_AstParamNew(const char* name,
                                                   size_t nameLen,
-												  const char* typeName,
-												  size_t typeNameLen);
+                                                  const char* typeName,
+                                                  size_t typeNameLen);
 
 /**
  *	Destroys a parameter node, releasing its memory.

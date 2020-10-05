@@ -40,48 +40,48 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 "||"             { return MON_TK_OP_OR; }
 
 [a-zA-Z][a-zA-Z_0-9]* {
-	yylval = MakeIdentifier(yytext, yyleng);
+    yylval = MakeIdentifier(yytext, yyleng);
 
-	return MON_TK_IDENTIFIER;
+    return MON_TK_IDENTIFIER;
 }
 
 [0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+ {
-	yylval.real = strtof(yytext, NULL);
-	return MON_TK_LIT_FLOAT;
+    yylval.real = strtof(yytext, NULL);
+    return MON_TK_LIT_FLOAT;
 }
 
 [0-9]+ {
-	yylval.integer = strtol(yytext, NULL, 10);
-	return MON_TK_LIT_INT;
+    yylval.integer = strtol(yytext, NULL, 10);
+    return MON_TK_LIT_INT;
 }
 
 0x[0-9a-fA-F]+ {
-	yylval.integer = strtol(yytext, NULL, 16);
-	return MON_TK_LIT_INT;
+    yylval.integer = strtol(yytext, NULL, 16);
+    return MON_TK_LIT_INT;
 }
 
 [0-9]+(\.[0-9]+) {
-	yylval.real = strtof(yytext, NULL);
-	return MON_TK_LIT_FLOAT;
+    yylval.real = strtof(yytext, NULL);
+    return MON_TK_LIT_FLOAT;
 }
 
 . {
-	return *yytext;
+    return *yytext;
 }
 
 %%
 
 static Mon_TkVal MakeIdentifier(const char* name, size_t length) {
-	Mon_TkVal ret;
+    Mon_TkVal ret;
 
-	char* idName = Mon_Alloc(length + 1);
+    char* idName = Mon_Alloc(length + 1);
 
-	memcpy(idName, name, length);
-	idName[length] = '\0';
+    memcpy(idName, name, length);
+    idName[length] = '\0';
 
-	ret.identifier.name = idName;
-	ret.identifier.length = length;
+    ret.identifier.name = idName;
+    ret.identifier.length = length;
 
-	return ret;
+    return ret;
 }
 

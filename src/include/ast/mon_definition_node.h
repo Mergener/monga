@@ -11,66 +11,66 @@ C_LINKAGE_BEGIN
 
 typedef enum {
 
-	/** Variable definition node. */
-	MON_AST_DEF_VAR,
+    /** Variable definition node. */
+    MON_AST_DEF_VAR,
 
-	/** Function definition node. */
-	MON_AST_DEF_FUNC,
+    /** Function definition node. */
+    MON_AST_DEF_FUNC,
 
-	/** Type definition node. */
-	MON_AST_DEF_TYPE
+    /** Type definition node. */
+    MON_AST_DEF_TYPE
 
 } Mon_AstDefKind;
 
 /** Contains data that defines a variable, regardless of its scope. */
 typedef struct {
-	
-	const char* varName;
-	size_t      varNameLength;
+    
+    const char* varName;
+    size_t      varNameLength;
 
-	const char* typeName;
-	size_t		typeNameLength;
+    const char* typeName;
+    size_t		typeNameLength;
 
 } Mon_AstVarDef;
 
 /** Contains data that defines a function, regardless of its scope. */
 typedef struct {
-	const char*   funcName;
-	size_t        funcNameLength;
+    const char*   funcName;
+    size_t        funcNameLength;
 
-	/** 
-	 * Pointer to the first parameter node in a null-terminated chain of nodes. 
-	 * NULL if the function has no parameters.
-	 */
-	Mon_AstParam* firstParam;
+    /** 
+     * Pointer to the first parameter node in a null-terminated chain of nodes. 
+     * NULL if the function has no parameters.
+     */
+    Mon_AstParam* firstParam;
 } Mon_AstFuncDef;
 
 /** Contains data that defines a type, regardless of its scope. */
 typedef struct {
-	const char* typeName;
-	size_t      typeNameLength;
+    const char* typeName;
+    size_t      typeNameLength;
 } Mon_AstTypeDef;
 
 typedef struct Mon_AstDef_ {
 
-	union {
+    union {
 
-		/** Available if defKind == MON_AST_DEF_VAR */
-		Mon_AstVarDef  variable;
+        /** Available if defKind == MON_AST_DEF_VAR */
+        Mon_AstVarDef  variable;
 
-		/** Available if defKind == MON_AST_DEF_FUNC */
-		Mon_AstFuncDef function;
+        /** Available if defKind == MON_AST_DEF_FUNC */
+        Mon_AstFuncDef function;
 
-		/** Available if defKind == MON_AST_DEF_TYPE */
-		Mon_AstTypeDef type;
+        /** Available if defKind == MON_AST_DEF_TYPE */
+        Mon_AstTypeDef type;
 
-	} definition;
+    } definition;
 
-	/** This node definition kind. Indicates what is this definition node is actually defining. */
-	Mon_AstDefKind defKind;
+    /** This node definition kind. Indicates what is this definition node is actually defining. */
+    Mon_AstDefKind defKind;
 
-	/** Next definition. May be NULL. */
-	struct Mon_AstDef_* next;
+    /** Next definition. May be NULL. */
+    struct Mon_AstDef_* next;
 
 } Mon_AstDef;
 
@@ -88,8 +88,8 @@ typedef struct Mon_AstDef_ {
  */
 MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
                                                  size_t varNameLen,
-												 const char* typeName,
-												 size_t typeNameLen);
+                                                 const char* typeName,
+                                                 size_t typeNameLen);
 
 /**
  *	Constructs and returns a definition node for a function definition.
@@ -105,8 +105,8 @@ MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
  * 
  */
 MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
-                                               	  size_t funcNameLen,
-												  Mon_AstParam* firstParam);
+                                                     size_t funcNameLen,
+                                                  Mon_AstParam* firstParam);
 
 C_LINKAGE_END
 

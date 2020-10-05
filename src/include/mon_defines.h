@@ -14,20 +14,20 @@
 #endif
 
 #ifdef MON_COMPILING_LIB
-	#define MON_PUBLIC MON_EXPORT
+    #define MON_PUBLIC MON_EXPORT
 #else
-	#define MON_PUBLIC MON_IMPORT
+    #define MON_PUBLIC MON_IMPORT
 #endif
 #define MON_PRIVATE
 
 #ifdef __cplusplus
-	#define C_LINKAGE extern "C"
-	#define C_LINKAGE_BEGIN C_LINKAGE {
-	#define C_LINKAGE_END }
+    #define C_LINKAGE extern "C"
+    #define C_LINKAGE_BEGIN C_LINKAGE {
+    #define C_LINKAGE_END }
 #else
-	#define C_LINKAGE
-	#define C_LINKAGE_BEGIN
-	#define C_LINKAGE_END 
+    #define C_LINKAGE
+    #define C_LINKAGE_BEGIN
+    #define C_LINKAGE_END 
 #endif
 
 #define MON_CALL

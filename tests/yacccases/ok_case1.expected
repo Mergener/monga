@@ -1,0 +1,19 @@
+<Module>
+	<FunctionDefinition>
+		<Name>hello</Name>
+		<Parameters>
+			<Parameter>
+				<Type>int</Type>
+				<Name>a</Name>
+			</Parameter>
+			<Parameter>
+				<Type>float</Type>
+				<Name>b</Name>
+			</Parameter>
+		</Parameters>
+	</FunctionDefinition>
+	<VariableDeclaration>
+		<Name>test</Name>
+		<Type>int</Type>
+	</VariableDeclaration>
+</Module>

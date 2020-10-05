@@ -13,17 +13,17 @@ C_LINKAGE_BEGIN
 
 typedef enum {
 
-	/** XML dump format. */
-	MON_ASTDUMP_XML
+    /** XML dump format. */
+    MON_ASTDUMP_XML
 
 } Mon_AstDumpFormat;
 
 typedef enum {
 
-	MON_ASTDUMP_FLAGS_NONE = 0,
+    MON_ASTDUMP_FLAGS_NONE = 0,
 
-	/** If set, dumps the AST in a more readable way. */
-	MON_ASTDUMP_FLAGS_PRETTYPRINT = (1 << 0)
+    /** If set, dumps the AST in a more readable way. */
+    MON_ASTDUMP_FLAGS_PRETTYPRINT = (1 << 0)
 
 } Mon_AstDumpFlags;
 
@@ -32,8 +32,8 @@ typedef enum {
  */
 typedef struct {
 
-	/** The first program definition. */
-	Mon_AstDef* rootDefinition;
+    /** The first program definition. */
+    Mon_AstDef* rootDefinition;
 
 } Mon_Ast;
 
@@ -52,8 +52,8 @@ typedef struct {
  */
 MON_PUBLIC Mon_RetCode MON_CALL Mon_DumpAst(const Mon_Ast* ast, 
                                          FILE* outputStream, 
-								         Mon_AstDumpFormat fmt,
-										 Mon_AstDumpFlags flags);
+                                         Mon_AstDumpFormat fmt,
+                                         Mon_AstDumpFlags flags);
 
 /**
  * 	Releases all resources used by the given AST and sets

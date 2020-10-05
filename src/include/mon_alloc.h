@@ -10,17 +10,17 @@ C_LINKAGE_BEGIN
 
 typedef struct {
 
-	/** Default allocation function. Defaults to malloc. */
-	void* (*alloc)(size_t);
+    /** Default allocation function. Defaults to malloc. */
+    void* (*alloc)(size_t);
 
-	/** Zero-initialized allocation function. Defaults to calloc. */
-	void* (*allocZero)(size_t, size_t);
+    /** Zero-initialized allocation function. Defaults to calloc. */
+    void* (*allocZero)(size_t, size_t);
 
-	/** Memory reallocation function. Defaults to realloc. */
-	void* (*realloc)(void*, size_t);
+    /** Memory reallocation function. Defaults to realloc. */
+    void* (*realloc)(void*, size_t);
 
-	/** Memory disposal function. Defaults to free. */
-	void  (*free)(void*);
+    /** Memory disposal function. Defaults to free. */
+    void  (*free)(void*);
 
 } Mon_Allocator;
 

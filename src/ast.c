@@ -8,39 +8,39 @@
 #include "mon_error.h"
 
 Mon_RetCode Mon_DumpAst(const Mon_Ast* ast, 
-				        FILE* outputStream, 
-				        Mon_AstDumpFormat fmt,
-				        Mon_AstDumpFlags flags) {
+                        FILE* outputStream, 
+                        Mon_AstDumpFormat fmt,
+                        Mon_AstDumpFlags flags) {
 
-	if (ast == NULL ||
-	    outputStream == NULL) {
-		   return MON_ERR_BAD_ARG;
-	}
+    if (ast == NULL ||
+        outputStream == NULL) {
+           return MON_ERR_BAD_ARG;
+    }
 
-	AstDumpContext ctx;
-	ctx.ioErr = false;
-	ctx.indentLevel = 0;
-	ctx.outFile = outputStream;
-	ctx.dumpFlags = flags;
+    AstDumpContext ctx;
+    ctx.ioErr = false;
+    ctx.indentLevel = 0;
+    ctx.outFile = outputStream;
+    ctx.dumpFlags = flags;
 
-	switch (fmt) {
-		case MON_ASTDUMP_XML:
-			AstDumpXml(&ctx, ast);
-			break;
+    switch (fmt) {
+        case MON_ASTDUMP_XML:
+            AstDumpXml(&ctx, ast);
+            break;
 
-		default:
-			return MON_ERR_BAD_ARG;
-	}
+        default:
+            return MON_ERR_BAD_ARG;
+    }
 
-	fflush(ctx.outFile);
+    fflush(ctx.outFile);
 
-	if (!ctx.ioErr) {
-		return MON_SUCCESS;
-	} else {
-		return MON_ERR_IO;
-	}
+    if (!ctx.ioErr) {
+        return MON_SUCCESS;
+    } else {
+        return MON_ERR_IO;
+    }
 }
 
 void Mon_AstFinalize(Mon_Ast* ast) {
-	// TO-DO
+    // TO-DO
 }

@@ -13,23 +13,23 @@
  *	it returned false.
  */
 #define DUMPF_OR_STOP(ctx, ...) \
-	if (!Dumpf(ctx, __VA_ARGS__)) \
-	{ \
-		return; \
-	}
+    if (!Dumpf(ctx, __VA_ARGS__)) \
+    { \
+        return; \
+    }
 
 typedef struct {
 
-	/** The file being written to. */
-	FILE* outFile;
+    /** The file being written to. */
+    FILE* outFile;
 
-	/** The current indentation level. */
-	int indentLevel;
+    /** The current indentation level. */
+    int indentLevel;
 
-	/** True if an IO error happened. */
-	bool ioErr;
+    /** True if an IO error happened. */
+    bool ioErr;
 
-	Mon_AstDumpFlags dumpFlags;
+    Mon_AstDumpFlags dumpFlags;
 
 } AstDumpContext;
 
