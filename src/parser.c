@@ -7,6 +7,8 @@
 
 #include "error.h"
 
+extern FILE* yyin;
+
 /**
  *	The user provided AST object to be filled.
  *	
@@ -26,6 +28,7 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst) {
 	s_Busy = true;
 
 	mon_TargetAst = outAst;
+	yyin = f;
 
 	Mon_RetCode retCode;
 
