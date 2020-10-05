@@ -74,7 +74,7 @@ typedef struct Mon_AstDef_ {
  * 
  */
 MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
-                                               size_t varNameLen);
+                                                 size_t varNameLen);
 
 /**
  *	Constructs and returns a definition node for a function definition.
@@ -89,7 +89,7 @@ MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstVarDefNew(const char* varName,
  * 
  */
 MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
-                                               size_t funcNameLen);
+                                               	  size_t funcNameLen);
 
 C_LINKAGE_END
 

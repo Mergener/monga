@@ -34,7 +34,13 @@ typedef struct {
 } AstDumpContext;
 
 /**
- *	
+ *	Prints the specified format string with formatted arguments to a dump context's out file
+ *	and checks for IO errors. If any is found, ctx->ioErr is set to true.
+ *
+ * 	@param ctx The dumping context.
+ * 	@param fmt The format string.
+ * 
+ * 	@return True if no IO errors occurred, false otherwise.
  */ 
 MON_PRIVATE bool Dumpf(AstDumpContext* ctx, const char* fmt, ...);
 

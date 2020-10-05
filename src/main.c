@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "mon_alloc.h"
 #include "mon_lex.h"
 #include "mon_parser.h"
 #include "mon_error.h"
@@ -162,11 +163,68 @@ static void Run(const struct ProgramArgs* args) {
 	}
 }
 
+//
+//	Custom allocator functions:
+//
+
+static void* Alloc(size_t s) {
+	void* mem = malloc(s);
+
+	if (mem == NULL) {
+		fprintf(stderr, "Error: out of memory.");
+		exit(MON_ERR_NOMEM);
+	}
+
+	return mem;
+}
+
+static void* AllocZero(size_t s1, size_t s2) {
+	void* mem = calloc(s1, s2);
+
+	if (mem == NULL) {
+		fprintf(stderr, "Error: out of memory.");
+		exit(MON_ERR_NOMEM);
+	}
+
+	return mem;
+}
+
+static void FreeAlloc(void* mem) {
+	free(mem);
+}
+
+static void* ReAlloc(void* src, size_t newSize) {
+	void* newMem = realloc(src, newSize);
+
+	if (newMem == NULL) {
+		fprintf(stderr, "Error: out of memory.");
+		exit(MON_ERR_NOMEM);
+	}
+
+	return newMem;
+}
+
+///
+
 int main(int argc, char* argv[]) {
 	if (argc == 1) {
 		fprintf(stderr, "Invalid arguments for Monga. Use %s --h for help.\n", argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	//
+	//	Since we don't want to be manually handling memory failures in this batch
+	//	executable, we can create an allocator that simply exits the program in case
+	//	any allocation fails.
+	//
+
+	Mon_Allocator allocator;
+	allocator.alloc = Alloc;
+	allocator.allocZero = AllocZero;
+	allocator.free = FreeAlloc;
+	allocator.realloc = ReAlloc;
+
+	Mon_SetAllocator(allocator);
 
 	struct ProgramArgs args = ParseArgs(argc, argv);
 

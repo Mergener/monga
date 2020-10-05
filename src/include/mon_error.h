@@ -1,7 +1,7 @@
 #ifndef MON_ERROR_H
 #define MON_ERROR_H
 
-#include "defines.h"
+#include "mon_defines.h"
 
 C_LINKAGE_BEGIN
 
