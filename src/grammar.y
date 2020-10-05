@@ -12,10 +12,12 @@
 
 #include "grammar.tab.h"
 
-#define DEBUGF(...) printf(__VA_ARGS__); printf("\n")
+#define DEBUGF(...)
+//#define DEBUGF(...) printf(__VA_ARGS__); printf("\n")
 #define THROW_IF_ALLOC_FAIL(var)
 
 int yylex();
+void yyerror(const char* s);
 
 /** 
  *  Pointer to the user provided AST object to be filled.  
@@ -94,7 +96,8 @@ definitions:
     | definitions definition {
         DEBUGF("definitions r2");
 
-        $$->next = $1;
+        $$ = $1;
+        $$->next = $2;
     }
 ;
 
@@ -528,3 +531,7 @@ opt_exps:
 ;
 
 %%
+
+void yyerror(const char* s) {
+    fprintf(stderr, "%s\n", s);
+}

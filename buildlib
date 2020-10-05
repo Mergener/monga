@@ -17,8 +17,6 @@ OUT_PATH="bin/builds/libmonga"
 # Extra arguments passed to the compiler
 COMPILER_ARGS="-Wall -I$GEN_SRC_PATH -I$EXPORT_HEADERS_PATH -I$SRC_PATH"
 
-echo $COMPILER_ARGS
-
 #####################################################
 
 ./buildlex &&

@@ -134,7 +134,7 @@ static void RunAstDump(const struct AstDumpArgs* args) {
 	Mon_RetCode ret = Mon_Parse(inputStream, &ast);
 
 	if (ret == MON_SUCCESS) {
-		printf("Parsing ended: success.\n");
+		Mon_DumpAst(&ast, stdout, MON_ASTDUMP_XML, MON_ASTDUMP_FLAGS_PRETTYPRINT);
 	} else {
 		fprintf(stderr, "Parsing ended with errors.\n");
 	}

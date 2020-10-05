@@ -16,6 +16,9 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 %}
 
 %option noyywrap
+%option noinput
+%option nounput
+
 %%
 
 [\t\n ]+ ;
