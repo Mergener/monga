@@ -1,6 +1,6 @@
-#include "ast/definition_node.h"
+#include "ast/mon_definition_node.h"
 
-#include "alloc.h"
+#include "mon_alloc.h"
 
 Mon_AstDef* Mon_AstVarDefNew(const char* varName,
                              size_t varNameLen) {

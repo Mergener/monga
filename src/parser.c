@@ -1,11 +1,11 @@
-#include "parser.h"
+#include "mon_parser.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
 
 #include "grammar.tab.h"
 
-#include "error.h"
+#include "mon_error.h"
 
 extern FILE* yyin;
 

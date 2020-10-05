@@ -3,9 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "lex.h"
-#include "parser.h"
-#include "error.h"
+#include "mon_lex.h"
+#include "mon_parser.h"
+#include "mon_error.h"
 
 enum ExecutionMode {
 	NONE,
@@ -109,7 +109,7 @@ static void RunLexDump(const struct LexDumpArgs* args) {
 
 		if (inputStream == NULL) {
 			fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
-			Mon_Fatal(MON_ERR_FILENOTFOUND);
+			exit(MON_ERR_FILENOTFOUND);
 		}
 	}
 

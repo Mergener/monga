@@ -1,11 +1,11 @@
-#include "ast.h"
+#include "mon_ast.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
 
 #include "ast_dump.h"
 #include "ast_xml.h"
-#include "error.h"
+#include "mon_error.h"
 
 Mon_RetCode Mon_DumpAst(const Mon_Ast* ast, 
 				        FILE* outputStream, 

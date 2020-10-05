@@ -1,12 +1,12 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "defines.h"
+#include "mon_defines.h"
 
 #include <stdio.h>
 
-#include "ast.h"
-#include "error.h"
+#include "mon_ast.h"
+#include "mon_error.h"
 
 /**
  *	Parses the specified input stream that contains Monga code and generates 

@@ -1,11 +1,11 @@
 #ifndef MON_STACK_H
 #define MON_STACK_H
 
-#include "defines.h"
+#include "mon_defines.h"
 
 #include <stdbool.h>
 
-#include "error.h"
+#include "mon_error.h"
 
 C_LINKAGE_BEGIN
 

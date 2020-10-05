@@ -1,12 +1,12 @@
 #ifndef MON_AST_H
 #define MON_AST_H
 
-#include "error.h"
-#include "defines.h"
+#include "mon_error.h"
+#include "mon_defines.h"
 
 #include <stdio.h>
 
-#include "ast/definition_node.h"
+#include "ast/mon_definition_node.h"
 
 C_LINKAGE_BEGIN
 

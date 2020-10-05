@@ -1,6 +1,6 @@
-#include "monstack.h"
+#include "mon_stack.h"
 
-#include "alloc.h"
+#include "mon_alloc.h"
 
 #define DEFAULT_SIZE 16
 #define MIN_SIZE DEFAULT_SIZE

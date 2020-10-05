@@ -1,7 +1,7 @@
 #ifndef AST_XML_H
 #define AST_XML_H
 
-#include "defines.h"
+#include "mon_defines.h"
 
 #include "ast_dump.h"
 

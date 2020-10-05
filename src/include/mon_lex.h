@@ -1,7 +1,7 @@
 #ifndef LEX_H
 #define LEX_H
 
-#include "defines.h"
+#include "mon_defines.h"
 
 #include <stdio.h>
 #include <limits.h>

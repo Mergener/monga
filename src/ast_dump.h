@@ -1,12 +1,12 @@
 #ifndef AST_DUMP_H
 #define AST_DUMP_H
 
-#include "defines.h"
+#include "mon_defines.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
 
-#include "ast.h"
+#include "mon_ast.h"
 
 /** 
  *	Macro that calls Dumpf, checks for its return value and returns if

@@ -1,8 +1,8 @@
 // The following is needed since the YACC generated header file must
 // be aware of types defined in these headers.
 %code requires {
-#include "ast.h"
-#include "monstack.h"
+#include "mon_ast.h"
+#include "mon_stack.h"
 }
 
 %{

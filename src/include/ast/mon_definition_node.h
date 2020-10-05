@@ -1,7 +1,7 @@
 #ifndef MON_AST_DEFINITION_NODE_H
 #define MON_AST_DEFINITION_NODE_H
 
-#include "../defines.h"
+#include "../mon_defines.h"
 
 #include <stdlib.h>
 

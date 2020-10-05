@@ -16,10 +16,7 @@ enum {
 	MON_ERR_IO
 
 };
-
 typedef int Mon_RetCode;
-
-MON_PUBLIC void MON_CALL Mon_Fatal(Mon_RetCode code);
 
 C_LINKAGE_END
 

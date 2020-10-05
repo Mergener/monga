@@ -1,7 +1,7 @@
 #ifndef ALLOC_H
 #define ALLOC_H
 
-#include "defines.h"
+#include "mon_defines.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -31,7 +31,7 @@ typedef struct {
  * 	@return True if the allocator was accepted, false if one of its function pointers
  * 	was NULL.
  */ 
-MON_PUBLIC bool MON_CALL Mon_SetAllocator(Mon_Allocator allocator);
+MON_PUBLIC bool  MON_CALL Mon_SetAllocator(Mon_Allocator allocator);
 MON_PUBLIC void* MON_CALL Mon_Alloc(size_t s);
 MON_PUBLIC void* MON_CALL Mon_Realloc(void* oldMem, size_t s);
 MON_PUBLIC void  MON_CALL Mon_Free(void* mem);
