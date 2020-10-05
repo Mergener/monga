@@ -17,23 +17,30 @@ This is a project for the Compilers course (INF1715) at PUC-Rio.
 
 ### Prerequisites
 
-* flex/lex
+* flex/lex (to generate the language scanner)
 ```sh
 sudo apt-get install flex
 ```
 
-* yacc/bison
+* yacc/bison (to generate the language parser)
 ```sh
 sudo apt-get install bison
 ```
 
-* gcc
+* gcc (to compile the compiler's source)
 
 Even though any C99 (or more recent) compliant compiler should be able to compile the code, the build scripts currently only support gcc.
 
 ```sh
 sudo apt install gcc
 ```
+
+* Python 3 (to run unit test scripts)
+```sh 
+sudo apt-get install python3
+```
+
+Make sure all dependencies are listed on the system's PATH.
 
 ### Setup
 

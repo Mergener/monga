@@ -1,3 +1,5 @@
+# Run this file from the ./testall script located at the repository's top level directory.
+
 from subprocess import Popen, PIPE
 import os
 import sys
