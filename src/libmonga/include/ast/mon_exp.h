@@ -5,12 +5,15 @@
 
 #include <stdbool.h>
 
-#include "mon_binop.h"
+#include "ast/expressions/mon_binop.h"
 
 C_LINKAGE_BEGIN
 
 typedef enum {
 
+	MON_EXP_CONDITIONAL,
+	MON_EXP_LVALUE,
+	MON_EXP_UNOP,
 	MON_EXP_BINOP
 
 } Mon_AstExpType;
