@@ -1,0 +1,15 @@
+type Node = {
+	value : int;
+	next : Node;
+};
+
+function newNode(value : int): Node {
+	var ret : Node;
+
+	ret = new Node;
+
+	ret.value = value;
+	ret.next = null;
+
+	return ret;
+}

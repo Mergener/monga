@@ -11,6 +11,7 @@
 enum ExecutionMode {
     NONE,
     LEX_DUMP,
+    REDUCE_DUMP,
     AST_DUMP,
     COMPILER
 };
@@ -23,6 +24,10 @@ struct AstDumpArgs {
     const char* inputFilePath;
 };
 
+struct ReduceDumpArgs {
+    const char* inputFilePath;
+};
+
 /** Structured arguments provided to the program. */
 struct ProgramArgs {
     /** The selected execution mode. */
@@ -31,8 +36,13 @@ struct ProgramArgs {
     union {
         /** LexDump args. Available if execMode == LEX_DUMP. */
         struct LexDumpArgs lexDump;
+        
         /** ASTDump args. Available if execMode == AST_DUMP. */
         struct AstDumpArgs astDump;
+
+        /** ReduceDump args. Available if execMode == REDUCE_DUMP */
+        struct ReduceDumpArgs reduceDump;
+
     } args;
 };
 
@@ -95,6 +105,24 @@ static struct ProgramArgs ParseArgs(int argc, char** argv) {
 
             ret.args.astDump.inputFilePath = argv[i];
         }
+        // AST dump mode
+        else if (!strcmp(argv[i], "-r")) {
+
+            if (ret.execMode != NONE) {
+                ErrorOneExecMode(argv[0]);
+            }
+
+            ret.execMode = REDUCE_DUMP;
+
+            ++i;
+            if (i == argc || argv[i][0] == '-') {
+                // No file argument for lex mode provided.
+                perror("Expected an input source file for Reduce dump mode.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            ret.args.reduceDump.inputFilePath = argv[i];
+        }
     }
 
     return ret;
@@ -132,13 +160,31 @@ static void RunAstDump(const struct AstDumpArgs* args) {
     }
 
     Mon_Ast ast;
-    Mon_RetCode ret = Mon_Parse(inputStream, &ast, MON_PARSEFLAGS_DUMPREDUCES);
+    Mon_RetCode ret = Mon_Parse(inputStream, &ast, MON_PARSEFLAGS_NONE);
 
     if (ret == MON_SUCCESS) {
         Mon_DumpAst(&ast, stdout, MON_ASTDUMP_XML, MON_ASTDUMP_FLAGS_PRETTYPRINT);
     } else {
         fprintf(stderr, "Parsing ended with errors.\n");
     }
+}
+
+static void RunReduceDump(const struct ReduceDumpArgs* args) {
+    FILE* inputStream;
+
+    if (args->inputFilePath == NULL) {
+        inputStream = stdin;
+    } else {
+        inputStream = fopen(args->inputFilePath, "r");
+
+        if (inputStream == NULL) {
+            fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
+            exit(MON_ERR_FILENOTFOUND);
+        }
+    }
+
+    Mon_Ast ast;
+    Mon_Parse(inputStream, &ast, MON_PARSEFLAGS_DUMPREDUCES);
 }
 
 static void Run(const struct ProgramArgs* args) {
@@ -148,6 +194,10 @@ static void Run(const struct ProgramArgs* args) {
         case LEX_DUMP:
             RunLexDump(&args->args.lexDump);
             break;
+
+        case REDUCE_DUMP:
+            RunReduceDump(&args->args.reduceDump);
+            break;            
 
         case AST_DUMP:
             RunAstDump(&args->args.astDump);

@@ -8,7 +8,7 @@
 
 C_LINKAGE_BEGIN
 
-typedef struct {
+typedef struct Mon_AstBlock_ {
 
 	Mon_AstVarDef*    firstVarDef;
 	Mon_AstStatement* firstStatement;

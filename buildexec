@@ -9,7 +9,7 @@ OUT_PATH="bin/builds/monga"
 SRC_FILES="src/exec/*.c"
 
 # Compilation args
-COMPILER_ARGS="-Wall -Ibin/builds/libmonga/include"
+COMPILER_ARGS="-Wall -Wextra -Werror -Ibin/builds/libmonga/include"
 
 # Library path
 LIB_PATH="bin/builds/libmonga"

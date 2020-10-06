@@ -191,7 +191,7 @@ type:
 ; 
 
 def_type: 
-    MON_TK_TYPE MON_TK_IDENTIFIER '=' typedesc {
+    MON_TK_TYPE MON_TK_IDENTIFIER '=' typedesc ';' {
         DumpReduce("def_type r1");
     }
 ;
@@ -205,24 +205,24 @@ typedesc:
         DumpReduce("typedesc r2");
     }
 
-    | '{' fields '}' {
+    | '{' field_defs '}' {
         DumpReduce("typedesc r3");
     }
 ;
 
-field: 
+def_field: 
     MON_TK_IDENTIFIER ':' type ';' {
-        DumpReduce("field r1");
+        DumpReduce("def_field r1");
     }
 ;
 
-fields: 
-    field {
-        DumpReduce("fields r1");
+field_defs: 
+    def_field {
+        DumpReduce("field_defs r1");
     }
 
-    | fields field {
-        DumpReduce("fields r2");
+    | field_defs def_field {
+        DumpReduce("field_defs r2");
     }
 ;
 
@@ -300,7 +300,7 @@ block:
     '{' opt_variable_defs opt_statements '}' {
         DumpReduce("block r1");
 
-        $$ = Mon_AstBlockNew($1, $2);
+        //$$ = Mon_AstBlockNew($1, $2);
 
         THROW_IF_ALLOC_FAIL($$);
     }
@@ -315,7 +315,7 @@ statement:
         DumpReduce("block r2");
     }
 
-    | lvalue '=' exp ';' {
+    | exp_member '=' exp ';' {
         DumpReduce("block r3");
     }
 
@@ -374,10 +374,6 @@ var:
     MON_TK_IDENTIFIER {
         DumpReduce("var r1");
     }
-
-    | var '.' MON_TK_IDENTIFIER {
-        DumpReduce("var r2");
-    }
 ;
 
 numeral: 
@@ -406,16 +402,6 @@ exp:
     }
 ;
 
-lvalue: 
-    var {
-        DumpReduce("lvalue r1");
-    }
-
-    | exp_primary bracket_exp {
-        DumpReduce("lvalue r2");
-    }
-;
-
 exp_primary: 
     '(' exp ')' {
         DumpReduce("exp_primary r1");
@@ -425,17 +411,31 @@ exp_primary:
         DumpReduce("exp_primary r2");
     }
 
-    | lvalue {
+    | var {
         DumpReduce("exp_primary r3");
+    }
+
+    | call {
+        DumpReduce("exp_primary r4");
+    }
+;
+
+exp_member:
+    exp_primary {
+        DumpReduce("exp_member r1");
+    }
+
+    | exp_member '.' exp_primary {
+        DumpReduce("exp_member r2");
     }
 ;
 
 exp_postfix: 
-    exp_primary {
+    exp_member {
         DumpReduce("exp_postfix r1");
     }
 
-    | exp_primary MON_TK_AS type {
+    | exp_member MON_TK_AS type {
         DumpReduce("exp_postfix r2");
     }
 ;

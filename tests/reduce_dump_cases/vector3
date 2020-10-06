@@ -1,0 +1,11 @@
+type vec3 = {
+	x : float;
+	y : float;
+	z : float;
+};
+
+type vec3array = [vec3];
+
+function magnitude(v : vec3): float {
+	return sqrt(v.x, v.y, v.z);
+}

@@ -3,10 +3,9 @@
 
 #include <mon_defines.h>
 
-#include "ast/mon_block.h"
-
 C_LINKAGE_BEGIN
 
+typedef struct Mon_AstBlock_ Mon_AstBlock;
 typedef struct Mon_AstCond_ Mon_AstCond;
 
 typedef struct {
