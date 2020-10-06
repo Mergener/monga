@@ -76,12 +76,12 @@ static void DumpReduce(const char* fmt, ...);
     Mon_AstParam*     paramNode;
 }
 
-%type <identifier> MON_TK_IDENTIFIER type
-%type <defNode>    definition definitions   
-%type <varDefNode> def_variable
+%type <identifier>  MON_TK_IDENTIFIER type
+%type <defNode>     definition definitions   
+%type <varDefNode>  def_variable variable_defs opt_variable_defs
 %type <typeDefNode> def_type
 %type <funcDefNode> def_function
-%type <paramNode>  parameter parameters opt_parameters
+%type <paramNode>   parameter parameters opt_parameters
 
 %%
 
@@ -119,18 +119,24 @@ definition:
         DumpReduce("definition r1");
 
         $$ = Mon_AstDefNewVar($1); 
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | def_function { 
         DumpReduce("definition r2");
 
         $$ = Mon_AstDefNewFunc($1); 
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | def_type { 
         DumpReduce("definition r3");
 
         $$ = Mon_AstDefNewType($1); 
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
@@ -147,19 +153,29 @@ def_variable:
 opt_variable_defs: 
     /* nothing */ {
         DumpReduce("opt_variable_defs r1");
+
+        $$ = NULL;
     }
 
     | variable_defs {
-        DumpReduce("opt_variable_defs r2");        
+        DumpReduce("opt_variable_defs r2");
+
+        $$ = $1;
     }
 ;
 
 variable_defs: 
     def_variable {
         DumpReduce("variable_defs r1");
+
+        $$ = $1;
     }
+
     | variable_defs def_variable {
         DumpReduce("variable_defs r2");
+
+        $$ = $1;
+        $$->next = $1;
     }
 ;
 

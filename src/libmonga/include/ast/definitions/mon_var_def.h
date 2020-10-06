@@ -8,13 +8,15 @@
 C_LINKAGE_BEGIN
 
 /** Contains data that defines a variable, regardless of its scope. */
-typedef struct {
+typedef struct Mon_AstVarDef_ {
     
     char*  varName;
     size_t varNameLength;
 
     char* typeName;
     size_t typeNameLength;
+
+    struct Mon_AstVarDef_* next;
 
 } Mon_AstVarDef;
 

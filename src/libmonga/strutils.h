@@ -17,6 +17,6 @@
  * 	@remarks Ignores any '\0's of the original string. Does append one
  * 	at the end of the returned string, however.
  */
-char* DuplicateString(const char* s, size_t len);
+MON_PRIVATE char* DuplicateString(const char* s, size_t len);
 
 #endif // STRUTILS_H

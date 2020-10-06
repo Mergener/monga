@@ -11,7 +11,7 @@ Mon_AstTypeDef* Mon_AstTypeDefNew(const char* name,
         return NULL;
     }
 
-    ret->typeName = DuplicateString(ret->typeName, nameLen);
+    ret->typeName = DuplicateString(name, nameLen);
     if (ret->typeName == NULL) {
         Mon_Free(ret);
         return NULL;
