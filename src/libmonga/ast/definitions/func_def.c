@@ -5,7 +5,10 @@
 
 Mon_AstFuncDef* Mon_AstFuncDefNew(const char* funcName,
                                   size_t funcNameLen,
-                                  Mon_AstParam* firstParam) {
+                                  const char* funcRetTypeName,
+                                  size_t funcRetTypeLen,
+                                  Mon_AstParam* firstParam,
+                                  Mon_AstBlock* body) {
 
     Mon_AstFuncDef* ret = Mon_Alloc(sizeof(Mon_AstFuncDef));
 
@@ -19,9 +22,22 @@ Mon_AstFuncDef* Mon_AstFuncDefNew(const char* funcName,
         return NULL;
     }
 
+    if (funcRetTypeName == NULL) {
+        funcRetTypeName = "void";
+        funcRetTypeLen = 4;
+    }
+
+    ret->funcRetTypeName = DuplicateString(funcRetTypeName, funcRetTypeLen);
+    if (ret->funcRetTypeName == NULL) {
+        Mon_Free(ret->funcRetTypeName);
+        Mon_Free(ret);
+        return NULL;
+    }
+
     ret->funcName = name;
     ret->funcNameLength = funcNameLen;
     ret->firstParam = firstParam;
+    ret->body = body;
 
     return ret;
 }

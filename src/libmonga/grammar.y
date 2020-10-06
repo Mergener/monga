@@ -66,22 +66,25 @@ static void DumpReduce(const char* fmt, ...);
     long   integer;
     double real;
 
-    Mon_Ast*          ast;
+    Mon_Ast* ast;
 
     Mon_AstDef*       defNode;
+    Mon_AstBlock*     blockNode;
     Mon_AstTypeDef*   typeDefNode;
     Mon_AstVarDef*    varDefNode;
     Mon_AstFuncDef*   funcDefNode;
-
+    Mon_AstStatement* statementNode;
     Mon_AstParam*     paramNode;
 }
 
-%type <identifier>  MON_TK_IDENTIFIER type
+%type <identifier>  MON_TK_IDENTIFIER type opt_ret_type
+%type <blockNode>   block opt_else
 %type <defNode>     definition definitions   
 %type <varDefNode>  def_variable variable_defs opt_variable_defs
 %type <typeDefNode> def_type
 %type <funcDefNode> def_function
 %type <paramNode>   parameter parameters opt_parameters
+%type <statement>   statement statements opt_statements
 
 %%
 
@@ -179,11 +182,12 @@ variable_defs:
     }
 ;
 
-type: MON_TK_IDENTIFIER {
-    DumpReduce("type r1");
+type: 
+    MON_TK_IDENTIFIER {
+        DumpReduce("type r1");
 
-    $$ = $1;
-}
+        $$ = $1;
+    }
 ; 
 
 def_type: 
@@ -226,7 +230,13 @@ def_function:
     MON_TK_FUNCTION MON_TK_IDENTIFIER '(' opt_parameters ')' opt_ret_type block {
         DumpReduce("def_function r1");
 
-        $$ = Mon_AstFuncDefNew($2.name, $2.length, $4);
+        $$ = Mon_AstFuncDefNew(
+            $2.name,
+            $2.length,
+            $6.name,
+            $6.length,
+            $4, $7
+        );
 
         THROW_IF_ALLOC_FAIL($$);
     }
@@ -235,10 +245,15 @@ def_function:
 opt_ret_type: 
     /* nothing */ {
         DumpReduce("opt_ret_type r1");
+
+        $$.name = NULL;
+        $$.length = 0;
     }
 
     | ':' type {
         DumpReduce("opt_ret_type r2");
+
+        $$ = $2;
     }
 ;
 
@@ -276,6 +291,7 @@ parameter:
         DumpReduce("parameter r1");
 
         $$ = Mon_AstParamNew($1.name, $1.length, $3.name, $3.length);
+
         THROW_IF_ALLOC_FAIL($$);
     }
 ;
@@ -283,6 +299,10 @@ parameter:
 block: 
     '{' opt_variable_defs opt_statements '}' {
         DumpReduce("block r1");
+
+        $$ = Mon_AstBlockNew($1, $2);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
@@ -319,10 +339,14 @@ statement:
 opt_else: 
     /* nothing */ {
         DumpReduce("opt_else r1");
+
+        $$ = NULL;
     }
 
     | MON_TK_ELSE block {
         DumpReduce("opt_else r2");
+
+        $$ = $2;
     }
 ;
 
@@ -340,6 +364,7 @@ opt_statements:
     /* nothing */  {
         DumpReduce("opt_statements r1");
     }
+
     | statements {
         DumpReduce("opt_statements r2");
     }
@@ -349,6 +374,7 @@ var:
     MON_TK_IDENTIFIER {
         DumpReduce("var r1");
     }
+
     | var '.' MON_TK_IDENTIFIER {
         DumpReduce("var r2");
     }

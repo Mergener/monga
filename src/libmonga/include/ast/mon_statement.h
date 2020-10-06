@@ -11,11 +11,10 @@ typedef enum {
 
 } Mon_StmtType;
 
-typedef struct {
+typedef struct Mon_AstStatement_ {
 
+	struct Mon_AstStatement_* next;
 
-	Mon_AstStatement* next;
-	
 } Mon_AstStatement;
 
 C_LINKAGE_END

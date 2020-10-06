@@ -3,6 +3,8 @@
 
 #include <mon_defines.h>
 
+#include <stdbool.h>
+
 #include "mon_binop.h"
 
 C_LINKAGE_BEGIN
@@ -31,6 +33,8 @@ typedef struct Mon_AstExp_ {
 	struct Mon_AstExp_* next;
 
 } Mon_AstExp;
+
+MON_PUBLIC void MON_CALL Mon_AstExpDestroy(Mon_AstExp* node, bool rec);
 
 C_LINKAGE_END
 
