@@ -16,8 +16,6 @@ typedef struct Mon_AstParam_ {
     char*  typeName;
     size_t typeNameLen;
 
-    struct Mon_AstParam_* next;
-
 } Mon_AstParam;
 
 MON_PUBLIC Mon_AstParam* MON_CALL Mon_AstParamNew(const char* name,
@@ -29,9 +27,8 @@ MON_PUBLIC Mon_AstParam* MON_CALL Mon_AstParamNew(const char* name,
  *	Destroys a parameter node, releasing its memory.
  *
  * 	@param param The node to be destroyed.
- * 	@param rec If true, recursively destroys all subsequent parameter nodes in the 'next' chain.
  */ 
-MON_PUBLIC void MON_CALL Mon_AstParamDestroy(Mon_AstParam* param, bool rec);
+MON_PUBLIC void MON_CALL Mon_AstParamDestroy(Mon_AstParam* param);
 
 C_LINKAGE_END
 

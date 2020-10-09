@@ -3,14 +3,13 @@
 
 #include <mon_defines.h>
 
-#include "ast/statements/mon_call.h"
-#include "ast/statements/mon_assignment.h"
-#include "ast/statements/mon_if.h"
-#include "ast/statements/mon_return.h"
-#include "ast/statements/mon_while.h"
-#include "ast/mon_block.h"
+#include "ast/mon_call.h"
+#include "ast/mon_cond.h"
 
 C_LINKAGE_BEGIN
+
+typedef struct Mon_AstVar_ Mon_AstVar;
+typedef struct Mon_AstBlock_ Mon_AstBlock;
 
 typedef enum {
 
@@ -23,38 +22,67 @@ typedef enum {
 
 } Mon_StmtKind;
 
+typedef struct {
+
+    Mon_AstCond*  condition;
+    Mon_AstBlock* thenBlock;
+    Mon_AstBlock* elseBlock;
+
+} Mon_StmtIf;
+
+typedef struct {
+
+    Mon_AstCond*  condition;
+    Mon_AstBlock* block;
+
+} Mon_StmtWhile;
+
+typedef struct {
+
+    Mon_AstExp* returnedExpression;
+
+} Mon_StmtReturn;
+
+typedef struct {
+
+    Mon_AstVar* lvalue;
+    Mon_AstExp* rvalue;
+
+} Mon_StmtAssignment;
+
 typedef struct Mon_AstStatement_ {
 
+    Mon_StmtKind statementKind;
     union {
 
         /** Available if statementKind == MON_STMT_IF */
-        Mon_AstIf*	   ifBlock;
+        Mon_StmtIf ifStmt;
 
         /** Available if statementKind == MON_STMT_WHILE */
-        Mon_AstWhile*  whileBlock;
+        Mon_StmtWhile whileStmt;
 
         /** Available if statementKind == MON_STMT_RETURN */
-        Mon_AstReturn* returnStmt;
+        Mon_StmtReturn returnStmt;
+
+        /** Available if statementKind == MON_STMT_ASSIGNMENT */
+        Mon_StmtAssignment assignment;
 
         /** Available if statementKind == MON_STMT_CALL */
-        Mon_AstCall*   call;
+        Mon_AstCall* call;
 
         /** Available if statementKind == MON_STMT_BLOCK */
-        Mon_AstBlock*  block;
+        Mon_AstBlock* block;
 
     } statement;
-
-    Mon_StmtKind statementKind;
-
-    struct Mon_AstStatement_* next;
 
 } Mon_AstStatement;
 
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewCall(Mon_AstCall* call);
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewBlock(Mon_AstBlock* block);
-MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewWhile(Mon_AstWhile* whileBlock);
-MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewIf(Mon_AstIf* ifBlock);
-MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewReturn(Mon_AstReturn* retStmt);
+MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewWhile(Mon_AstCond* condition, Mon_AstBlock* block);
+MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewIf(Mon_AstCond* condition, Mon_AstBlock* thenBlock, Mon_AstBlock* elseBlock);
+MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewReturn(Mon_AstExp* returnedExp);
+MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewAssignment(Mon_AstVar* lvalue, Mon_AstExp* rvalue);
 
 MON_PUBLIC void MON_CALL Mon_AstStatementDestroy(Mon_AstStatement* node, bool rec);
 

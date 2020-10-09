@@ -45,9 +45,6 @@ typedef struct Mon_AstDef_ {
     /** This node definition kind. Indicates what is this definition node is actually defining. */
     Mon_AstDefKind defKind;
 
-    /** Next definition. May be NULL. */
-    struct Mon_AstDef_* next;
-
 } Mon_AstDef;
 
 /**

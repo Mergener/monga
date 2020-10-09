@@ -4,26 +4,27 @@
 #include <mon_defines.h>
 
 #include "ast/mon_statement.h"
-#include "ast/definitions/mon_var_def.h"
 
 C_LINKAGE_BEGIN
 
+typedef struct Mon_AstVarDef_ Mon_AstVarDef;
+
 typedef struct Mon_AstBlock_ {
 
-	Mon_AstVarDef*    firstVarDef;
-	Mon_AstStatement* firstStatement;
+	Mon_Vector	varDefs;
+	Mon_Vector	statements;
 
 } Mon_AstBlock;
 
 /**
  *	Creates a new block node.
  * 
- * 	@param firstVarDecl Pointer to the first variable declaration node in the block.
- * 	@param firstStatement Pointer to the first statement of the block.
+ * 	@param varDefs Vector of Mon_AstVarDefs that contain all declared variables in the block.
+ * 	@param statements Vector of Mon_AstStatements that contain all statements in the block.
  * 
  * 	@return The created block node or NULL if allocation failed.
  */
-MON_PUBLIC Mon_AstBlock* MON_CALL Mon_AstBlockNew(Mon_AstVarDef* firstVarDecl, Mon_AstStatement* firstStatement);
+MON_PUBLIC Mon_AstBlock* MON_CALL Mon_AstBlockNew(Mon_Vector varDefs, Mon_Vector statements);
 
 /**
  *	Destroys a block node, releasing its memory.

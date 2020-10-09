@@ -1,10 +1,15 @@
 #include "ast/definitions/mon_type_def.h"
 
+#include <assert.h>
+
 #include "mon_alloc.h"
 #include "../../strutils.h"
 
 Mon_AstTypeDef* Mon_AstTypeDefNew(const char* name,
                                   size_t nameLen) {
+
+    assert(name != NULL);
+
 	Mon_AstTypeDef* ret = Mon_Alloc(sizeof(Mon_AstTypeDef));
 
     if (ret == NULL) {
@@ -23,6 +28,10 @@ Mon_AstTypeDef* Mon_AstTypeDefNew(const char* name,
 }
 
 void Mon_AstTypeDefDestroy(Mon_AstTypeDef* def) {
+    if (def == NULL) {
+        return;
+    }
+
 	Mon_Free(def->typeName);
 	Mon_Free(def);
 }

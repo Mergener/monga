@@ -11,7 +11,6 @@ static Mon_AstDef* MakeDefNode(void* defPtr, Mon_AstDefKind defKind) {
 
     ret->defKind = defKind;
     ret->definition.ptr = defPtr;
-    ret->next = NULL;
 
     return ret;
 }
@@ -29,6 +28,10 @@ Mon_AstDef* Mon_AstDefNewType(Mon_AstTypeDef* typeDef) {
 }
 
 void Mon_AstDefDestroy(Mon_AstDef* def, bool rec) {
+    if (def == NULL) {
+        return;
+    }
+
     if (rec) {
         switch (def->defKind) {
             case MON_AST_DEF_FUNC:

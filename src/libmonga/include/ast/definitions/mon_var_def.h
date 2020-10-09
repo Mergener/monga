@@ -16,8 +16,6 @@ typedef struct Mon_AstVarDef_ {
     char* typeName;
     size_t typeNameLength;
 
-    struct Mon_AstVarDef_* next;
-
 } Mon_AstVarDef;
 
 /**

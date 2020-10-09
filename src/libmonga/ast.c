@@ -43,6 +43,9 @@ Mon_RetCode Mon_DumpAst(const Mon_Ast* ast,
 
 void Mon_AstFinalize(Mon_Ast* ast) {
     if (ast != NULL) {
-        Mon_AstDefDestroy(ast->rootDefinition, true);
+        MON_VECTOR_FOREACH(&ast->defsVector, Mon_AstDef*, def,
+            Mon_AstDefDestroy(def, true);
+        );
     }
+    Mon_VectorFinalize(&ast->defsVector);
 }

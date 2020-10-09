@@ -1,11 +1,14 @@
-#include "ast/statements/mon_call.h"
+#include "ast/mon_call.h"
 
+#include <assert.h>
 #include "mon_alloc.h"
 #include "../strutils.h"
 
 Mon_AstCall* Mon_AstCallNew(const char* funcName,
                             size_t funcNameLen,
-							Mon_AstExp* firstParameter) {
+							Mon_Vector parameters) {
+	assert(funcName != NULL);
+
 	Mon_AstCall* ret = Mon_Alloc(sizeof(Mon_AstCall));
 
 	if (ret == NULL) {
@@ -19,16 +22,23 @@ Mon_AstCall* Mon_AstCallNew(const char* funcName,
 	}
 
 	ret->funcNameLen = funcNameLen;
-	ret->firstParameter = firstParameter;
+	ret->parameterList = parameters;
 
 	return ret;
 }
 
 void Mon_AstCallDestroy(Mon_AstCall* node, bool rec) {
-	if (rec) {
-		Mon_AstExpDestroy(node->firstParameter, true);
+	if (node == NULL) {
+		return;
 	}
 
+	if (rec) {
+		MON_VECTOR_FOREACH(&node->parameterList, Mon_AstExp*, param,
+			Mon_AstExpDestroy(param, true);
+		);
+	}
+
+	Mon_VectorFinalize(&node->parameterList);
 	Mon_Free(node->funcName);
 	Mon_Free(node);
 }

@@ -8,7 +8,7 @@
 C_LINKAGE_BEGIN
 
 /** Contains data that defines a type, regardless of its scope. */
-typedef struct {
+typedef struct Mon_AstTypeDef_ {
     char*  typeName;
     size_t typeNameLength;
 } Mon_AstTypeDef;

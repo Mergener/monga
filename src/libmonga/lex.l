@@ -46,22 +46,26 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 }
 
 [0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+ {
-    yylval.real = strtof(yytext, NULL);
+    yylval.literal.real = strtof(yytext, NULL);
+    yylval.literal.literalKind = MON_LIT_FLOAT;
+
     return MON_TK_LIT_FLOAT;
 }
 
 [0-9]+ {
-    yylval.integer = strtol(yytext, NULL, 10);
+    yylval.literal.integer = strtol(yytext, NULL, 10);
+    yylval.literal.literalKind = MON_LIT_INT;
+
     return MON_TK_LIT_INT;
 }
 
 0x[0-9a-fA-F]+ {
-    yylval.integer = strtol(yytext, NULL, 16);
+    yylval.literal.integer = strtol(yytext, NULL, 16);
     return MON_TK_LIT_INT;
 }
 
 [0-9]+(\.[0-9]+) {
-    yylval.real = strtof(yytext, NULL);
+    yylval.literal.real = strtof(yytext, NULL);
     return MON_TK_LIT_FLOAT;
 }
 

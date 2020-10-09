@@ -2,7 +2,8 @@
 // be aware of types defined in these headers.
 %code requires {
 #include "mon_ast.h"
-#include "mon_stack.h"
+#include "mon_vector.h"
+#include "mon_literal.h"
 }
 
 %{
@@ -14,6 +15,12 @@
 #include "grammar.tab.h"
 
 #define THROW_IF_ALLOC_FAIL(var)
+#define INIT_VECTOR(vec) \
+    if (Mon_VectorInit(&vec) != MON_SUCCESS) { \
+    }
+#define ADD_TO_VECTOR(vec, value) \
+    if (Mon_VectorPush(&vec, value) != MON_SUCCESS) { \
+    }
 
 int yylex();
 void yyerror(const char* s);
@@ -58,15 +65,16 @@ static void DumpReduce(const char* fmt, ...);
 %token MON_TK_OP_NOT
 
 %union {
+    Mon_Literal literal;
+
     struct {
-            const char* name;
-            unsigned    length;
+        const char* name;
+        size_t length;
     } identifier;
-    
-    long   integer;
-    double real;
 
     Mon_Ast* ast;
+
+    Mon_Vector        vector;
 
     Mon_AstDef*       defNode;
     Mon_AstBlock*     blockNode;
@@ -74,17 +82,27 @@ static void DumpReduce(const char* fmt, ...);
     Mon_AstVarDef*    varDefNode;
     Mon_AstFuncDef*   funcDefNode;
     Mon_AstStatement* statementNode;
+    Mon_AstExp*       expNode;
+    Mon_AstCond*      condNode;
     Mon_AstParam*     paramNode;
+    Mon_AstVar*       varNode;
+    Mon_AstCall*      callNode;
 }
 
-%type <identifier>  MON_TK_IDENTIFIER type opt_ret_type
-%type <blockNode>   block opt_else
-%type <defNode>     definition definitions   
-%type <varDefNode>  def_variable variable_defs opt_variable_defs
-%type <typeDefNode> def_type
-%type <funcDefNode> def_function
-%type <paramNode>   parameter parameters opt_parameters
-%type <statement>   statement statements opt_statements
+%type <identifier>    MON_TK_IDENTIFIER type opt_ret_type
+%type <blockNode>     block opt_else
+%type <defNode>       definition   
+%type <varDefNode>    def_variable
+%type <typeDefNode>   def_type
+%type <funcDefNode>   def_function
+%type <paramNode>     parameter
+%type <statementNode> statement
+%type <varNode>       var
+%type <expNode>       opt_exp exp exp_primary exp_postfix exp_unary exp_multiplicative exp_additive exp_conditional opt_bracket_exp bracket_exp
+%type <condNode>      cond cond_primary cond_not cond_and cond_or
+%type <callNode>      call
+%type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT
+%type <vector>        definitions variable_defs opt_variable_defs parameters opt_parameters statements opt_statements exps opt_exps
 
 %%
 
@@ -92,13 +110,11 @@ module:
     definitions {
         DumpReduce("module r1");
 
-        mon_TargetAst->rootDefinition = $1;
+        mon_TargetAst->defsVector = $1;
     }
 
     | /* nothing */ {
         DumpReduce("module r2");
-
-        mon_TargetAst->rootDefinition = NULL;
     }
 ;
 
@@ -106,14 +122,15 @@ definitions:
     definition {
         DumpReduce("definitions r1");
 
-        $$ = $1;
+        INIT_VECTOR($$);
+        ADD_TO_VECTOR($$, $1);
     }
 
     | definitions definition {
         DumpReduce("definitions r2");
 
         $$ = $1;
-        $$->next = $2;
+        ADD_TO_VECTOR($$, $2);
     }
 ;
 
@@ -153,32 +170,33 @@ def_variable:
     }
 ;
 
-opt_variable_defs: 
-    /* nothing */ {
-        DumpReduce("opt_variable_defs r1");
-
-        $$ = NULL;
-    }
-
-    | variable_defs {
-        DumpReduce("opt_variable_defs r2");
-
-        $$ = $1;
-    }
-;
-
 variable_defs: 
     def_variable {
         DumpReduce("variable_defs r1");
 
-        $$ = $1;
+        INIT_VECTOR($$);
+        ADD_TO_VECTOR($$, $1);
     }
 
     | variable_defs def_variable {
         DumpReduce("variable_defs r2");
 
         $$ = $1;
-        $$->next = $1;
+        ADD_TO_VECTOR($$, $2);
+    }
+;
+
+opt_variable_defs: 
+    /* nothing */ {
+        DumpReduce("opt_variable_defs r1");
+
+        INIT_VECTOR($$);
+    }
+
+    | variable_defs {
+        DumpReduce("opt_variable_defs r2");
+
+        $$ = $1;
     }
 ;
 
@@ -246,8 +264,8 @@ opt_ret_type:
     /* nothing */ {
         DumpReduce("opt_ret_type r1");
 
-        $$.name = NULL;
-        $$.length = 0;
+        $$.name = "void";
+        $$.length = 4;
     }
 
     | ':' type {
@@ -259,16 +277,17 @@ opt_ret_type:
 
 parameters: 
     parameter {
-        DumpReduce("parameters r1");
-
-        $$ = $1;
+        DumpReduce("parameters r1");        
+        
+        INIT_VECTOR($$);
+        ADD_TO_VECTOR($$, $1);
     }
 
     | parameters ',' parameter {
         DumpReduce("parameters r2");
 
         $$ = $1;
-        $1->next = $3;
+        ADD_TO_VECTOR($$, $3);
     }
 ;
 
@@ -276,7 +295,7 @@ opt_parameters:
     /* nothing */ {
         DumpReduce("opt_parameters r1");
 
-        $$ = NULL;
+        INIT_VECTOR($$);
     }
 
     | parameters {
@@ -300,7 +319,7 @@ block:
     '{' opt_variable_defs opt_statements '}' {
         DumpReduce("block r1");
 
-        //$$ = Mon_AstBlockNew($1, $2);
+        $$ = Mon_AstBlockNew($2, $3);
 
         THROW_IF_ALLOC_FAIL($$);
     }
@@ -309,22 +328,42 @@ block:
 statement: 
     MON_TK_IF cond block opt_else {
         DumpReduce("statement r1");
+
+        $$ = Mon_AstStatementNewIf($2, $3, $4);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | MON_TK_WHILE cond block {
         DumpReduce("block r2");
+
+        $$ = Mon_AstStatementNewWhile($2, $3);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
-    | exp_member '=' exp ';' {
+    | var '=' exp ';' {
         DumpReduce("block r3");
+
+        $$ = Mon_AstStatementNewAssignment($1, $3);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | MON_TK_RETURN opt_exp ';' {
         DumpReduce("block r4");
+
+        $$ = Mon_AstStatementNewReturn($2);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | call ';' {
         DumpReduce("block r5");
+
+        $$ = Mon_AstStatementNewCall($1);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | '@' exp ';' {
@@ -333,6 +372,10 @@ statement:
 
     | block {
         DumpReduce("block r7");
+
+        $$ = Mon_AstStatementNewBlock($1);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
@@ -353,240 +396,387 @@ opt_else:
 statements: 
     statement {
         DumpReduce("statements r1");
+
+        INIT_VECTOR($$);
+        ADD_TO_VECTOR($$, $1);
     }
     
     | statements statement {
         DumpReduce("statements r2");
+
+        $$ = $1;
+        ADD_TO_VECTOR($$, $2);
     }
 ;
 
 opt_statements: 
     /* nothing */  {
         DumpReduce("opt_statements r1");
+
+        INIT_VECTOR($$);
     }
 
     | statements {
         DumpReduce("opt_statements r2");
+
+        $$ = $1;
     }
 ;
 
 var: 
     MON_TK_IDENTIFIER {
         DumpReduce("var r1");
+
+        $$ = Mon_AstVarNewDirect($1.name);
+
+        THROW_IF_ALLOC_FAIL($$);
+    }
+
+    | exp_primary '.' MON_TK_IDENTIFIER {
+        DumpReduce("var r2");
+
+        $$ = Mon_AstVarNewField($1, $3.name);
+
+        THROW_IF_ALLOC_FAIL($$);
+    }
+
+    | exp_primary bracket_exp {
+        DumpReduce("var r3");
+
+        $$ = Mon_AstVarNewIndexed($1, $2);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 numeral: 
     MON_TK_LIT_FLOAT {
         DumpReduce("numeral r1");
+
+        $$ = $1;
     }
 
     | MON_TK_LIT_INT {
         DumpReduce("numeral r2");
+
+        $$ = $1;
     }
 ;
 
 opt_exp: 
     /* nothing */ {
         DumpReduce("opt_exp r1");
+
+        $$ = NULL;
     }
 
     | exp {
         DumpReduce("opt_exp r2");
+
+        $$ = $1;
     }
 ;
 
 exp: 
     exp_conditional {
         DumpReduce("exp r1");
+
+        $$ = $1;
     }
 ;
 
 exp_primary: 
     '(' exp ')' {
         DumpReduce("exp_primary r1");
+
+        $$ = $2;
     }
 
     | numeral {
         DumpReduce("exp_primary r2");
+
+        $$ = Mon_AstExpNewLiteral($1);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | var {
         DumpReduce("exp_primary r3");
+
+        $$ = Mon_AstExpNewVar($1);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | call {
         DumpReduce("exp_primary r4");
-    }
-;
 
-exp_member:
-    exp_primary {
-        DumpReduce("exp_member r1");
-    }
+        $$ = Mon_AstExpNewCall($1);
 
-    | exp_member '.' exp_primary {
-        DumpReduce("exp_member r2");
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 exp_postfix: 
-    exp_member {
+    exp_primary {
         DumpReduce("exp_postfix r1");
+
+        $$ = $1;
     }
 
-    | exp_member MON_TK_AS type {
+    | exp_primary MON_TK_AS type {
         DumpReduce("exp_postfix r2");
+
+        $$ = Mon_AstExpNewCast($1, $3.name);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
               
 exp_unary: 
     exp_postfix {
         DumpReduce("exp_unary r1");
+
+        $$ = $1;
     }
 
     | '-' exp_primary {
         DumpReduce("exp_unary r2");
+
+        $$ = Mon_AstExpNewUn($2, MON_UNOP_NEGATIVE);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 exp_multiplicative: 
     exp_unary {
         DumpReduce("exp_multiplicative r1");
+
+        $$ = $1;
     }
 
     | exp_multiplicative '*' exp_unary {
         DumpReduce("exp_multiplicative r2");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_MUL);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | exp_multiplicative '/' exp_unary {
         DumpReduce("exp_multiplicative r3");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_DIV);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 exp_additive: 
     exp_multiplicative {
         DumpReduce("exp_additive r1");
+
+        $$ = $1;
     }
 
     | exp_additive '+' exp_multiplicative {
         DumpReduce("exp_additive r2");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_ADD);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | exp_additive '-' exp_multiplicative {
         DumpReduce("exp_additive r3");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_SUB);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 exp_conditional: 
     exp_additive {
         DumpReduce("exp_conditional r1");
+
+        $$ = $1;
     }
 
     | cond_primary '?' exp ':' exp_conditional {
         DumpReduce("exp_conditional r2");
+
+        $$ = Mon_AstExpNewCond($1, $3, $5);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | MON_TK_NEW type opt_bracket_exp {
         DumpReduce("exp_conditional r3");
+
+        $$ = Mon_AstExpNewNew($2.name, $3);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 opt_bracket_exp: 
     /* nothing */ {
         DumpReduce("opt_bracket_exp r1");
+
+        $$ = NULL;
     }
 
     | bracket_exp {
         DumpReduce("opt_bracket_exp r2");
+
+        $$ = $1;
     }
 ;
 
 bracket_exp: 
     '[' exp ']' {
         DumpReduce("bracket_exp r1");
+
+        $$ = $2;
     }
 ;
 
 cond: 
     cond_or {
         DumpReduce("cond_or r1");
+
+        $$ = $1;
     }
 ;
 
 cond_primary: 
     '(' cond ')' {
         DumpReduce("cond_primary r1");
+
+        $$ = $2;
     }
 
     | exp_additive MON_TK_OP_EQ exp_additive {
         DumpReduce("cond_primary r2");
+
+        $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_EQ);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | exp_additive MON_TK_OP_NE exp_additive {
         DumpReduce("cond_primary r3");
+
+        $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_NE);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | exp_additive MON_TK_OP_LE exp_additive {
         DumpReduce("cond_primary r4");
+
+        $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_LE);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | exp_additive MON_TK_OP_GE exp_additive {
         DumpReduce("cond_primary r5");
+
+        $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_GE);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | exp_additive '>' exp_additive {
         DumpReduce("cond_primary r6");
+
+        $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_GT);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | exp_additive '<' exp_additive {
         DumpReduce("cond_primary r7");
+
+        $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_LT);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 cond_not: 
     cond_primary {
         DumpReduce("cond_not r1");
+
+        $$ = $1;
     }
 
     | '!' '(' cond ')' {
         DumpReduce("cond_not r2");
+
+        $$ = $3;
+        $$->negate = !($$->negate);
     }
 ;
 
 cond_and: 
     cond_not {
         DumpReduce("cond_and r1");
+
+        $$ = $1;
     }
 
     | cond_and MON_TK_OP_AND cond_not {
         DumpReduce("cond_and r2");
+
+        $$ = Mon_AstCondNewBin($1, $3, MON_BINCOND_AND);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 cond_or: 
     cond_and {
         DumpReduce("cond_or r1");
+
+        $$ = $1;
     }
 
     | cond_or MON_TK_OP_OR cond_and {
         DumpReduce("cond_or r2");
+
+        $$ = Mon_AstCondNewBin($1, $3, MON_BINCOND_OR);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 call: 
     MON_TK_IDENTIFIER '(' opt_exps ')'  {
         DumpReduce("call r1");
+
+        $$ = Mon_AstCallNew($1.name, $1.length, $3);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 exps: 
-    exp  {
+    exp {
         DumpReduce("exps r1");
+
+        INIT_VECTOR($$);
+        ADD_TO_VECTOR($$, $1);
     }
 
     | exps ',' exp  {
         DumpReduce("exps r2");
+
+        $$ = $1;
+        ADD_TO_VECTOR($$, $3);
     }
 ;
 

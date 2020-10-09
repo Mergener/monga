@@ -30,19 +30,13 @@ Mon_AstParam* Mon_AstParamNew(const char* name,
     ret->nameLen = nameLen;
     ret->typeName = parTypeName;
     ret->typeNameLen = typeNameLen;
-    ret->next = NULL;
 
     return ret;
 }
 
-void Mon_AstParamDestroy(Mon_AstParam* param, bool rec) {
-    if (rec) {
-        Mon_AstParam* curr = param->next;
-
-        while (curr != NULL) {
-            Mon_AstParamDestroy(curr, false);
-            curr = curr->next;
-        }
+void Mon_AstParamDestroy(Mon_AstParam* param) {
+    if (param == NULL) {
+        return;
     }
 
     Mon_Free(param->name);

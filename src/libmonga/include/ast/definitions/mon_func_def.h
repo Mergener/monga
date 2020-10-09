@@ -18,11 +18,7 @@ typedef struct {
     char*  funcRetTypeName;
     size_t funcRetTypeNameLen;
 
-    /** 
-     *  Pointer to the first parameter node in a null-terminated chain of nodes. 
-     *  NULL if the function has no parameters.
-     */
-    Mon_AstParam* firstParam;
+    Mon_Vector parameters;
 
     Mon_AstBlock* body;
 
@@ -35,7 +31,7 @@ typedef struct {
  * 	@param funcNameLen The function's name length (excluding the null termination byte)
  *  @param funcRetType The function's return type name. If NULL, the returned type will be set to 'void'.
  *  @param funcRetTypeLen The function's return type name length. Ignored if funcRetType is NULL.
- * 	@param firstParam Pointer to the first parameter node. May be NULL if function has no parameters.
+ * 	@param params Vector of parameter node pointers.
  * 
  * 	@return If succesful, the new function definition node. If allocation fails,
  * 	returns NULL.
@@ -44,7 +40,7 @@ MON_PUBLIC Mon_AstFuncDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
                                                       size_t funcNameLen,
                                                       const char* funcRetTypeName,
                                                       size_t funcRetTypeLen,
-                                                      Mon_AstParam* firstParam,
+                                                      Mon_Vector params,
                                                       Mon_AstBlock* body);
 
 /**

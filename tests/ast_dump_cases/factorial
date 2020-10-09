@@ -1,5 +1,7 @@
 function factorial(x : int): int {
 	var n : int;
+	var f : float;
+	var s : string;
 
 	n = 1;
 	while (x > 1) {
@@ -8,4 +10,10 @@ function factorial(x : int): int {
 	}
 
 	return n;
+}
+
+function main(argc: int, argv: stringarray, f : float) {
+	print(factorial(32));
+
+	f = 4e+2;
 }

@@ -1,13 +1,24 @@
 #ifndef MON_AST_H
 #define MON_AST_H
 
-#include "mon_error.h"
 #include "mon_defines.h"
 
 #include <stdio.h>
 
+#include "mon_error.h"
+#include "mon_vector.h"
+
+#include "ast/mon_block.h"
+#include "ast/mon_call.h"
+#include "ast/mon_cond.h"
 #include "ast/mon_definition.h"
+#include "ast/mon_exp.h"
 #include "ast/mon_parameter.h"
+#include "ast/mon_statement.h"
+#include "ast/mon_var.h"
+#include "ast/definitions/mon_func_def.h"
+#include "ast/definitions/mon_type_def.h"
+#include "ast/definitions/mon_var_def.h"
 
 C_LINKAGE_BEGIN
 
@@ -32,8 +43,8 @@ typedef enum {
  */
 typedef struct {
 
-    /** The first program definition. */
-    Mon_AstDef* rootDefinition;
+    /** Vector containing all program definitions. Stored elements are of type Mon_AstDef*. */
+    Mon_Vector defsVector;
 
 } Mon_Ast;
 
@@ -51,9 +62,9 @@ typedef struct {
  *  
  */
 MON_PUBLIC Mon_RetCode MON_CALL Mon_DumpAst(const Mon_Ast* ast, 
-                                         FILE* outputStream, 
-                                         Mon_AstDumpFormat fmt,
-                                         Mon_AstDumpFlags flags);
+                                            FILE* outputStream, 
+                                            Mon_AstDumpFormat fmt,
+                                            Mon_AstDumpFlags flags);
 
 /**
  * 	Releases all resources used by the given AST and sets

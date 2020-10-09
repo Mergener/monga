@@ -1,0 +1,116 @@
+#include "mon_vector.h"
+
+#include <assert.h>
+
+#include "mon_alloc.h"
+
+#define DEFAULT_SIZE 16
+#define MIN_SIZE DEFAULT_SIZE
+
+Mon_RetCode Mon_VectorInit(Mon_Vector* vector) {
+    assert(vector != NULL);
+
+    vector->_cap = DEFAULT_SIZE * sizeof(void*);
+    vector->_arr = Mon_Alloc(vector->_cap);
+    vector->_count = 0;
+
+    if (vector->_arr == NULL) {
+        return MON_ERR_NOMEM;
+    }
+
+    return MON_SUCCESS;
+}
+
+void* Mon_VectorGet(const Mon_Vector* vector, int index) {
+    assert(vector != NULL);
+    assert(((unsigned int)index) < (unsigned int)vector->_count);
+
+    return (void*)vector->_arr[index];
+}
+
+int Mon_VectorCount(const Mon_Vector* vector) {
+    assert(vector != NULL);
+
+    return vector->_count;
+}
+
+Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
+    assert(vector != NULL);
+
+    if (vector->_count == vector->_cap) {
+        int newCap = vector->_cap * 2;
+        const void** newMem = Mon_Realloc(vector->_arr, newCap);
+
+        if (newMem == NULL) {
+            return MON_ERR_NOMEM;
+        }
+
+        vector->_arr = newMem;
+        vector->_cap = newCap;
+    }
+
+    vector->_arr[vector->_count] = obj;
+    vector->_count++;
+
+    return MON_SUCCESS;
+}
+
+MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorRemove(Mon_Vector* vector, int index) {
+    assert(vector != NULL);
+    assert(((unsigned int)index) < (unsigned int)vector->_count);
+    
+    if (vector->_cap > MIN_SIZE && vector->_count <= vector->_cap/3) {
+        // In pop operation, it is not strictly necessary to resize the array.
+        // So, if reallocation fails, we just keep the original one.
+
+        int halfCap = vector->_cap/2;
+        int newCap = halfCap > MIN_SIZE ? halfCap : MIN_SIZE;
+        const void** newMem = Mon_Realloc(vector->_arr, newCap);
+
+        if (newMem != NULL) {
+            vector->_arr = newMem;
+            vector->_cap = newCap;
+        }
+    }
+
+    if (vector->_count <= 0) {
+        return MON_ERR_EMPTY_COLLECTION;
+    }
+
+    vector->_count--;
+    for (int i = index; i < vector->_count; ++i) {
+        vector->_arr[i] = vector->_arr[i + 1];
+    }
+
+    return MON_SUCCESS;
+}
+
+int Mon_VectorGetCount(const Mon_Vector* vector) {
+    assert(vector != NULL);
+    
+    return vector->_count;
+}
+
+bool Mon_VectorEmpty(const Mon_Vector* vector) {
+    assert(vector != NULL);
+    
+    return vector->_count == 0;
+}
+
+void Mon_VectorClear(Mon_Vector* vector) {
+    assert(vector != NULL);
+    
+    vector->_count = 0;
+}
+
+void Mon_VectorFinalize(Mon_Vector* vector) {
+    if (vector == NULL) {
+        return;
+    }
+    
+    vector->_cap = 0;
+    vector->_count = 0;
+    vector->_arr = NULL;
+
+    Mon_Free(vector->_arr);
+}

@@ -7,14 +7,15 @@
 #include <stdbool.h>
 
 #include "ast/mon_exp.h"
+#include "../mon_vector.h"
 
 C_LINKAGE_BEGIN
 
-typedef struct {
+typedef struct Mon_AstCall_ {
 
 	char*       funcName;
 	size_t      funcNameLen;
-	Mon_AstExp* firstParameter;
+	Mon_Vector	parameterList;
 
 } Mon_AstCall;
 
@@ -29,7 +30,7 @@ typedef struct {
  */
 MON_PUBLIC Mon_AstCall* MON_CALL Mon_AstCallNew(const char* funcName,
                                                 size_t funcNameLen,
-												Mon_AstExp* firstParameter);
+												Mon_Vector parameters);
 
 /**
  *	Destroys a call node, releasing its memory.

@@ -21,6 +21,8 @@ Mon_Ast* mon_TargetAst;
  */
 bool mon_DumpReduces = false;
 
+Mon_Vector* mon_ParseStack = NULL;
+
 static atomic_bool s_Busy = false;
 
 Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
@@ -31,6 +33,11 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
     // Wait until an ongoing parsing is finished.
     while (s_Busy);
     s_Busy = true;
+
+    Mon_Vector stack;
+    if (Mon_VectorInit(&stack) != MON_SUCCESS) {
+        return MON_ERR_NOMEM;
+    }
 
     mon_TargetAst = outAst;
     mon_DumpReduces = (flags & MON_PARSEFLAGS_DUMPREDUCES) != 0;
@@ -54,6 +61,8 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
     }
 
     s_Busy = false;
+
+    Mon_VectorFinalize(&stack);
 
     return retCode;
 }
