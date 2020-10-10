@@ -55,7 +55,7 @@ Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
     return MON_SUCCESS;
 }
 
-MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorRemove(Mon_Vector* vector, int index) {
+Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
     assert(vector != NULL);
     assert(((unsigned int)index) < (unsigned int)vector->_count);
     
@@ -92,9 +92,7 @@ int Mon_VectorGetCount(const Mon_Vector* vector) {
 }
 
 bool Mon_VectorEmpty(const Mon_Vector* vector) {
-    assert(vector != NULL);
-    
-    return vector->_count == 0;
+    return vector == NULL || vector->_count == 0;
 }
 
 void Mon_VectorClear(Mon_Vector* vector) {
@@ -107,10 +105,10 @@ void Mon_VectorFinalize(Mon_Vector* vector) {
     if (vector == NULL) {
         return;
     }
+
+    Mon_Free(vector->_arr);
     
     vector->_cap = 0;
     vector->_count = 0;
     vector->_arr = NULL;
-
-    Mon_Free(vector->_arr);
 }
