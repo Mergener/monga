@@ -1,0 +1,19 @@
+var a : int;
+
+function f(a : int, b : int, c : int, d : int, r : res): float {
+	var x : int;
+
+	while (a < 5 || b > 6 && c > 12) {
+		a = ((c + 3) > 2.05)
+			? 20 * 4 + 33 - 12
+			: 15 - 5;
+		
+		b = b * 80;
+		c = c * d * 500;
+
+		r.x[2].b = 550;
+		r.y = 3;
+	}
+
+	return 4 + 33 * d;
+}

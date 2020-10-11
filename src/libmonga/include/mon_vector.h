@@ -108,6 +108,8 @@ MON_PUBLIC void MON_CALL Mon_VectorClear(Mon_Vector* vector);
 
 /**
  *	Finalizes a vector, cleaning up any resources used by it.
+ *
+ *  @param vector The vector to be finalized.
  */ 
 MON_PUBLIC void MON_CALL Mon_VectorFinalize(Mon_Vector* vector);
 

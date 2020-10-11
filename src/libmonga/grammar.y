@@ -50,6 +50,7 @@ static void DumpReduce(const char* fmt, ...);
 %token MON_TK_AS
 %token MON_TK_LIT_INT
 %token MON_TK_LIT_FLOAT
+%token MON_TK_LIT_STRING
 %token MON_TK_OP_ADD
 %token MON_TK_OP_SUB
 %token MON_TK_OP_MUL

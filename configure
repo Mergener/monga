@@ -5,6 +5,7 @@ chmod +x buildyacc
 chmod +x buildlib
 chmod +x buildexec
 chmod +x buildall
+chmod +x buildtests
 chmod +x testall
 
 mkdir bin
@@ -22,3 +23,5 @@ mkdir monga
 cd libmonga
 
 mkdir include
+mkdir debug
+mkdir release

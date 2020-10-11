@@ -2,19 +2,33 @@
 
 #####################################################
 
-# Path to build the executable
-OUT_PATH="bin/builds/monga"
-
 # Executable source files
 SRC_FILES="src/exec/*.c"
 
-# Compilation args
-COMPILER_ARGS="-Wall -Wextra -Werror -Ibin/builds/libmonga/include"
+BASE_COMPILER_ARGS="-Wall -Wextra -Werror -Ibin/builds/libmonga/include"
 
+### DEBUG
 # Library path
-LIB_PATH="bin/builds/libmonga"
+DEBUG_LIB_PATH="bin/builds/libmonga/debug"
+
+# Path to build the executable
+DEBUG_OUT_PATH="bin/builds/monga/debug"
+
+# Compilation args
+DEBUG_COMPILER_ARGS="-O1"
+
+### RELEASE
+# Library path
+RELEASE_LIB_PATH="bin/builds/libmonga/release"
+
+# Path to build the executable
+RELEASE_OUT_PATH="bin/builds/monga/release"
+
+# Compilation args
+RELEASE_COMPILER_ARGS="-O2 -DNDEBUG"
 
 #####################################################
 
 ./buildlib &&
-gcc -L$LIB_PATH -o $OUT_PATH/monga $SRC_FILES $COMPILER_ARGS -lmonga -lfl -ly
+gcc -L$DEBUG_LIB_PATH -o $DEBUG_OUT_PATH/monga $SRC_FILES $DEBUG_COMPILER_ARGS -lmonga -lfl -ly
+gcc -L$RELEASE_LIB_PATH -o $RELEASE_OUT_PATH/monga $SRC_FILES $RELEASE_COMPILER_ARGS -lmonga -lfl -ly

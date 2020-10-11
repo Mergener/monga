@@ -32,6 +32,8 @@ void Mon_DumpLex(FILE* inputFile, FILE* outputFile) {
             fprintf(outputFile, "%s %ld\n", Mon_GetTokenName(tkType), yylval.literal.integer);
         } else if (tkType == MON_TK_IDENTIFIER) {
             fprintf(outputFile, "%s %s\n", Mon_GetTokenName(tkType), yylval.identifier.name);
+        } else if (tkType == MON_TK_LIT_STRING) {
+            fprintf(outputFile, "%s %s\n", Mon_GetTokenName(tkType), yylval.literal.string.arr);
         } else {
             fprintf(outputFile, "%s\n", Mon_GetTokenName(tkType));
         }
@@ -85,6 +87,9 @@ const char* Mon_GetTokenName(Mon_TkType tkType) {
 
         case MON_TK_LIT_FLOAT:
             return "lit_float";
+
+        case MON_TK_LIT_STRING:
+            return "lit_string";
 
         case MON_TK_OP_ADD:
             return "op_add";

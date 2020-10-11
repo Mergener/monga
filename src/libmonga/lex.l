@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "mon_alloc.h"
+#include "strutils.h"
 
 #include "grammar.tab.h"
 
@@ -39,7 +40,14 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 "&&"             { return MON_TK_OP_AND; }
 "||"             { return MON_TK_OP_OR; }
 
-[a-zA-Z][a-zA-Z_0-9]* {
+\"([^\\\"]|\\.)*\" {
+    yylval.literal.string.len = yyleng - 2;
+    yylval.literal.string.arr = DuplicateString(&yytext[1], yylval.literal.string.len);
+
+    return MON_TK_LIT_STRING;
+}
+
+[a-zA-Z_][a-zA-Z_0-9]* {
     yylval = MakeIdentifier(yytext, yyleng);
 
     return MON_TK_IDENTIFIER;
