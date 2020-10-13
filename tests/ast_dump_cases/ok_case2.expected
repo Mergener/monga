@@ -78,17 +78,19 @@
 						<Var>a</Var>
 						<ConditionalExp>
 							<Condition>
-								<GreaterThan>
-									<Addition>
-										<OperandA>
-											<Var>c</Var>
-										</OperandA>
-										<OperandB>
-											<IntConstant>3</IntConstant>
-										</OperandB>
-									</Addition>
-									<FloatConstant>2.050000</FloatConstant>
-								</GreaterThan>
+								<Not>
+									<GreaterThan>
+										<Addition>
+											<OperandA>
+												<Var>c</Var>
+											</OperandA>
+											<OperandB>
+												<IntConstant>3</IntConstant>
+											</OperandB>
+										</Addition>
+										<FloatConstant>2.050000</FloatConstant>
+									</GreaterThan>
+									</Not>
 							</Condition>
 							<ThenExp>
 								<Subtraction>
