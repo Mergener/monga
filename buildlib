@@ -27,7 +27,7 @@ COMPILER_ARGS="-Wall -Wextra -I$GEN_SRC_PATH -I$EXPORT_HEADERS_PATH -I$SRC_PATH 
 DEBUG_ARGS="-DMON_DEBUG"
 
 # Extra release arguments passed to the compiler
-RELEASE_ARGS="-NDEBUG"
+RELEASE_ARGS="-DNDEBUG"
 
 #####################################################
 
@@ -63,11 +63,11 @@ function build_lib {
 	for o in $objects; do
 		rm $o
 	done
-
-	# copy headers from source path to build/include and delete previous ones
-	rm -R $OUT_PATH_HEADERS
-	cp -R $EXPORT_HEADERS_PATH $OUT_PATH_HEADERS
 }
 
 build_lib $OUT_PATH_DEBUG $DEBUG_ARGS
 build_lib $OUT_PATH_RELEASE $RELEASE_ARGS
+
+# copy headers from source path to build/include and delete previous ones
+rm -R $OUT_PATH_HEADERS
+cp -R $EXPORT_HEADERS_PATH $OUT_PATH_HEADERS

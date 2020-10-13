@@ -25,3 +25,8 @@ cd libmonga
 mkdir include
 mkdir debug
 mkdir release
+
+cd ../monga
+
+mkdir debug
+mkdir release

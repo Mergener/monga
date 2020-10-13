@@ -62,7 +62,7 @@ static void AssertError(const char* fileName,
     s_LastAssertionError.line = line;
 
     if (msgFmt != NULL) {
-        vsnprintf(&s_LastAssertionError.msgBuf, sizeof(s_LastAssertionError.msgBuf), msgFmt, msgArgs);
+        vsnprintf(s_LastAssertionError.msgBuf, sizeof(s_LastAssertionError.msgBuf), msgFmt, msgArgs);
         s_LastAssertionError.hasMsg = true;
     } else {
         s_LastAssertionError.hasMsg = false;
@@ -74,8 +74,6 @@ int main() {
     printf("Starting Monga unit tests.\n");
 
     Mon_SetAssertErrProc(AssertError);
-
-    RunVectorTests();
 
     printf("Tests finished. (%d of %d passed)\n", s_PassedCount, s_TestCount);
 
