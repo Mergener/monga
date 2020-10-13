@@ -1,5 +1,10 @@
 var a : int;
 
+type Vec2 = {
+	float : x;
+	float : y;
+};
+
 function f(a : int, b : int, c : int, d : int, r : res): float {
 	var x : int;
 

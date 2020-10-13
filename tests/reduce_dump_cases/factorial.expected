@@ -9,8 +9,6 @@ def_variable r1
 variable_defs r1
 opt_variable_defs r2
 var r1
-exp_primary r3
-exp_member r1
 numeral r2
 exp_primary r2
 exp_postfix r1
@@ -45,8 +43,6 @@ cond_or r1
 cond_or r1
 opt_variable_defs r1
 var r1
-exp_primary r3
-exp_member r1
 var r1
 exp_primary r3
 exp_postfix r1
@@ -63,8 +59,6 @@ exp r1
 block r3
 statements r1
 var r1
-exp_primary r3
-exp_member r1
 var r1
 exp_primary r3
 exp_postfix r1
@@ -108,8 +102,6 @@ def_variable r1
 variable_defs r1
 opt_variable_defs r2
 var r1
-exp_primary r3
-exp_member r1
 opt_exps r1
 call r1
 exp_primary r4

@@ -19,8 +19,6 @@ def_variable r1
 variable_defs r1
 opt_variable_defs r2
 var r1
-exp_primary r3
-exp_member r1
 type r1
 opt_bracket_exp r1
 exp_conditional r3
@@ -29,13 +27,9 @@ block r3
 statements r1
 var r1
 exp_primary r3
-exp_member r1
+var r2
 var r1
 exp_primary r3
-exp_member r2
-var r1
-exp_primary r3
-exp_member r1
 exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
@@ -46,13 +40,9 @@ block r3
 statements r2
 var r1
 exp_primary r3
-exp_member r1
+var r2
 var r1
 exp_primary r3
-exp_member r2
-var r1
-exp_primary r3
-exp_member r1
 exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
@@ -63,7 +53,6 @@ block r3
 statements r2
 var r1
 exp_primary r3
-exp_member r1
 exp_postfix r1
 exp_unary r1
 exp_multiplicative r1

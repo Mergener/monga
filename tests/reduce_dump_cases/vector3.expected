@@ -25,10 +25,8 @@ opt_ret_type r2
 opt_variable_defs r1
 var r1
 exp_primary r3
-exp_member r1
-var r1
+var r2
 exp_primary r3
-exp_member r2
 exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
@@ -38,10 +36,8 @@ exp r1
 exps r1
 var r1
 exp_primary r3
-exp_member r1
-var r1
+var r2
 exp_primary r3
-exp_member r2
 exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
@@ -51,10 +47,8 @@ exp r1
 exps r2
 var r1
 exp_primary r3
-exp_member r1
-var r1
+var r2
 exp_primary r3
-exp_member r2
 exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
@@ -65,7 +59,6 @@ exps r2
 opt_exps r2
 call r1
 exp_primary r4
-exp_member r1
 exp_postfix r1
 exp_unary r1
 exp_multiplicative r1

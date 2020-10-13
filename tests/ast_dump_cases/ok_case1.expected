@@ -1,16 +1,27 @@
 <Module>
 	<FunctionDefinition>
 		<Name>hello</Name>
+		<ReturnType>void</ReturnType>
 		<Parameters>
 			<Parameter>
-				<Type>int</Type>
 				<Name>a</Name>
+				<Type>int</Type>
 			</Parameter>
 			<Parameter>
-				<Type>float</Type>
 				<Name>b</Name>
+				<Type>float</Type>
 			</Parameter>
 		</Parameters>
+		<Block>
+			<Call>
+				<Callee>print</Callee>
+				<Parameters>
+					<Parameter>
+						<IntConstant>4</IntConstant>
+					</Parameter>
+				</Parameters>
+			</Call>
+		</Block>
 	</FunctionDefinition>
 	<VariableDeclaration>
 		<Name>test</Name>
