@@ -1,5 +1,5 @@
 #!/bin/bash
 
+./bin/unittests
 cd tests
-./unittests
 python3 testall.py

@@ -9,7 +9,7 @@
 
 C_LINKAGE_BEGIN
 
-#ifndef MON_DEBUG
+#ifdef MON_DEBUG
     /**
      *	If MON_DEBUG is not defined, does nothing. Else, evaluates a condition
      *	and throws an assertion error if it's false.

@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE, STDOUT
 import os
 import sys
 
-MONGA_PATH = '../bin/builds/monga/monga'
+MONGA_PATH = '../bin/builds/monga/release/monga'
 LEX_CASES_PATH = 'lex_cases'
 AST_DUMP_CASES_PATH = 'ast_dump_cases'
 REDUCE_DUMP_CASES_PATH = 'reduce_dump_cases'
