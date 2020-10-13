@@ -79,10 +79,11 @@ Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
         return MON_ERR_EMPTY_COLLECTION;
     }
 
-    vector->_count--;
-    for (int i = index; i < vector->_count; ++i) {
+    int newCount = vector->_count - 1;
+    for (int i = index; i < newCount; ++i) {
         vector->_arr[i] = vector->_arr[i + 1];
     }
+    vector->_count = newCount;
 
     return MON_SUCCESS;
 }
