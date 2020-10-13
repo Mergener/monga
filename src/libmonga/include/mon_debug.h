@@ -10,32 +10,32 @@
 C_LINKAGE_BEGIN
 
 #ifndef MON_DEBUG
-	/**
-	 *	If MON_DEBUG is not defined, does nothing. Else, evaluates a condition
-	 *	and throws an assertion error if it's false.
-	 *
-	 * 	@param cond The condition to be evaluated.
-	 * 	@param ... A printf-like format string to be used as an assertion error message followed
-	 * 	by optional format arguments.
-	 */
-	#define MON_ASSERT(cond, ...) \
-		Mon_AssertInternal((cond), __FILE__, __func__, __LINE__, __VA_ARGS__)
+    /**
+     *	If MON_DEBUG is not defined, does nothing. Else, evaluates a condition
+     *	and throws an assertion error if it's false.
+     *
+     * 	@param cond The condition to be evaluated.
+     * 	@param ... A printf-like format string to be used as an assertion error message followed
+     * 	by optional format arguments.
+     */
+    #define MON_ASSERT(cond, ...) \
+        Mon_AssertInternal((cond), __FILE__, __func__, __LINE__, __VA_ARGS__)
 
-	/**
-	 * 	Wrapper for MON_ASSERT((val) != NULL).
-	 */
-	#define MON_CANT_BE_NULL(val) \
-		MON_ASSERT((val) != NULL, #val " cannot be NULL.")
+    /**
+     * 	Wrapper for MON_ASSERT((val) != NULL).
+     */
+    #define MON_CANT_BE_NULL(val) \
+        MON_ASSERT((val) != NULL, #val " cannot be NULL.")
 #else
-	#define MON_ASSERT(cond, msg, ...)
-	#define MON_CANT_BE_NULL(val)
+    #define MON_ASSERT(cond, msg, ...)
+    #define MON_CANT_BE_NULL(val)
 #endif
 
 typedef void (MON_CALL *Mon_AssertErrProc)(const char* fileName,
-										   const char* funcName,
-										   int line,
-										   const char* msgFmt,
-										   va_list msgArgs);
+                                           const char* funcName,
+                                           int line,
+                                           const char* msgFmt,
+                                           va_list msgArgs);
 
 /**
  *	Internal implementation function for Monga's assertion system.
@@ -51,11 +51,11 @@ typedef void (MON_CALL *Mon_AssertErrProc)(const char* fileName,
  * 	which can be altered by using Mon_SetAssertErrProc.
  */
 MON_PUBLIC void MON_CALL Mon_AssertInternal(bool cond,
-				                            const char* fileName,
-											const char* funcName,
-				                            int line,
-				                            const char* msgFmt,
-				                            ...);
+                                            const char* fileName,
+                                            const char* funcName,
+                                            int line,
+                                            const char* msgFmt,
+                                            ...);
 
 
 /**
