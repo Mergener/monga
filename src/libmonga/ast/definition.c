@@ -43,7 +43,7 @@ void Mon_AstDefDestroy(Mon_AstDef* def, bool rec) {
                 break;
 
             case MON_AST_DEF_TYPE:
-                Mon_AstTypeDefDestroy(def->definition.type);
+                Mon_AstTypeDefDestroy(def->definition.type, true);
                 break;
         }
     }
