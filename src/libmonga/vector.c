@@ -62,10 +62,6 @@ Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
         "Specified index (%d) cannot be >= vector element count (%d).",
         index, vector->_count);
 
-    if (vector->_count <= 0) {
-        return MON_ERR_EMPTY_COLLECTION;
-    }
-
     vector->_count--;
     for (int i = index; i < vector->_count; ++i) {
         vector->_arr[i] = vector->_arr[i + 1];
