@@ -4,14 +4,14 @@
 
 #include "mon_alloc.h"
 
-#define DEFAULT_SIZE 16
-#define MIN_SIZE DEFAULT_SIZE
+#define DEFAULT_CAP 16
+#define MIN_SIZE DEFAULT_CAP
 
 Mon_RetCode Mon_VectorInit(Mon_Vector* vector) {
     MON_CANT_BE_NULL(vector);
 
-    vector->_cap = DEFAULT_SIZE * sizeof(void*);
-    vector->_arr = Mon_Alloc(vector->_cap);
+    vector->_cap = DEFAULT_CAP;
+    vector->_arr = Mon_Alloc(vector->_cap * sizeof(void*));
     vector->_count = 0;
 
     if (vector->_arr == NULL) {
@@ -41,7 +41,7 @@ Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
 
     if (vector->_count == vector->_cap) {
         int newCap = vector->_cap * 2;
-        const void** newMem = Mon_Realloc(vector->_arr, newCap);
+        const void** newMem = Mon_Realloc(vector->_arr, newCap * sizeof(void*));
 
         if (newMem == NULL) {
             return MON_ERR_NOMEM;
@@ -51,8 +51,7 @@ Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
         vector->_cap = newCap;
     }
 
-    vector->_arr[vector->_count] = obj;
-    vector->_count++;
+    vector->_arr[vector->_count++] = obj;
 
     return MON_SUCCESS;
 }
