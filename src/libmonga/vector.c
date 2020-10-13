@@ -61,8 +61,17 @@ Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
     MON_ASSERT(((unsigned int)index) < (unsigned int)vector->_count, 
         "Specified index (%d) cannot be >= vector element count (%d).",
         index, vector->_count);
+
+    if (vector->_count <= 0) {
+        return MON_ERR_EMPTY_COLLECTION;
+    }
+
+    vector->_count--;
+    for (int i = index; i < vector->_count; ++i) {
+        vector->_arr[i] = vector->_arr[i + 1];
+    }
     
-    if (vector->_cap > MIN_SIZE && vector->_count <= vector->_cap/3) {
+    if (vector->_cap > MIN_SIZE && vector->_count < vector->_cap/3) {
         // In pop operation, it is not strictly necessary to resize the array.
         // So, if reallocation fails, we just keep the original one.
         int halfCap = vector->_cap/2;
@@ -74,16 +83,6 @@ Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
             vector->_cap = newCap;
         }
     }
-
-    if (vector->_count <= 0) {
-        return MON_ERR_EMPTY_COLLECTION;
-    }
-
-    int newCount = vector->_count - 1;
-    for (int i = index; i < newCount; ++i) {
-        vector->_arr[i] = vector->_arr[i + 1];
-    }
-    vector->_count = newCount;
 
     return MON_SUCCESS;
 }
