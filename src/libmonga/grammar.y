@@ -88,6 +88,8 @@ static void DumpReduce(const char* fmt, ...);
     Mon_AstParam*     paramNode;
     Mon_AstVar*       varNode;
     Mon_AstCall*      callNode;
+    Mon_AstTypeDesc*  typeDescNode;
+    Mon_AstField*     fieldNode;
 }
 
 %type <identifier>    MON_TK_IDENTIFIER type opt_ret_type
@@ -103,7 +105,9 @@ static void DumpReduce(const char* fmt, ...);
 %type <condNode>      cond cond_primary cond_not cond_and cond_or
 %type <callNode>      call
 %type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT
-%type <vector>        definitions variable_defs opt_variable_defs parameters opt_parameters statements opt_statements exps opt_exps
+%type <vector>        definitions variable_defs opt_variable_defs parameters opt_parameters statements opt_statements exps opt_exps field_defs
+%type <typeDescNode>  typedesc
+%type <fieldNode>     def_field
 
 %%
 
@@ -212,36 +216,62 @@ type:
 def_type: 
     MON_TK_TYPE MON_TK_IDENTIFIER '=' typedesc ';' {
         DumpReduce("def_type r1");
+
+        $$ = Mon_AstTypeDefNew($2.name, $2.length, $4);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 typedesc: 
     MON_TK_IDENTIFIER {
         DumpReduce("typedesc r1");
+
+        $$ = Mon_AstTypeDescNewAlias($1.name);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | '[' typedesc ']' {
         DumpReduce("typedesc r2");
+
+        $$ = Mon_AstTypeDescNewArray($2);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | '{' field_defs '}' {
         DumpReduce("typedesc r3");
+
+        $$ = Mon_AstTypeDescNewRecord(&$2);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 def_field: 
     MON_TK_IDENTIFIER ':' type ';' {
         DumpReduce("def_field r1");
+
+        $$ = Mon_AstFieldNew($3.name, $1.name);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 ;
 
 field_defs: 
     def_field {
         DumpReduce("field_defs r1");
+
+        INIT_VECTOR($$);
+        ADD_TO_VECTOR($$, $1);
     }
 
     | field_defs def_field {
         DumpReduce("field_defs r2");
+
+        $$ = $1;
+        ADD_TO_VECTOR($1, $2);
     }
 ;
 

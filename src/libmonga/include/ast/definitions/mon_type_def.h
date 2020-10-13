@@ -4,13 +4,19 @@
 #include <mon_defines.h>
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 C_LINKAGE_BEGIN
 
+typedef struct Mon_AstTypeDesc_ Mon_AstTypeDesc;
+
 /** Contains data that defines a type, regardless of its scope. */
 typedef struct Mon_AstTypeDef_ {
+
     char*  typeName;
     size_t typeNameLength;
+    Mon_AstTypeDesc* typeDesc;
+
 } Mon_AstTypeDef;
 
 /**
@@ -23,14 +29,15 @@ typedef struct Mon_AstTypeDef_ {
  * 	returns NULL.
  */
 MON_PUBLIC Mon_AstTypeDef* MON_CALL Mon_AstTypeDefNew(const char* name,
-                                                      size_t nameLen);
+                                                      size_t nameLen,
+                                                      Mon_AstTypeDesc* typeDesc);
 
 /**
  *  Destroys a type definition node, releasing its memory.
  * 
  *  @param def The definition node to be destroyed.
  */
-MON_PUBLIC void MON_CALL Mon_AstTypeDefDestroy(Mon_AstTypeDef* def);
+MON_PUBLIC void MON_CALL Mon_AstTypeDefDestroy(Mon_AstTypeDef* def, bool rec);
 
 C_LINKAGE_END
 

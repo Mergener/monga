@@ -327,7 +327,7 @@ static void XmlDumpCompar(AstDumpContext* ctx, const Mon_AstCond* cond, const ch
 }
 
 static void XmlDumpBinCond(AstDumpContext* ctx, const Mon_AstCond* cond, const char* binCondName) {
-    MON_ASSERT(cond->condKind == MON_COND_COMPARISON, "cond must be a binary condition.");
+    MON_ASSERT(cond->condKind == MON_COND_BIN, "cond must be a binary condition.");
 
     DUMPF_OR_STOP(ctx, "<%s>", binCondName);
     ctx->indentLevel++;
@@ -611,6 +611,65 @@ static void XmlDumpVarDefNode(AstDumpContext* ctx, const Mon_AstVarDef* varDef) 
     DUMPF_OR_STOP(ctx, "</VariableDeclaration>");
 }
 
+static void XmlDumpRecord(AstDumpContext* ctx, const Mon_TypeDescRecord* record) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(record);
+
+    DUMPF_OR_STOP(ctx, "<Record>");
+    ctx->indentLevel++;
+
+    DUMPF_OR_STOP(ctx, "<Fields>");
+    ctx->indentLevel++;
+
+    MON_VECTOR_FOREACH(&record->fields, Mon_AstField*, field, 
+        DUMPF_OR_STOP(ctx, "<Field>");
+        ctx->indentLevel++;
+
+        DUMPF_OR_STOP(ctx, "<Type>%s</Type>", field->typeName);
+        DUMPF_OR_STOP(ctx, "<Name>%s</Name>", field->fieldName);
+
+        ctx->indentLevel--;
+        DUMPF_OR_STOP(ctx, "</Field>");
+    );
+
+    ctx->indentLevel--;
+    DUMPF_OR_STOP(ctx, "</Fields>");
+
+    ctx->indentLevel--;
+    DUMPF_OR_STOP(ctx, "</Record>");
+}
+
+static void XmlDumpTypedesc(AstDumpContext* ctx, const Mon_AstTypeDesc* typeDesc) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(typeDesc);
+
+    DUMPF_OR_STOP(ctx, "<TypeDesc>", typeDesc->typeDesc.alias.aliasedTypeName);
+    ctx->indentLevel++;
+
+    switch (typeDesc->typeDescKind) {
+        case MON_TYPEDESC_ALIAS:
+            DUMPF_OR_STOP(ctx, "<Alias>%s</Alias>", typeDesc->typeDesc.alias.aliasedTypeName);
+            break;
+
+        case MON_TYPEDESC_RECORD:
+            XmlDumpRecord(ctx, &typeDesc->typeDesc.record);
+            break;
+
+        case MON_TYPEDESC_ARRAY:
+            DUMPF_OR_STOP(ctx, "<Array>");
+            ctx->indentLevel++;
+
+            XmlDumpTypedesc(ctx, typeDesc->typeDesc.array.innerTypeDesc);
+
+            ctx->indentLevel--;
+            DUMPF_OR_STOP(ctx, "</Array>");
+            break;
+    }
+
+    ctx->indentLevel--;
+    DUMPF_OR_STOP(ctx, "</TypeDesc>", typeDesc->typeDesc.alias.aliasedTypeName);
+}
+
 static void XmlDumpTypeNode(AstDumpContext* ctx, const Mon_AstTypeDef* typeDef) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(typeDef);
@@ -619,6 +678,7 @@ static void XmlDumpTypeNode(AstDumpContext* ctx, const Mon_AstTypeDef* typeDef) 
     ctx->indentLevel++;
 
     DUMPF_OR_STOP(ctx, "<Name>%s</Name>", typeDef->typeName);
+    XmlDumpTypedesc(ctx, typeDef->typeDesc);
 
     ctx->indentLevel--;
     DUMPF_OR_STOP(ctx, "</TypeDefinition>");

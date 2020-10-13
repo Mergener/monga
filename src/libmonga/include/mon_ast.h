@@ -19,6 +19,8 @@
 #include "ast/definitions/mon_func_def.h"
 #include "ast/definitions/mon_type_def.h"
 #include "ast/definitions/mon_var_def.h"
+#include "ast/mon_field.h"
+#include "ast/mon_typedesc.h"
 
 C_LINKAGE_BEGIN
 
