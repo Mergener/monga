@@ -1,13 +1,13 @@
 #include "ast/mon_call.h"
 
-#include <assert.h>
+#include <mon_debug.h>
 #include "mon_alloc.h"
 #include "../strutils.h"
 
 Mon_AstCall* Mon_AstCallNew(const char* funcName,
                             size_t funcNameLen,
 							Mon_Vector parameters) {
-	assert(funcName != NULL);
+	MON_CANT_BE_NULL(funcName);
 
 	Mon_AstCall* ret = Mon_Alloc(sizeof(Mon_AstCall));
 

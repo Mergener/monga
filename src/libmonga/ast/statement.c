@@ -1,13 +1,13 @@
 #include "ast/mon_statement.h"
 
-#include <assert.h>
+#include <mon_debug.h>
 
 #include "mon_alloc.h"
 #include "ast/mon_var.h"
 #include "ast/mon_block.h"
 
 Mon_AstStatement* Mon_AstStatementNewCall(Mon_AstCall* call) {
-	assert(call != NULL);
+	MON_CANT_BE_NULL(call);
 
 	Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
 	if (ret == NULL) {
@@ -22,7 +22,7 @@ Mon_AstStatement* Mon_AstStatementNewCall(Mon_AstCall* call) {
 
 
 Mon_AstStatement* Mon_AstStatementNewBlock(Mon_AstBlock* block) {
-	assert(block != NULL);
+	MON_CANT_BE_NULL(block);
 
 	Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
 	if (ret == NULL) {
@@ -37,7 +37,7 @@ Mon_AstStatement* Mon_AstStatementNewBlock(Mon_AstBlock* block) {
 
 
 Mon_AstStatement* Mon_AstStatementNewWhile(Mon_AstCond* condition, Mon_AstBlock* block) {
-	assert(condition != NULL);
+	MON_CANT_BE_NULL(condition);
 
 	Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
 	if (ret == NULL) {
@@ -53,7 +53,7 @@ Mon_AstStatement* Mon_AstStatementNewWhile(Mon_AstCond* condition, Mon_AstBlock*
 
 
 Mon_AstStatement* Mon_AstStatementNewIf(Mon_AstCond* condition, Mon_AstBlock* thenBlock, Mon_AstBlock* elseBlock) {
-	assert(condition != NULL);
+	MON_CANT_BE_NULL(condition);
 
 	Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
 	if (ret == NULL) {
@@ -83,8 +83,8 @@ Mon_AstStatement* Mon_AstStatementNewReturn(Mon_AstExp* retExp) {
 
 
 Mon_AstStatement* Mon_AstStatementNewAssignment(Mon_AstVar* lvalue, Mon_AstExp* rvalue) {
-	assert(lvalue != NULL);
-	assert(rvalue != NULL);
+	MON_CANT_BE_NULL(lvalue);
+	MON_CANT_BE_NULL(rvalue);
 
 	Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
 	if (ret == NULL) {
@@ -135,7 +135,7 @@ void Mon_AstStatementDestroy(Mon_AstStatement* node, bool rec) {
 				break;
 
 			default:
-				assert(false);
+				MON_ASSERT(false, "Unimplemented statement kind. (got %d)", (int)node->statementKind);
 				break;
 		}
 	}

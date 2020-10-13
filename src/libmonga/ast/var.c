@@ -1,14 +1,14 @@
 #include "ast/mon_var.h"
 
 #include <string.h>
-#include <assert.h>
+#include <mon_debug.h>
 
 #include "mon_alloc.h"
 #include "../strutils.h"
 
 Mon_AstVar* Mon_AstVarNewIndexed(Mon_AstExp* indexedExpr, Mon_AstExp* indexExpr) {
-	assert(indexedExpr != NULL);
-	assert(indexExpr != NULL);
+	MON_CANT_BE_NULL(indexedExpr);
+	MON_CANT_BE_NULL(indexExpr);
 
 	Mon_AstVar* ret = Mon_Alloc(sizeof(Mon_AstVar));
 	if (ret == NULL) {
@@ -23,7 +23,7 @@ Mon_AstVar* Mon_AstVarNewIndexed(Mon_AstExp* indexedExpr, Mon_AstExp* indexExpr)
 }
 
 Mon_AstVar* Mon_AstVarNewField(Mon_AstExp* expr, const char* fieldName) {
-	assert(expr != NULL);
+	MON_CANT_BE_NULL(expr);
 
 	Mon_AstVar* ret = Mon_Alloc(sizeof(Mon_AstVar));
 	if (ret == NULL) {
@@ -43,7 +43,7 @@ Mon_AstVar* Mon_AstVarNewField(Mon_AstExp* expr, const char* fieldName) {
 }
 
 Mon_AstVar* Mon_AstVarNewDirect(const char* varName) {
-	assert(varName != NULL);
+	MON_CANT_BE_NULL(varName);
 
 	Mon_AstVar* ret = Mon_Alloc(sizeof(Mon_AstVar));
 	if (ret == NULL) {
@@ -86,7 +86,7 @@ void Mon_AstVarDestroy(Mon_AstVar* node, bool rec) {
 			break;
 
 		default:
-			assert(false);
+			MON_ASSERT(false, "Unimplemented varKind. (got %d)", (int)node->varKind);
 			break;
 	}
 }

@@ -1,6 +1,6 @@
 #include "ast_dump.h"
 
-#include <assert.h>
+#include <mon_debug.h>
 
 #include "ast/definitions/mon_type_def.h"
 
@@ -38,8 +38,8 @@ static void XmlDumpVarNode(AstDumpContext* ctx, const Mon_AstVar* var);
 static void XmlDumpCallNode(AstDumpContext* ctx, const Mon_AstCall* call);
 
 void AstDumpXml(AstDumpContext* ctx, const Mon_Ast* ast) {
-    assert(ctx != NULL);
-    assert(ast != NULL);
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(ast);
 
     DUMPF_OR_STOP(ctx, "<Module>");
     ctx->indentLevel++;
@@ -56,8 +56,8 @@ void AstDumpXml(AstDumpContext* ctx, const Mon_Ast* ast) {
 }
 
 static void XmlDumpVarNode(AstDumpContext* ctx, const Mon_AstVar* var) {
-    assert(ctx != NULL);
-    assert(var != NULL);
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(var);
 
     switch (var->varKind) {
         case MON_VAR_DIRECT:
@@ -103,9 +103,11 @@ static void XmlDumpVarNode(AstDumpContext* ctx, const Mon_AstVar* var) {
 }
 
 static void XmlDumpExpUnopNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
-    assert(ctx != NULL);
-    assert(exp != NULL);
-    assert(exp->expKind == MON_EXP_UNOP);
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(exp);
+    MON_ASSERT(exp->expKind == MON_EXP_UNOP, 
+        "exp must be an unary operation (was %d).", 
+        (int)exp->expKind);
 
     switch (exp->exp.unaryOperation.unOpKind) {
         case MON_UNOP_NEGATIVE:
@@ -131,9 +133,11 @@ static void XmlDumpExpUnopNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
 }
 
 static void XmlDumpBinop(AstDumpContext* ctx, const Mon_AstExp* exp, const char* binopName) {
-    assert(ctx != NULL);
-    assert(exp != NULL);
-    assert(binopName != NULL);
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(exp);
+    MON_ASSERT(exp->expKind == MON_EXP_BINOP, 
+        "exp must be a binary operation (was %d).", 
+        (int)exp->expKind);
 
     DUMPF_OR_STOP(ctx, "<%s>", binopName);
     ctx->indentLevel++;
@@ -155,9 +159,11 @@ static void XmlDumpBinop(AstDumpContext* ctx, const Mon_AstExp* exp, const char*
 }
 
 static void XmlDumpExpBinopNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
-    assert(ctx != NULL);
-    assert(exp != NULL);
-    assert(exp->expKind == MON_EXP_BINOP);
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(exp);
+    MON_ASSERT(exp->expKind == MON_EXP_BINOP, 
+        "exp must be a binary operation (was %d).", 
+        (int)exp->expKind);
 
     switch (exp->exp.binaryOperation.binOpKind) {
         case MON_BINOP_ADD:
@@ -203,11 +209,11 @@ static void XmlDumpExpBinopNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
 }
 
 static void XmlDumpLiteral(AstDumpContext* ctx, Mon_Literal literal) {
-    assert(ctx != NULL);
+    MON_CANT_BE_NULL(ctx);
 
     switch (literal.literalKind) {
         case MON_LIT_STR:
-            assert(literal.string.arr != NULL);
+            MON_CANT_BE_NULL(literal.string.arr);
             DUMPF_OR_STOP(ctx, "<StringConstant>%s</StringConstant>", literal.string.arr);
             break;
 
@@ -222,8 +228,8 @@ static void XmlDumpLiteral(AstDumpContext* ctx, Mon_Literal literal) {
 }
 
 static void XmlDumpExpNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
-    assert(ctx != NULL);
-    assert(exp != NULL);
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(exp);
 
     switch (exp->expKind) {
         case MON_EXP_CONDITIONAL:
@@ -306,7 +312,9 @@ static void XmlDumpExpNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
 }
 
 static void XmlDumpCompar(AstDumpContext* ctx, const Mon_AstCond* cond, const char* comparName) {
-    assert(cond->condKind == MON_COND_COMPARISON);
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(cond);
+    MON_ASSERT(cond->condKind == MON_COND_COMPARISON, "cond must be a comparison.");
 
     DUMPF_OR_STOP(ctx, "<%s>", comparName);
     ctx->indentLevel++;
@@ -319,7 +327,7 @@ static void XmlDumpCompar(AstDumpContext* ctx, const Mon_AstCond* cond, const ch
 }
 
 static void XmlDumpBinCond(AstDumpContext* ctx, const Mon_AstCond* cond, const char* binCondName) {
-    assert(cond->condKind == MON_COND_BIN);
+    MON_ASSERT(cond->condKind == MON_COND_COMPARISON, "cond must be a binary condition.");
 
     DUMPF_OR_STOP(ctx, "<%s>", binCondName);
     ctx->indentLevel++;
@@ -332,8 +340,8 @@ static void XmlDumpBinCond(AstDumpContext* ctx, const Mon_AstCond* cond, const c
 }
 
 static void XmlDumpCondNode(AstDumpContext* ctx, const Mon_AstCond* cond) {
-    assert(ctx != NULL);
-    assert(cond != NULL);
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(cond);
 
     DUMPF_OR_STOP(ctx, "<Condition>");
     ctx->indentLevel++;
@@ -396,6 +404,9 @@ static void XmlDumpCondNode(AstDumpContext* ctx, const Mon_AstCond* cond) {
 
 
 static void XmlDumpCallNode(AstDumpContext* ctx, const Mon_AstCall* call) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(call);
+
     DUMPF_OR_STOP(ctx, "<Call>");
     ctx->indentLevel++;
 
@@ -424,6 +435,9 @@ static void XmlDumpCallNode(AstDumpContext* ctx, const Mon_AstCall* call) {
 }
 
 static void XmlDumpStatementNode(AstDumpContext* ctx, const Mon_AstStatement* stmt) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(stmt);
+
     switch (stmt->statementKind) {
         case MON_STMT_IF:
             DUMPF_OR_STOP(ctx, "<If>");
@@ -529,6 +543,9 @@ static void XmlDumpBlockInline(AstDumpContext* ctx, const Mon_AstBlock* block) {
 }
 
 static void XmlDumpParam(AstDumpContext* ctx, const Mon_AstParam* param) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(param);
+
     DUMPF_OR_STOP(ctx, "<Parameter>");
     ctx->indentLevel++;
 
@@ -540,6 +557,9 @@ static void XmlDumpParam(AstDumpContext* ctx, const Mon_AstParam* param) {
 }
 
 static void XmlDumpParams(AstDumpContext* ctx, const Mon_Vector* params) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(params);
+
     DUMPF_OR_STOP(ctx, "<Parameters>");
     ctx->indentLevel++;
 
@@ -552,6 +572,9 @@ static void XmlDumpParams(AstDumpContext* ctx, const Mon_Vector* params) {
 }
 
 static void XmlDumpFuncNode(AstDumpContext* ctx, const Mon_AstFuncDef* funcDef) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(funcDef);
+
     DUMPF_OR_STOP(ctx, "<FunctionDefinition>");
     ctx->indentLevel++;
 
@@ -575,6 +598,9 @@ static void XmlDumpFuncNode(AstDumpContext* ctx, const Mon_AstFuncDef* funcDef) 
 }
 
 static void XmlDumpVarDefNode(AstDumpContext* ctx, const Mon_AstVarDef* varDef) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(varDef);
+
     DUMPF_OR_STOP(ctx, "<VariableDeclaration>");
     ctx->indentLevel++;
 
@@ -586,6 +612,9 @@ static void XmlDumpVarDefNode(AstDumpContext* ctx, const Mon_AstVarDef* varDef) 
 }
 
 static void XmlDumpTypeNode(AstDumpContext* ctx, const Mon_AstTypeDef* typeDef) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(typeDef);
+
     DUMPF_OR_STOP(ctx, "<TypeDefinition>");
     ctx->indentLevel++;
 
@@ -596,6 +625,9 @@ static void XmlDumpTypeNode(AstDumpContext* ctx, const Mon_AstTypeDef* typeDef) 
 }
 
 static void XmlDumpDefNode(AstDumpContext* ctx, const Mon_AstDef* defNode) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(defNode);
+
     switch (defNode->defKind) {
         case MON_AST_DEF_FUNC:
             XmlDumpFuncNode(ctx, defNode->definition.function);

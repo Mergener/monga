@@ -1,1 +1,3 @@
 #!/bin/bash
+
+gcc -L$DEBUG_LIB_PATH -o $DEBUG_OUT_PATH/monga $SRC_FILES $DEBUG_COMPILER_ARGS -lmonga -lfl -ly

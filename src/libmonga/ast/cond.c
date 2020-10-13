@@ -1,13 +1,13 @@
 #include "ast/mon_cond.h"
 
-#include <assert.h>
+#include <mon_debug.h>
 
 #include "mon_alloc.h"
 #include "ast/mon_exp.h"
 
 Mon_AstCond* Mon_AstCondNewBin(Mon_AstCond* l, Mon_AstCond* r, Mon_BinCondKind condKind) {
-	assert(l != NULL);
-	assert(r != NULL);	
+	MON_CANT_BE_NULL(l);
+	MON_CANT_BE_NULL(r);	
 
 	Mon_AstCond* ret = Mon_Alloc(sizeof(*ret));
 	if (ret == NULL) {
@@ -24,8 +24,8 @@ Mon_AstCond* Mon_AstCondNewBin(Mon_AstCond* l, Mon_AstCond* r, Mon_BinCondKind c
 }
 
 Mon_AstCond* Mon_AstCondNewCompar(Mon_AstExp* l, Mon_AstExp* r, Mon_ComparKind comparKind) {
-	assert(l != NULL);
-	assert(r != NULL);
+	MON_CANT_BE_NULL(l);
+	MON_CANT_BE_NULL(r);	
 
 	Mon_AstCond* ret = Mon_Alloc(sizeof(*ret));
 	if (ret == NULL) {
@@ -64,7 +64,7 @@ void Mon_AstCondDestroy(Mon_AstCond* node, bool rec) {
 				break;
 
 			default:
-				assert(false);
+				MON_ASSERT(false, "Unimplemented condition kind. (got %d)", (int)cond.condKind);
 				break;
 		}
 	}

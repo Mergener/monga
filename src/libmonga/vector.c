@@ -1,6 +1,6 @@
 #include "mon_vector.h"
 
-#include <assert.h>
+#include <mon_debug.h>
 
 #include "mon_alloc.h"
 
@@ -8,7 +8,7 @@
 #define MIN_SIZE DEFAULT_SIZE
 
 Mon_RetCode Mon_VectorInit(Mon_Vector* vector) {
-    assert(vector != NULL);
+    MON_CANT_BE_NULL(vector);
 
     vector->_cap = DEFAULT_SIZE * sizeof(void*);
     vector->_arr = Mon_Alloc(vector->_cap);
@@ -22,20 +22,22 @@ Mon_RetCode Mon_VectorInit(Mon_Vector* vector) {
 }
 
 void* Mon_VectorGet(const Mon_Vector* vector, int index) {
-    assert(vector != NULL);
-    assert(((unsigned int)index) < (unsigned int)vector->_count);
+    MON_CANT_BE_NULL(vector);
+    MON_ASSERT(((unsigned int)index) < (unsigned int)vector->_count, 
+        "Specified index (%d) cannot be >= vector element count (%d).",
+        index, vector->_count);
 
     return (void*)vector->_arr[index];
 }
 
 int Mon_VectorCount(const Mon_Vector* vector) {
-    assert(vector != NULL);
+    MON_CANT_BE_NULL(vector);
 
     return vector->_count;
 }
 
 Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
-    assert(vector != NULL);
+    MON_CANT_BE_NULL(vector);
 
     if (vector->_count == vector->_cap) {
         int newCap = vector->_cap * 2;
@@ -56,13 +58,14 @@ Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
 }
 
 Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
-    assert(vector != NULL);
-    assert(((unsigned int)index) < (unsigned int)vector->_count);
+    MON_CANT_BE_NULL(vector);
+    MON_ASSERT(((unsigned int)index) < (unsigned int)vector->_count, 
+        "Specified index (%d) cannot be >= vector element count (%d).",
+        index, vector->_count);
     
     if (vector->_cap > MIN_SIZE && vector->_count <= vector->_cap/3) {
         // In pop operation, it is not strictly necessary to resize the array.
         // So, if reallocation fails, we just keep the original one.
-
         int halfCap = vector->_cap/2;
         int newCap = halfCap > MIN_SIZE ? halfCap : MIN_SIZE;
         const void** newMem = Mon_Realloc(vector->_arr, newCap);
@@ -86,7 +89,7 @@ Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
 }
 
 int Mon_VectorGetCount(const Mon_Vector* vector) {
-    assert(vector != NULL);
+    MON_CANT_BE_NULL(vector);
     
     return vector->_count;
 }
@@ -96,7 +99,7 @@ bool Mon_VectorEmpty(const Mon_Vector* vector) {
 }
 
 void Mon_VectorClear(Mon_Vector* vector) {
-    assert(vector != NULL);
+    MON_CANT_BE_NULL(vector);
     
     vector->_count = 0;
 }

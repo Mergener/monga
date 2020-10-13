@@ -1,6 +1,6 @@
 #include "ast/definitions/mon_func_def.h"
 
-#include <assert.h>
+#include <mon_debug.h>
 
 #include "mon_alloc.h"
 #include "../../strutils.h"
@@ -12,7 +12,7 @@ Mon_AstFuncDef* Mon_AstFuncDefNew(const char* funcName,
                                   Mon_Vector params,
                                   Mon_AstBlock* body) {
 
-    assert(funcName != NULL);
+    MON_CANT_BE_NULL(funcName);
 
     Mon_AstFuncDef* ret = Mon_Alloc(sizeof(Mon_AstFuncDef));
 

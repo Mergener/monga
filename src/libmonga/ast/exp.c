@@ -1,6 +1,6 @@
 #include "ast/mon_exp.h"
 
-#include <assert.h>
+#include <mon_debug.h>
 #include <string.h>
 
 #include "mon_alloc.h"
@@ -10,8 +10,8 @@
 #include "../strutils.h"
 
 Mon_AstExp* Mon_AstExpNewBin(Mon_AstExp* l, Mon_AstExp* r, Mon_BinopKind kind) {
-	assert(l != NULL);
-	assert(r != NULL);
+	MON_CANT_BE_NULL(l);
+	MON_CANT_BE_NULL(r);
 
 	Mon_AstExp* ret = Mon_Alloc(sizeof(Mon_AstExp));
 	if (ret == NULL) {
@@ -27,7 +27,7 @@ Mon_AstExp* Mon_AstExpNewBin(Mon_AstExp* l, Mon_AstExp* r, Mon_BinopKind kind) {
 }
 
 Mon_AstExp* Mon_AstExpNewCall(Mon_AstCall* call) {
-	assert(call != NULL);
+	MON_CANT_BE_NULL(call);
 
 	Mon_AstExp* ret = Mon_Alloc(sizeof(Mon_AstExp));
 	if (ret == NULL) {
@@ -41,7 +41,7 @@ Mon_AstExp* Mon_AstExpNewCall(Mon_AstCall* call) {
 }
 
 Mon_AstExp* Mon_AstExpNewNew(const char* typeName, Mon_AstExp* arrSizeExp) {
-	assert(typeName != NULL);
+	MON_CANT_BE_NULL(typeName);
 
 	Mon_AstExp* ret = Mon_Alloc(sizeof(Mon_AstExp));
 	if (ret == NULL) {
@@ -61,7 +61,7 @@ Mon_AstExp* Mon_AstExpNewNew(const char* typeName, Mon_AstExp* arrSizeExp) {
 }
 
 Mon_AstExp* Mon_AstExpNewUn(Mon_AstExp* operand, Mon_UnopKind unOpKind) {
-	assert(operand != NULL);
+	MON_CANT_BE_NULL(operand);
 
 	Mon_AstExp* ret = Mon_Alloc(sizeof(Mon_AstExp));
 	if (ret == NULL) {
@@ -76,9 +76,9 @@ Mon_AstExp* Mon_AstExpNewUn(Mon_AstExp* operand, Mon_UnopKind unOpKind) {
 }
 
 Mon_AstExp* Mon_AstExpNewCond(Mon_AstCond* cond, Mon_AstExp* thenExp, Mon_AstExp* elseExp) {
-	assert(cond != NULL);
-	assert(thenExp != NULL);
-	assert(elseExp != NULL);
+	MON_CANT_BE_NULL(cond);
+	MON_CANT_BE_NULL(thenExp);
+	MON_CANT_BE_NULL(elseExp);
 
 	Mon_AstExp* ret = Mon_Alloc(sizeof(Mon_AstExp));
 	if (ret == NULL) {
@@ -94,8 +94,8 @@ Mon_AstExp* Mon_AstExpNewCond(Mon_AstCond* cond, Mon_AstExp* thenExp, Mon_AstExp
 }
 
 Mon_AstExp* Mon_AstExpNewCast(Mon_AstExp* castee, const char* typeName) {
-	assert(castee != NULL);
-	assert(typeName != NULL);
+	MON_CANT_BE_NULL(castee);
+	MON_CANT_BE_NULL(typeName);
 
 	Mon_AstExp* ret = Mon_Alloc(sizeof(Mon_AstExp));
 	if (ret == NULL) {
@@ -115,7 +115,7 @@ Mon_AstExp* Mon_AstExpNewCast(Mon_AstExp* castee, const char* typeName) {
 }
 
 Mon_AstExp* Mon_AstExpNewVar(Mon_AstVar* var) {
-	assert(var != NULL);
+	MON_CANT_BE_NULL(var);
 
 	Mon_AstExp* ret = Mon_Alloc(sizeof(Mon_AstExp));
 	if (ret == NULL) {
@@ -135,7 +135,7 @@ Mon_AstExp* Mon_AstExpNewLiteral(Mon_Literal literal) {
 	}
 
 	if (literal.literalKind == MON_LIT_STR) {
-		assert(literal.string.arr != NULL);
+		MON_CANT_BE_NULL(literal.string.arr);
 
 		ret->exp.literalExpr.string.arr = DuplicateString(literal.string.arr, literal.string.len);
 		if (ret->exp.literalExpr.string.arr == NULL) {
@@ -215,7 +215,7 @@ void Mon_AstExpDestroy(Mon_AstExp* node, bool rec) {
 			break;
 		
 		default:
-			assert(false);
+			MON_ASSERT(false, "Unimplemented exp kind. (got %d)", (int)exp.expKind);
 			break;
 	}
 }

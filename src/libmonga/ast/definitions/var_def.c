@@ -1,6 +1,6 @@
 #include "ast/definitions/mon_var_def.h"
 
-#include <assert.h>
+#include <mon_debug.h>
 #include "mon_alloc.h"
 #include "../../strutils.h"
 
@@ -9,8 +9,8 @@ Mon_AstVarDef* Mon_AstVarDefNew(const char* varName,
                              const char* typeName,
                              size_t typeNameLen) {
 
-    assert(varName != NULL);
-    assert(typeName != NULL);
+    MON_CANT_BE_NULL(varName);
+    MON_CANT_BE_NULL(typeName);
 
     Mon_AstVarDef* ret = Mon_Alloc(sizeof(Mon_AstVarDef));
 

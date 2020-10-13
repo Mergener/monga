@@ -1,12 +1,12 @@
 #include "strutils.h"
 
 #include <string.h>
-#include <assert.h>
+#include <mon_debug.h>
 
 #include "mon_alloc.h"
 
 char* DuplicateString(const char* s, size_t len) {
-    assert(s != NULL);
+    MON_CANT_BE_NULL(s);
 
     char* ret = Mon_Alloc(sizeof(char) * len + sizeof(char));
     if (ret == NULL) {
