@@ -72,12 +72,11 @@ MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorPush(Mon_Vector* vector, const void* o
 /**
  * 	Pops an element from a vector.
  * 
- * 	@param vector The vector to pop from.
+ * 	@param vector The non-empty vector to pop from.
  * 	@param ret Pointer to return the popped value to.
  * 
  *	@return One of the following:
  *		MON_SUCCESS :: Element popped succesfully.
- *		MON_ERR_EMPTY_COLLECTION :: The vector was empty.
  */ 
 MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorRemove(Mon_Vector* vector, int index);
 
