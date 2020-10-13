@@ -30,3 +30,8 @@ cd ../monga
 
 mkdir debug
 mkdir release
+
+cd ../../../
+
+./buildexec
+./buildtests

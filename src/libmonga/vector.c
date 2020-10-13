@@ -87,12 +87,6 @@ Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
     return MON_SUCCESS;
 }
 
-int Mon_VectorGetCount(const Mon_Vector* vector) {
-    MON_CANT_BE_NULL(vector);
-    
-    return vector->_count;
-}
-
 bool Mon_VectorEmpty(const Mon_Vector* vector) {
     return vector == NULL || vector->_count == 0;
 }

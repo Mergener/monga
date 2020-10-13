@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "mon_debug.h"
+
 typedef struct {
 
     const char* testName;

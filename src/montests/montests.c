@@ -23,16 +23,6 @@ static int s_PassedCount = 0;
 /** True if an assertion failed in the last test. */
 static bool s_LastFailed = false;
 
-static struct {
-
-    const char* fileName;
-    const char* funcName;
-    int line;
-    bool hasMsg;
-    char msgBuf[512];
-
-} s_LastAssertionError;
-
 void RunTest(const Test* test) {
     s_TestCount++;
 
@@ -40,12 +30,7 @@ void RunTest(const Test* test) {
 
     test->testFunc();
     if (s_LastFailed) {
-        printf("Test %s: %s\n", test->testName, "FAILED");
-        printf("Failed assertion data:\n");
-        printf("\tFile: %s\n", s_LastAssertionError.fileName);
-        printf("\tLine: %d\n", s_LastAssertionError.line);
-        printf("\tFunction: %s\n", s_LastAssertionError.funcName);
-        printf("\tMessage: \"%s\"\n", s_LastAssertionError.msgBuf);
+        printf("Test %s: %s\n", test->testName, "FAILED (view assertion data above)");
     } else {
         printf("Test %s: %s\n", test->testName, "PASSED");
         s_PassedCount++;
@@ -65,16 +50,19 @@ static void AssertError(const char* fileName,
                         const char* msgFmt,
                         va_list msgArgs) {
     s_LastFailed = true;
-    s_LastAssertionError.fileName = fileName;
-    s_LastAssertionError.funcName = funcName;
-    s_LastAssertionError.line = line;
+
+    printf("\n*** ASSERTION FAILED ***\n*\n");
+    printf("* File: %s\n", fileName);
+    printf("* Line: %d\n", line);
+    printf("* Function: %s\n", funcName);
 
     if (msgFmt != NULL) {
-        vsnprintf(s_LastAssertionError.msgBuf, sizeof(s_LastAssertionError.msgBuf), msgFmt, msgArgs);
-        s_LastAssertionError.hasMsg = true;
-    } else {
-        s_LastAssertionError.hasMsg = false;
+        printf("* Message: \"");
+        vprintf(msgFmt, msgArgs);
+        printf("\"\n");
     }
+
+    printf("*\n************\n\n");
 }
 
 typedef struct AllocNode_ {
@@ -220,7 +208,7 @@ static void Setup() {
 }
 
 int main() {
-    printf("*** Starting Monga unit tests. ***\n\n");
+    printf("*** Starting Libmonga unit tests. ***\n\n");
 
     Setup();
 
@@ -228,7 +216,8 @@ int main() {
     RunVectorTests();
     ///
 
-    printf("\n*** Monga unit tests finished. (%d of %d passed) ***\n", s_PassedCount, s_TestCount);
+    printf("\n*** Libmonga unit tests finished. (%d of %d passed) ***\n", s_PassedCount, s_TestCount);
 
+    // Returns the number of failed tests.
     return s_TestCount - s_PassedCount;
 }

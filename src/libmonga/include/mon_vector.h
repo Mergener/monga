@@ -82,15 +82,6 @@ MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorPush(Mon_Vector* vector, const void* o
 MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorRemove(Mon_Vector* vector, int index);
 
 /**
- * 	Gets the number of elements in a vector.
- * 
- * 	@param vector The vector.
- * 
- *	@return The number of elements in the specified vector.
- */ 
-MON_PUBLIC int MON_CALL Mon_VectorGetCount(const Mon_Vector* vector);
-
-/**
  * 	Checks whether a vector is empty.
  * 
  * 	@param vector The vector.
