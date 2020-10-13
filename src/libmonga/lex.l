@@ -40,17 +40,17 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 "&&"             { return MON_TK_OP_AND; }
 "||"             { return MON_TK_OP_OR; }
 
-\"([^\\\"]|\\.)*\" {
-    yylval.literal.string.len = yyleng - 2;
-    yylval.literal.string.arr = DuplicateString(&yytext[1], yylval.literal.string.len);
-
-    return MON_TK_LIT_STRING;
-}
-
 [a-zA-Z_][a-zA-Z_0-9]* {
     yylval = MakeIdentifier(yytext, yyleng);
 
     return MON_TK_IDENTIFIER;
+}
+
+[0-9]+(\.[0-9]+) {
+    yylval.literal.real = strtof(yytext, NULL);
+    yylval.literal.literalKind = MON_LIT_FLOAT;
+
+    return MON_TK_LIT_FLOAT;
 }
 
 [0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+ {
@@ -70,11 +70,6 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 0x[0-9a-fA-F]+ {
     yylval.literal.integer = strtol(yytext, NULL, 16);
     return MON_TK_LIT_INT;
-}
-
-[0-9]+(\.[0-9]+) {
-    yylval.literal.real = strtof(yytext, NULL);
-    return MON_TK_LIT_FLOAT;
 }
 
 . {
