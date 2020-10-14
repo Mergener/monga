@@ -8,6 +8,8 @@ chmod +x buildall
 chmod +x buildtests
 chmod +x testall
 
+mkdir logs
+mkdir logs/tests
 mkdir bin
 
 cd bin

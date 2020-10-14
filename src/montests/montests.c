@@ -11,6 +11,7 @@
 // Test files:
 
 #include "vectortests.c"
+#include "asttests.c"
 
 ///
 
@@ -98,6 +99,7 @@ static AllocNode** PrevNodeNext(void* mem) {
         if (it->next == memNode) {
             return &it->next;
         }
+        it = it->next;
     }
 
     return NULL;
@@ -143,6 +145,8 @@ static void* Alloc(size_t s) {
 
     void* ret = (void*)&node[1];
 
+    Logf("[Memory] %ld bytes allocated at %p.\n", (long)s, ret);
+
     return ret;
 }
 
@@ -172,8 +176,12 @@ static void FreeAlloc(void* mem) {
     AllocNode* memNode = MEM_TO_NODE(mem);
     *prevNext = memNode->next;
 
+    size_t size = memNode->size;
+
     free(memNode);
     s_AllocCount--;
+
+    Logf("[Memory] %ld bytes freed at %p.\n", (long)size, mem);
 }
 
 static void* ReAlloc(void* src, size_t newSize) {
@@ -193,7 +201,25 @@ static void* ReAlloc(void* src, size_t newSize) {
 #undef MEM_TO_NODE
 #undef NODE_TO_MEM
 
-static void Setup() {
+FILE* g_LogFileStream = NULL;
+
+void Logf(const char* fmt, ...) {
+    if (g_LogFileStream == NULL) {
+        // Maybe it would be a better idea to print to stdout instead
+        // of doing nothing, but that would pollute assertion results and
+        // passed/failed test outputs.
+        return;
+    }
+
+    va_list args;
+    va_start(args, fmt);
+
+    vfprintf(g_LogFileStream, fmt, args);
+
+    va_end(args);
+}
+
+static void Setup(const char* logFilePath) {
     // Set custom assertion handler
     Mon_SetAssertErrProc(AssertError);
 
@@ -205,18 +231,53 @@ static void Setup() {
     allocator.realloc = ReAlloc;
 
     Mon_SetAllocator(allocator);
+
+    // Open log file
+    if (logFilePath != NULL) {
+        g_LogFileStream = fopen(logFilePath, "w");
+        if (g_LogFileStream == NULL) {
+            fprintf(stderr, "Couldn't open log file.\n");
+        }
+    }
 }
 
-int main() {
+static bool s_HasCleanedUp = false;
+
+static void Cleanup() {
+    if (s_HasCleanedUp) {
+        return;
+    }
+
+    s_HasCleanedUp = true;
+
+    if (g_LogFileStream != NULL) {
+        fclose(g_LogFileStream);
+    }
+}
+
+int main(int argc, char* argv[]) {
     printf("*** Starting Libmonga unit tests. ***\n\n");
 
-    Setup();
+    atexit(Cleanup);
+
+    const char* logFilePath;
+
+    if (argc >= 2) {
+        logFilePath = argv[1];
+    } else {
+        logFilePath = NULL;
+    }
+
+    Setup(logFilePath);
 
     // Tests:
     RunVectorTests();
+    RunASTTests();
     ///
 
     printf("\n*** Libmonga unit tests finished. (%d of %d passed) ***\n", s_PassedCount, s_TestCount);
+
+    Cleanup();
 
     // Returns the number of failed tests.
     return s_TestCount - s_PassedCount;

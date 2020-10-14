@@ -89,4 +89,6 @@ void Mon_AstVarDestroy(Mon_AstVar* node, bool rec) {
             MON_ASSERT(false, "Unimplemented varKind. (got %d)", (int)node->varKind);
             break;
     }
+
+    Mon_Free(node);
 }

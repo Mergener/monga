@@ -1,5 +1,6 @@
 #include "ast/mon_definition.h"
 
+#include "mon_debug.h"
 #include "mon_alloc.h"
 
 static Mon_AstDef* MakeDefNode(void* defPtr, Mon_AstDefKind defKind) { 
@@ -44,6 +45,10 @@ void Mon_AstDefDestroy(Mon_AstDef* def, bool rec) {
 
             case MON_AST_DEF_TYPE:
                 Mon_AstTypeDefDestroy(def->definition.type, true);
+                break;
+
+            default:
+                MON_ASSERT(false, "Unimplemented defKind. (got %d)", (int)def->defKind);
                 break;
         }
     }

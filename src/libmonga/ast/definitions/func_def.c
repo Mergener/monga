@@ -55,9 +55,12 @@ void Mon_AstFuncDefDestroy(Mon_AstFuncDef* funcDef, bool rec) {
         MON_VECTOR_FOREACH(&funcDef->parameters, Mon_AstParam*, el,
             Mon_AstParamDestroy(el);
         );
+        Mon_AstBlockDestroy(funcDef->body, true);
     }
 
     Mon_VectorFinalize(&funcDef->parameters);
+    
+    Mon_Free(funcDef->funcRetTypeName);
     Mon_Free(funcDef->funcName);
     Mon_Free(funcDef);
 }

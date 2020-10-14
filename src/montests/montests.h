@@ -2,6 +2,7 @@
 #define MONTESTS_H
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "mon_debug.h"
 
@@ -11,6 +12,8 @@ typedef struct {
     void (*testFunc)();
 
 } Test;
+
+extern FILE* g_LogFileStream;
 
 /** 
  *     Runs a test, incrementing test counters. 
@@ -31,5 +34,10 @@ int GetAllocCount();
  *  Returns true if the specified pointer is currently allocated.
  */
 bool IsAllocated(void* mem);
+
+/**
+ *  Outputs data to a log file.
+ */
+void Logf(const char* fmt, ...);
 
 #endif // MONTESTS_H
