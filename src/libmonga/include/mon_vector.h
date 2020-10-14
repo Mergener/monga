@@ -9,8 +9,9 @@
 
 #define MON_VECTOR_FOREACH(vector, type, el, block) \
     {\
-        const void** vector_begin_it_ = (vector)->_arr;\
-        const void** vector_end_it_ = (vector)->_arr + (vector)->_count;\
+        const Mon_Vector* const target_vector_ = (vector); \
+        const void** vector_begin_it_ = (target_vector_)->_arr;\
+        const void** vector_end_it_ = (target_vector_)->_arr + (target_vector_)->_count;\
         for (const void** it = vector_begin_it_; it != vector_end_it_; ++it) { \
             type el = (type)*it;\
             block \
