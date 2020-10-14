@@ -271,7 +271,7 @@ field_defs:
         DumpReduce("field_defs r2");
 
         $$ = $1;
-        ADD_TO_VECTOR($1, $2);
+        ADD_TO_VECTOR($$, $2);
     }
 ;
 
@@ -399,6 +399,10 @@ statement:
 
     | '@' exp ';' {
         DumpReduce("block r6");
+
+        $$ = Mon_AstStatementNewEcho($2);
+
+        THROW_IF_ALLOC_FAIL($$);
     }
 
     | block {

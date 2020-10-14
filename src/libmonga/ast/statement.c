@@ -20,6 +20,19 @@ Mon_AstStatement* Mon_AstStatementNewCall(Mon_AstCall* call) {
     return ret;
 }
 
+Mon_AstStatement* Mon_AstStatementNewEcho(Mon_AstExp* echoExp) {
+    MON_CANT_BE_NULL(echoExp);
+
+    Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
+    if (ret == NULL) {
+        return NULL;
+    }
+
+    ret->statementKind = MON_STMT_ECHO;
+    ret->statement.echo.echoedExp = echoExp;
+
+    return ret;
+}
 
 Mon_AstStatement* Mon_AstStatementNewBlock(Mon_AstBlock* block) {
     MON_CANT_BE_NULL(block);
@@ -35,7 +48,6 @@ Mon_AstStatement* Mon_AstStatementNewBlock(Mon_AstBlock* block) {
     return ret;
 }
 
-
 Mon_AstStatement* Mon_AstStatementNewWhile(Mon_AstCond* condition, Mon_AstBlock* block) {
     MON_CANT_BE_NULL(condition);
 
@@ -50,7 +62,6 @@ Mon_AstStatement* Mon_AstStatementNewWhile(Mon_AstCond* condition, Mon_AstBlock*
 
     return ret;
 }
-
 
 Mon_AstStatement* Mon_AstStatementNewIf(Mon_AstCond* condition, Mon_AstBlock* thenBlock, Mon_AstBlock* elseBlock) {
     MON_CANT_BE_NULL(condition);
@@ -68,7 +79,6 @@ Mon_AstStatement* Mon_AstStatementNewIf(Mon_AstCond* condition, Mon_AstBlock* th
     return ret;
 }
 
-
 Mon_AstStatement* Mon_AstStatementNewReturn(Mon_AstExp* retExp) {
     Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
     if (ret == NULL) {
@@ -80,7 +90,6 @@ Mon_AstStatement* Mon_AstStatementNewReturn(Mon_AstExp* retExp) {
 
     return ret;
 }
-
 
 Mon_AstStatement* Mon_AstStatementNewAssignment(Mon_AstVar* lvalue, Mon_AstExp* rvalue) {
     MON_CANT_BE_NULL(lvalue);
@@ -97,7 +106,6 @@ Mon_AstStatement* Mon_AstStatementNewAssignment(Mon_AstVar* lvalue, Mon_AstExp* 
 
     return ret;
 }
-
 
 void Mon_AstStatementDestroy(Mon_AstStatement* node, bool rec) {
     if (node == NULL) {
@@ -132,6 +140,10 @@ void Mon_AstStatementDestroy(Mon_AstStatement* node, bool rec) {
 
             case MON_STMT_BLOCK:
                 Mon_AstBlockDestroy(node->statement.block, true);
+                break;
+
+            case MON_STMT_ECHO:
+                Mon_AstExpDestroy(node->statement.echo.echoedExp, true);
                 break;
 
             default:

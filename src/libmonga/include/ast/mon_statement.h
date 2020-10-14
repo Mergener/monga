@@ -18,7 +18,8 @@ typedef enum {
     MON_STMT_ASSIGNMENT,
     MON_STMT_RETURN,
     MON_STMT_CALL,
-    MON_STMT_BLOCK
+    MON_STMT_BLOCK,
+    MON_STMT_ECHO
 
 } Mon_StmtKind;
 
@@ -50,6 +51,12 @@ typedef struct {
 
 } Mon_StmtAssignment;
 
+typedef struct {
+
+    Mon_AstExp* echoedExp;
+
+} Mon_StmtEcho;
+
 typedef struct Mon_AstStatement_ {
 
     Mon_StmtKind statementKind;
@@ -70,6 +77,8 @@ typedef struct Mon_AstStatement_ {
         /** Available if statementKind == MON_STMT_CALL */
         Mon_AstCall* call;
 
+        Mon_StmtEcho echo;
+
         /** Available if statementKind == MON_STMT_BLOCK */
         Mon_AstBlock* block;
 
@@ -78,6 +87,7 @@ typedef struct Mon_AstStatement_ {
 } Mon_AstStatement;
 
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewCall(Mon_AstCall* call);
+MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewEcho(Mon_AstExp* echoExp);
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewBlock(Mon_AstBlock* block);
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewWhile(Mon_AstCond* condition, Mon_AstBlock* block);
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewIf(Mon_AstCond* condition, Mon_AstBlock* thenBlock, Mon_AstBlock* elseBlock);

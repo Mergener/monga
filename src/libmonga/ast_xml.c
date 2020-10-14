@@ -516,6 +516,16 @@ static void XmlDumpStatementNode(AstDumpContext* ctx, const Mon_AstStatement* st
             XmlDumpCallNode(ctx, stmt->statement.call);
             break;
 
+        case MON_STMT_ECHO:
+            DUMPF_OR_STOP(ctx, "<Echo>");
+            ctx->indentLevel++;
+
+            XmlDumpExpNode(ctx, stmt->statement.echo.echoedExp);
+
+            ctx->indentLevel--;
+            DUMPF_OR_STOP(ctx, "</Echo>");
+            break;
+
         case MON_STMT_BLOCK:
             DUMPF_OR_STOP(ctx, "<Block>");
             ctx->indentLevel++;
