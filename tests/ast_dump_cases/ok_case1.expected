@@ -13,18 +13,14 @@
 			</Parameter>
 		</Parameters>
 		<Block>
-			<Call>
-				<Callee>print</Callee>
-				<Parameters>
-					<Parameter>
-						<IntConstant>4</IntConstant>
-					</Parameter>
-				</Parameters>
-			</Call>
+			<Assignment>
+				<Var>a</Var>
+				<IntConstant>5</IntConstant>
+			</Assignment>
+			<Assignment>
+				<Var>a</Var>
+				<Var>a</Var>
+			</Assignment>
 		</Block>
 	</FunctionDefinition>
-	<VariableDeclaration>
-		<Name>test</Name>
-		<Type>int</Type>
-	</VariableDeclaration>
 </Module>

@@ -12,6 +12,10 @@
 						<Type>x</Type>
 						<Name>float</Name>
 					</Field>
+					<Field>
+						<Type>y</Type>
+						<Name>float</Name>
+					</Field>
 				</Fields>
 			</Record>
 		</TypeDesc>
@@ -46,6 +50,16 @@
 				<Name>x</Name>
 				<Type>int</Type>
 			</VariableDeclaration>
+			<Echo>
+				<Addition>
+					<OperandA>
+						<Var>x</Var>
+					</OperandA>
+					<OperandB>
+						<IntConstant>55</IntConstant>
+					</OperandB>
+				</Addition>
+			</Echo>
 			<While>
 				<Condition>
 					<Or>

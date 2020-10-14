@@ -1,5 +1,4 @@
 function hello(a : int, b : float) {
-	print(4);
+	a = 5;
+	a = a;
 }
-
-var test : int;
