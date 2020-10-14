@@ -25,17 +25,17 @@ typedef struct {
 } Mon_AstFuncDef;
 
 /**
- *	Constructs and returns a new function definition node.
+ *    Constructs and returns a new function definition node.
  *
- * 	@param funcName The function's name.
- * 	@param funcNameLen The function's name length (excluding the null termination byte)
+ *     @param funcName The function's name.
+ *     @param funcNameLen The function's name length (excluding the null termination byte)
  *  @param funcRetType The function's return type name. If NULL, the returned type will be set to 'void'.
  *  @param funcRetTypeLen The function's return type name length. Ignored if funcRetType is NULL.
- * 	@param params Vector of parameter node pointers.
+ *     @param params Vector of parameter node pointers.
  *  @param body The function's execution block node.
  * 
- * 	@return If succesful, the new function definition node. If allocation fails,
- * 	returns NULL.
+ *     @return If succesful, the new function definition node. If allocation fails,
+ *     returns NULL.
  */
 MON_PUBLIC Mon_AstFuncDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
                                                       size_t funcNameLen,
@@ -47,9 +47,9 @@ MON_PUBLIC Mon_AstFuncDef* MON_CALL Mon_AstFuncDefNew(const char* funcName,
 /**
  *  Destroys a function definition node, releasing its memory.
  * 
- *  @param def The definition node to be destroyed.	
- * 	@param rec If true, will also recursively destroy the entire parameter and
- * 	statements list.
+ *  @param def The definition node to be destroyed.    
+ *     @param rec If true, will also recursively destroy the entire parameter and
+ *     statements list.
  */
 MON_PUBLIC void MON_CALL Mon_AstFuncDefDestroy(Mon_AstFuncDef* funcDef, bool rec);
 

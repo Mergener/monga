@@ -44,7 +44,7 @@ void Mon_AstVarDefDestroy(Mon_AstVarDef* varDefNode) {
         return;
     }
 
-	Mon_Free(varDefNode->typeName);
-	Mon_Free(varDefNode->varName);
-	Mon_Free(varDefNode);
+    Mon_Free(varDefNode->typeName);
+    Mon_Free(varDefNode->varName);
+    Mon_Free(varDefNode);
 }

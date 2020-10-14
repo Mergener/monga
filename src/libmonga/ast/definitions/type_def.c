@@ -13,7 +13,7 @@ Mon_AstTypeDef* Mon_AstTypeDefNew(const char* name,
     MON_CANT_BE_NULL(name);
     MON_CANT_BE_NULL(typeDesc);
 
-	Mon_AstTypeDef* ret = Mon_Alloc(sizeof(Mon_AstTypeDef));
+    Mon_AstTypeDef* ret = Mon_Alloc(sizeof(Mon_AstTypeDef));
 
     if (ret == NULL) {
         return NULL;
@@ -38,8 +38,8 @@ void Mon_AstTypeDefDestroy(Mon_AstTypeDef* def, bool rec) {
 
     Mon_AstTypeDef defVal = *def;
 
-	Mon_Free(def->typeName);
-	Mon_Free(def);
+    Mon_Free(def->typeName);
+    Mon_Free(def);
 
     if (rec) {
         Mon_AstTypeDescDestroy(defVal.typeDesc, true);

@@ -10,9 +10,9 @@
 extern FILE* yyin;
 
 /**
- *	The user provided AST object to be filled.
- *	
- *	Set by Mon_Parse procedure.
+ *    The user provided AST object to be filled.
+ *    
+ *    Set by Mon_Parse procedure.
  */
 Mon_Ast* mon_TargetAst;
 

@@ -704,7 +704,7 @@ static void XmlDumpDefNode(AstDumpContext* ctx, const Mon_AstDef* defNode) {
             break;
 
         case MON_AST_DEF_VAR:
-            XmlDumpVarDefNode(ctx, defNode->definition.variable);			
+            XmlDumpVarDefNode(ctx, defNode->definition.variable);            
             break;
 
         case MON_AST_DEF_TYPE:

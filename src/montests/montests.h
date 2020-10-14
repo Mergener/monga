@@ -13,12 +13,12 @@ typedef struct {
 } Test;
 
 /** 
- * 	Runs a test, incrementing test counters. 
+ *     Runs a test, incrementing test counters. 
  */
 void RunTest(const Test* test);
 
 /**
- *	Runs an array of tests.
+ *    Runs an array of tests.
  */
 void RunTests(const Test* testList, int count);
 

@@ -7,7 +7,7 @@
 
 Mon_AstCond* Mon_AstCondNewBin(Mon_AstCond* l, Mon_AstCond* r, Mon_BinCondKind condKind) {
     MON_CANT_BE_NULL(l);
-    MON_CANT_BE_NULL(r);	
+    MON_CANT_BE_NULL(r);    
 
     Mon_AstCond* ret = Mon_Alloc(sizeof(*ret));
     if (ret == NULL) {
@@ -25,7 +25,7 @@ Mon_AstCond* Mon_AstCondNewBin(Mon_AstCond* l, Mon_AstCond* r, Mon_BinCondKind c
 
 Mon_AstCond* Mon_AstCondNewCompar(Mon_AstExp* l, Mon_AstExp* r, Mon_ComparKind comparKind) {
     MON_CANT_BE_NULL(l);
-    MON_CANT_BE_NULL(r);	
+    MON_CANT_BE_NULL(r);    
 
     Mon_AstCond* ret = Mon_Alloc(sizeof(*ret));
     if (ret == NULL) {

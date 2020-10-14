@@ -20,14 +20,14 @@ typedef struct Mon_AstTypeDef_ {
 } Mon_AstTypeDef;
 
 /**
- *	Constructs and returns a new type definition node.
+ *    Constructs and returns a new type definition node.
  *
- * 	@param name The function's name.
- * 	@param nameLen The function's name length (excluding the null termination byte)
+ *     @param name The function's name.
+ *     @param nameLen The function's name length (excluding the null termination byte)
  *  @param typeDesc The type descriptor node.
  * 
- * 	@return If succesful, the new type definition node. If allocation fails,
- * 	returns NULL.
+ *     @return If succesful, the new type definition node. If allocation fails,
+ *     returns NULL.
  */
 MON_PUBLIC Mon_AstTypeDef* MON_CALL Mon_AstTypeDefNew(const char* name,
                                                       size_t nameLen,

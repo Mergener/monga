@@ -5,25 +5,25 @@
 
 typedef enum {
 
-	MON_LIT_STR,
-	MON_LIT_FLOAT,
-	MON_LIT_INT
+    MON_LIT_STR,
+    MON_LIT_FLOAT,
+    MON_LIT_INT
 
 } Mon_LiteralKind;
 
 typedef struct {
 
-	Mon_LiteralKind literalKind;
+    Mon_LiteralKind literalKind;
 
-	union {
-		struct {
-			char*  arr;
-			size_t len;
-		} string;
+    union {
+        struct {
+            char*  arr;
+            size_t len;
+        } string;
 
-		double real;
-		long integer;
-	};
+        double real;
+        long integer;
+    };
 
 } Mon_Literal;
 

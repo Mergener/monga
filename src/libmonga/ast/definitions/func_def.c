@@ -51,13 +51,13 @@ void Mon_AstFuncDefDestroy(Mon_AstFuncDef* funcDef, bool rec) {
         return;
     }
 
-	if (rec) {
-		MON_VECTOR_FOREACH(&funcDef->parameters, Mon_AstParam*, el,
+    if (rec) {
+        MON_VECTOR_FOREACH(&funcDef->parameters, Mon_AstParam*, el,
             Mon_AstParamDestroy(el);
         );
-	}
+    }
 
     Mon_VectorFinalize(&funcDef->parameters);
-	Mon_Free(funcDef->funcName);
-	Mon_Free(funcDef);
+    Mon_Free(funcDef->funcName);
+    Mon_Free(funcDef);
 }

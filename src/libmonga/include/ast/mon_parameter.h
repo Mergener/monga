@@ -22,14 +22,14 @@ typedef struct Mon_AstParam_ {
 } Mon_AstParam;
 
 /**
- *	Creates a new parameter declaration node.
+ *    Creates a new parameter declaration node.
  *
- * 	@param name The parameter name.
- * 	@param nameLen The parameter name length.
+ *     @param name The parameter name.
+ *     @param nameLen The parameter name length.
  *  @param typeName The parameter type name.
  *  @param typeNameLen The parameter type name length.
  * 
- * 	@return The parameter node or NULL if allocation fails.
+ *     @return The parameter node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstParam* MON_CALL Mon_AstParamNew(const char* name,
                                                   size_t nameLen,
@@ -37,9 +37,9 @@ MON_PUBLIC Mon_AstParam* MON_CALL Mon_AstParamNew(const char* name,
                                                   size_t typeNameLen);
 
 /**
- *	Destroys a parameter node, releasing its memory.
+ *    Destroys a parameter node, releasing its memory.
  *
- * 	@param param The node to be destroyed.
+ *     @param param The node to be destroyed.
  */ 
 MON_PUBLIC void MON_CALL Mon_AstParamDestroy(Mon_AstParam* param);
 

@@ -214,7 +214,7 @@ static void Run(const struct ProgramArgs* args) {
 }
 
 //
-//	Custom allocator functions:
+//    Custom allocator functions:
 //
 
 static void* Alloc(size_t s) {
@@ -263,9 +263,9 @@ int main(int argc, char* argv[]) {
     }
 
     //
-    //	Since we don't want to be manually handling memory failures in this batch
-    //	executable, we can create an allocator that simply exits the program in case
-    //	any allocation fails.
+    //    Since we don't want to be manually handling memory failures in this batch
+    //    executable, we can create an allocator that simply exits the program in case
+    //    any allocation fails.
     //
 
     Mon_Allocator allocator;
