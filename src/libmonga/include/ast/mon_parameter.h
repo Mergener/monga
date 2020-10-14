@@ -8,7 +8,10 @@
 
 C_LINKAGE_BEGIN
 
-/** A parameter node. Can be chained to other parameters. */
+/** 
+ *  A parameter declaration node. Not to be confused with parameters that
+ *  are passed to function calls; those are expression nodes.
+ */
 typedef struct Mon_AstParam_ {
 
     char*  name;
@@ -18,6 +21,16 @@ typedef struct Mon_AstParam_ {
 
 } Mon_AstParam;
 
+/**
+ *	Creates a new parameter declaration node.
+ *
+ * 	@param name The parameter name.
+ * 	@param nameLen The parameter name length.
+ *  @param typeName The parameter type name.
+ *  @param typeNameLen The parameter type name length.
+ * 
+ * 	@return The parameter node or NULL if allocation fails.
+ */
 MON_PUBLIC Mon_AstParam* MON_CALL Mon_AstParamNew(const char* name,
                                                   size_t nameLen,
                                                   const char* typeName,

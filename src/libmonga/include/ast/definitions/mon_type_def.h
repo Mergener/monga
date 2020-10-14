@@ -24,6 +24,7 @@ typedef struct Mon_AstTypeDef_ {
  *
  * 	@param name The function's name.
  * 	@param nameLen The function's name length (excluding the null termination byte)
+ *  @param typeDesc The type descriptor node.
  * 
  * 	@return If succesful, the new type definition node. If allocation fails,
  * 	returns NULL.
@@ -34,6 +35,7 @@ MON_PUBLIC Mon_AstTypeDef* MON_CALL Mon_AstTypeDefNew(const char* name,
 
 /**
  *  Destroys a type definition node, releasing its memory.
+ *  Does nothing if the specified node is NULL.
  * 
  *  @param def The definition node to be destroyed.
  */

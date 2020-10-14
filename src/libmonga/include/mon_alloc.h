@@ -33,7 +33,7 @@ typedef struct {
  * 
  * 	@remarks It is thoroughly advised not to change Monga's allocator once any allocations
  * 	have been made (they can be made from within any Monga procedure), since calls to Mon_Free
- * 	will be made to objects allocated with the previous allocator.
+ * 	might (and most likely will) be made to objects allocated with the previous allocator.
  */ 
 MON_PUBLIC bool  MON_CALL Mon_SetAllocator(Mon_Allocator allocator);
 MON_PUBLIC void* MON_CALL Mon_Alloc(size_t s);

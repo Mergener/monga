@@ -26,24 +26,33 @@ typedef enum {
 
 typedef struct Mon_AstDef_ {
 
+    /** This node definition kind. Indicates what is this definition node is actually defining. */
+    Mon_AstDefKind defKind;
+
     union {
 
-        /** Available if defKind == MON_AST_DEF_VAR */
+        /** 
+         *  A variable declaration node.
+         *  Available if defKind == MON_AST_DEF_VAR 
+         */
         Mon_AstVarDef* variable;
 
-        /** Available if defKind == MON_AST_DEF_FUNC */
+        /** 
+         *  A function declaration and implementation node.
+         *  Available if defKind == MON_AST_DEF_FUNC
+         */
         Mon_AstFuncDef* function;
 
-        /** Available if defKind == MON_AST_DEF_TYPE */
+        /** 
+         *  A type declaration node.
+         *  Available if defKind == MON_AST_DEF_TYPE
+         */
         Mon_AstTypeDef* type;
 
         /** Generic pointer handle to the definition node. */
         void* ptr;
 
     } definition;
-
-    /** This node definition kind. Indicates what is this definition node is actually defining. */
-    Mon_AstDefKind defKind;
 
 } Mon_AstDef;
 
@@ -81,8 +90,7 @@ MON_PUBLIC Mon_AstDef* MON_CALL Mon_AstDefNewType(Mon_AstTypeDef* typeDef);
  *  Destroys a definition node, releasing its memory.
  * 
  *  @param def The definition node to be destroyed.
- *  @param rec If true, all the definition nodes in the definition chain will be destroyed,
- *  as well as any AST nodes in the def's subtree. If false, only def's own resources are deallocated.
+ *  @param rec If true, destroys all subtrees being referenced by this definition node.
  */
 MON_PUBLIC void MON_CALL Mon_AstDefDestroy(Mon_AstDef* def, bool rec);
 

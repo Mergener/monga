@@ -11,7 +11,10 @@ typedef struct Mon_AstVarDef_ Mon_AstVarDef;
 
 typedef struct Mon_AstBlock_ {
 
+	/** Stores pointers to all variables (Mon_AstVarDef*) declared within this block. */
 	Mon_Vector	varDefs;
+
+	/** Stores pointers to all statements (Mon_AstVarStatement*) within this block. */
 	Mon_Vector	statements;
 
 } Mon_AstBlock;

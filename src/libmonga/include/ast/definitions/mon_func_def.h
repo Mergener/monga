@@ -32,6 +32,7 @@ typedef struct {
  *  @param funcRetType The function's return type name. If NULL, the returned type will be set to 'void'.
  *  @param funcRetTypeLen The function's return type name length. Ignored if funcRetType is NULL.
  * 	@param params Vector of parameter node pointers.
+ *  @param body The function's execution block node.
  * 
  * 	@return If succesful, the new function definition node. If allocation fails,
  * 	returns NULL.
