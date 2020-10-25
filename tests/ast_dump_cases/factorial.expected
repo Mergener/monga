@@ -28,7 +28,9 @@
 			<While>
 				<Condition>
 					<GreaterThan>
-						<Var>x</Var>
+						<ExpVar>
+							<Var>x</Var>
+						</ExpVar>
 						<IntConstant>1</IntConstant>
 					</GreaterThan>
 				</Condition>
@@ -37,10 +39,14 @@
 						<Var>n</Var>
 						<Multiplication>
 							<OperandA>
-								<Var>n</Var>
+								<ExpVar>
+									<Var>n</Var>
+								</ExpVar>
 							</OperandA>
 							<OperandB>
-								<Var>x</Var>
+								<ExpVar>
+									<Var>x</Var>
+								</ExpVar>
 							</OperandB>
 						</Multiplication>
 					</Assignment>
@@ -48,7 +54,9 @@
 						<Var>x</Var>
 						<Subtraction>
 							<OperandA>
-								<Var>x</Var>
+								<ExpVar>
+									<Var>x</Var>
+								</ExpVar>
 							</OperandA>
 							<OperandB>
 								<IntConstant>1</IntConstant>
@@ -58,7 +66,9 @@
 				</Do>
 			</While>
 			<Return>
-				<Var>n</Var>
+				<ExpVar>
+					<Var>n</Var>
+				</ExpVar>
 			</Return>
 		</Block>
 	</FunctionDefinition>

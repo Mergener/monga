@@ -53,7 +53,9 @@
 			<Echo>
 				<Addition>
 					<OperandA>
-						<Var>x</Var>
+						<ExpVar>
+							<Var>x</Var>
+						</ExpVar>
 					</OperandA>
 					<OperandB>
 						<IntConstant>55</IntConstant>
@@ -65,7 +67,9 @@
 					<Or>
 						<Condition>
 							<LessThan>
-								<Var>a</Var>
+								<ExpVar>
+									<Var>a</Var>
+								</ExpVar>
 								<IntConstant>5</IntConstant>
 							</LessThan>
 						</Condition>
@@ -73,13 +77,17 @@
 							<And>
 								<Condition>
 									<GreaterThan>
-										<Var>b</Var>
+										<ExpVar>
+											<Var>b</Var>
+										</ExpVar>
 										<IntConstant>6</IntConstant>
 									</GreaterThan>
 								</Condition>
 								<Condition>
 									<GreaterThan>
-										<Var>c</Var>
+										<ExpVar>
+											<Var>c</Var>
+										</ExpVar>
 										<IntConstant>12</IntConstant>
 									</GreaterThan>
 								</Condition>
@@ -96,7 +104,9 @@
 									<GreaterThan>
 										<Addition>
 											<OperandA>
-												<Var>c</Var>
+												<ExpVar>
+													<Var>c</Var>
+												</ExpVar>
 											</OperandA>
 											<OperandB>
 												<IntConstant>3</IntConstant>
@@ -146,7 +156,9 @@
 						<Var>b</Var>
 						<Multiplication>
 							<OperandA>
-								<Var>b</Var>
+								<ExpVar>
+									<Var>b</Var>
+								</ExpVar>
 							</OperandA>
 							<OperandB>
 								<IntConstant>80</IntConstant>
@@ -159,10 +171,14 @@
 							<OperandA>
 								<Multiplication>
 									<OperandA>
-										<Var>c</Var>
+										<ExpVar>
+											<Var>c</Var>
+										</ExpVar>
 									</OperandA>
 									<OperandB>
-										<Var>d</Var>
+										<ExpVar>
+											<Var>d</Var>
+										</ExpVar>
 									</OperandB>
 								</Multiplication>
 							</OperandA>
@@ -174,19 +190,25 @@
 					<Assignment>
 						<Field>
 							<AccessedExp>
-								<Indexed>
-									<IndexedExp>
-										<Field>
-											<AccessedExp>
-												<Var>r</Var>
-											</AccessedExp>
-											<FieldName>x</FieldName>
-										</Field>
-									</IndexedExp>
-									<IndexExp>
-										<IntConstant>2</IntConstant>
-									</IndexExp>
-								</Indexed>
+								<ExpVar>
+									<Indexed>
+										<IndexedExp>
+											<ExpVar>
+												<Field>
+													<AccessedExp>
+														<ExpVar>
+															<Var>r</Var>
+														</ExpVar>
+													</AccessedExp>
+													<FieldName>x</FieldName>
+												</Field>
+											</ExpVar>
+										</IndexedExp>
+										<IndexExp>
+											<IntConstant>2</IntConstant>
+										</IndexExp>
+									</Indexed>
+								</ExpVar>
 							</AccessedExp>
 							<FieldName>b</FieldName>
 						</Field>
@@ -195,7 +217,9 @@
 					<Assignment>
 						<Field>
 							<AccessedExp>
-								<Var>r</Var>
+								<ExpVar>
+									<Var>r</Var>
+								</ExpVar>
 							</AccessedExp>
 							<FieldName>y</FieldName>
 						</Field>
@@ -214,7 +238,9 @@
 								<IntConstant>33</IntConstant>
 							</OperandA>
 							<OperandB>
-								<Var>d</Var>
+								<ExpVar>
+									<Var>d</Var>
+								</ExpVar>
 							</OperandB>
 						</Multiplication>
 					</OperandB>

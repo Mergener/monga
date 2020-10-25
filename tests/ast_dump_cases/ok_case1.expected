@@ -19,7 +19,9 @@
 			</Assignment>
 			<Assignment>
 				<Var>a</Var>
-				<Var>a</Var>
+				<ExpVar>
+					<Var>a</Var>
+				</ExpVar>
 			</Assignment>
 		</Block>
 	</FunctionDefinition>
