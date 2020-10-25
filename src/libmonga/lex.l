@@ -12,6 +12,9 @@
 typedef YYSTYPE Mon_TkVal;
 extern Mon_TkVal yylval;
 
+int Mon_TkLine;
+int Mon_TkColumn;
+
 static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 
 %}
@@ -22,31 +25,94 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 
 %%
 
-[\t\n ]+ ;
+\n {
+    Mon_TkColumn = 1;
+    Mon_TkLine++;
+}
 
-"as"             { return MON_TK_AS; }
-"else"           { return MON_TK_ELSE; }
-"function"       { return MON_TK_FUNCTION; }
-"if"             { return MON_TK_IF; }
-"new"            { return MON_TK_NEW; }
-"type"           { return MON_TK_TYPE; }
-"var"            { return MON_TK_VAR; }
-"return"         { return MON_TK_RETURN; }
-"while"          { return MON_TK_WHILE; }
+[\t ]+ {
+    Mon_TkColumn += yyleng;
+}
 
-"=="             { return MON_TK_OP_EQ; }
-">="             { return MON_TK_OP_GE; }
-"<="             { return MON_TK_OP_LE; }
-"&&"             { return MON_TK_OP_AND; }
-"||"             { return MON_TK_OP_OR; }
+"as" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_AS;
+}
+
+"else" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_ELSE;
+}
+
+"function" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_FUNCTION;
+}
+
+"if" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_IF;
+}
+
+"new" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_NEW;
+}
+
+"type" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_TYPE;
+}
+
+"var" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_VAR;
+}
+
+"return" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_RETURN;
+}
+
+"while" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_WHILE;
+}
+
+"==" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_OP_EQ;
+}
+
+">=" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_OP_GE;
+}
+
+"<=" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_OP_LE;
+}
+
+"&&" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_OP_AND;
+}
+
+"||" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_OP_OR;
+}
 
 [a-zA-Z_][a-zA-Z_0-9]* {
+    Mon_TkColumn += yyleng;
     yylval = MakeIdentifier(yytext, yyleng);
 
     return MON_TK_IDENTIFIER;
 }
 
 [0-9]+(\.[0-9]+) {
+    Mon_TkColumn += yyleng;
     yylval.literal.real = strtof(yytext, NULL);
     yylval.literal.literalKind = MON_LIT_FLOAT;
 
@@ -54,6 +120,7 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 }
 
 [0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+ {
+    Mon_TkColumn += yyleng;
     yylval.literal.real = strtof(yytext, NULL);
     yylval.literal.literalKind = MON_LIT_FLOAT;
 
@@ -61,6 +128,7 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 }
 
 [0-9]+ {
+    Mon_TkColumn += yyleng;
     yylval.literal.integer = strtol(yytext, NULL, 10);
     yylval.literal.literalKind = MON_LIT_INT;
 
@@ -68,11 +136,13 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 }
 
 0x[0-9a-fA-F]+ {
+    Mon_TkColumn += yyleng;
     yylval.literal.integer = strtol(yytext, NULL, 16);
     return MON_TK_LIT_INT;
 }
 
 . {
+    Mon_TkColumn += yyleng;
     return *yytext;
 }
 

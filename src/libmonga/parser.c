@@ -6,13 +6,14 @@
 #include "grammar.tab.h"
 
 #include "mon_error.h"
+#include "lex_private.h"
 
 extern FILE* yyin;
 
 /**
- *    The user provided AST object to be filled.
- *    
- *    Set by Mon_Parse procedure.
+ *  The user provided AST object to be filled.
+ *  
+ *  Set by Mon_Parse procedure.
  */
 Mon_Ast* mon_TargetAst;
 
@@ -33,6 +34,8 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
     // Wait until an ongoing parsing is finished.
     while (s_Busy);
     s_Busy = true;
+
+    PrepareLex();
 
     Mon_Vector stack;
     if (Mon_VectorInit(&stack) != MON_SUCCESS) {

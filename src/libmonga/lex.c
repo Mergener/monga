@@ -1,4 +1,5 @@
 #include "mon_lex.h"
+#include "lex_private.h"
 
 #include <stdbool.h>
 #include <stdatomic.h>
@@ -7,6 +8,8 @@
 
 typedef YYSTYPE Mon_TkVal;
 extern Mon_TkVal yylval;
+extern int Mon_TkLine;
+extern int Mon_TkColumn;
 
 extern FILE* yyin;
 extern int yylex();
@@ -16,9 +19,20 @@ static char s_Ascii[512];
 
 static atomic_bool s_Busy = false;
 
+bool IsLexBusy() {
+    return s_Busy;
+}
+
+void PrepareLex() {
+    Mon_TkLine = 1;
+    Mon_TkColumn = 1;
+}
+
 void Mon_DumpLex(FILE* inputFile, FILE* outputFile) {
     while (s_Busy);
     s_Busy = true;
+
+    PrepareLex();
 
     yyin = inputFile;
 
