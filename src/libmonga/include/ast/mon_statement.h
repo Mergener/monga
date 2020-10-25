@@ -103,6 +103,8 @@ typedef struct {
  */
 typedef struct Mon_AstStatement_ {
 
+    Mon_AstNodeHeader header;
+
     Mon_StmtKind statementKind;
     union {
 
@@ -132,79 +134,79 @@ typedef struct Mon_AstStatement_ {
 } Mon_AstStatement;
 
 /**
- *    Creates a new call statement node.
+ *  Creates a new call statement node.
  *
- *     @param calL The call node being referred to.
+ *  @param calL The call node being referred to.
  * 
- *     @return The statement node or NULL if allocation fails.
+ *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewCall(Mon_AstCall* call);
 
 /**
- *    Creates a new echo statement node.
+ *  Creates a new echo statement node.
  *
- *     @param echoExp The expression to be echoed.
+ *  @param echoExp The expression to be echoed.
  * 
- *     @return The statement node or NULL if allocation fails.
+ *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewEcho(Mon_AstExp* echoExp);
 
 /**
- *    Creates a new execution block statement.
+ *  Creates a new execution block statement.
  *
- *     @param block The execution block.
+ *  @param block The execution block.
  * 
- *     @return The statement node or NULL if allocation fails.
+ *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewBlock(Mon_AstBlock* block);
 
 /**
- *    Creates a new while statement.
+ *  Creates a new while statement.
  *
- *     @param condition The 'while' condition.
- *     @param block The 'while' execution block.
+ *  @param condition The 'while' condition.
+ *  @param block The 'while' execution block.
  * 
- *     @return The statement node or NULL if allocation fails.
+ *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewWhile(Mon_AstCond* condition, Mon_AstBlock* block);
 
 /**
- *    Creates a new if statement.
+ *  Creates a new if statement.
  *
- *     @param condition The 'if' condition.
- *     @param thenBlock The 'then' execution block.
- *     @param elseBlock The 'else' execution block.
+ *  @param condition The 'if' condition.
+ *  @param thenBlock The 'then' execution block.
+ *  @param elseBlock The 'else' execution block.
  * 
- *     @return The statement node or NULL if allocation fails.
+ *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewIf(Mon_AstCond* condition, Mon_AstBlock* thenBlock, Mon_AstBlock* elseBlock);
 
 /**
- *    Creates a new return statement.
+ *  Creates a new return statement.
  *
- *     @param returnedExp The expression returned by the 'return'. May be NULL if no expression
+ *  @param returnedExp The expression returned by the 'return'. May be NULL if no expression
  *  is to be returned.
  * 
- *     @return The statement node or NULL if allocation fails.
+ *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewReturn(Mon_AstExp* returnedExp);
 
 /**
- *    Creates a new assignment statement.
+ *  Creates a new assignment statement.
  *
- *     @param lvalue The left-side of the assignment.
+ *  @param lvalue The left-side of the assignment.
  *  @param rvalue The right-side of the assignment.
  * 
- *     @return The statement node or NULL if allocation fails.
+ *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewAssignment(Mon_AstVar* lvalue, Mon_AstExp* rvalue);
 
 /**
- *    Destroys a statement node, releasing its memory.
- *    Does nothing if the specified node is NULL.
+ *  Destroys a statement node, releasing its memory.
+ *  Does nothing if the specified node is NULL.
  *
- *     @param node The node to be destroyed.
- *     @param rec If true, destroys all subtrees being referenced by the node.
+ *  @param node The node to be destroyed.
+ *  @param rec If true, destroys all subtrees being referenced by the node.
  */
 MON_PUBLIC void MON_CALL Mon_AstStatementDestroy(Mon_AstStatement* node, bool rec);
 

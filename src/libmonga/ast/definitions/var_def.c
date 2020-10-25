@@ -36,6 +36,8 @@ Mon_AstVarDef* Mon_AstVarDefNew(const char* varName,
     ret->typeName = allocTypeName;
     ret->typeNameLength = typeNameLen;
 
+    ret->semantic.type = NULL;
+
     return ret;
 }
 

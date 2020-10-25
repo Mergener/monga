@@ -41,7 +41,7 @@ typedef enum {
 } Mon_AstDumpFlags;
 
 /**
- *    Abstract syntax tree for a Monga language module.
+ *  Abstract syntax tree for a Monga language module.
  */
 typedef struct {
 
@@ -51,16 +51,16 @@ typedef struct {
 } Mon_Ast;
 
 /**
- *    Dumps an AST to a given output stream in a given format.
- *    
- *    @param ast The AST to dump.
- *    @param outputStream The stream to output the AST to.
- *    @param fmt The format to dump the AST.
- *    
- *    @return Any of the following:
- *        MON_SUCCESS :: Dumped succesfully.
- *        MON_ERR_IO :: An IO error occurred when dumping to the specified stream.
- *        MON_ERR_BAD_ARG :: Either ast was NULL, outputStream was NULL or fmt wasn't valid (part of the Mon_AstDumpFormat enumeration).
+ *  Dumps an AST to a given output stream in a given format.
+ *  
+ *  @param ast The AST to dump.
+ *  @param outputStream The stream to output the AST to.
+ *  @param fmt The format to dump the AST.
+ *  
+ *  @return Any of the following:
+ *   MON_SUCCESS :: Dumped succesfully.
+ *   MON_ERR_IO :: An IO error occurred when dumping to the specified stream.
+ *   MON_ERR_BAD_ARG :: Either ast was NULL, outputStream was NULL or fmt wasn't valid (part of the Mon_AstDumpFormat enumeration).
  *  
  */
 MON_PUBLIC Mon_RetCode MON_CALL Mon_DumpAst(const Mon_Ast* ast, 

@@ -43,6 +43,8 @@ Mon_AstFuncDef* Mon_AstFuncDefNew(const char* funcName,
     ret->parameters = params;
     ret->body = body;
 
+    ret->semantic.returnType = NULL;
+
     return ret;
 }
 

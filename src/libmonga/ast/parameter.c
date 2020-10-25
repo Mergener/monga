@@ -31,6 +31,8 @@ Mon_AstParam* Mon_AstParamNew(const char* name,
     ret->typeName = parTypeName;
     ret->typeNameLen = typeNameLen;
 
+    ret->semantic.type = NULL;
+
     return ret;
 }
 

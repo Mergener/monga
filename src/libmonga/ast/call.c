@@ -24,6 +24,8 @@ Mon_AstCall* Mon_AstCallNew(const char* funcName,
     ret->funcNameLen = funcNameLen;
     ret->parameterList = parameters;
 
+    ret->semantic.callee = NULL;
+
     return ret;
 }
 

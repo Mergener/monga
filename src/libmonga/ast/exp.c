@@ -9,6 +9,10 @@
 #include "ast/mon_call.h"
 #include "../strutils.h"
 
+static void InitializeExpSemantics(Mon_AstExp* exp) {
+    exp->semantic.type = NULL;
+}
+
 Mon_AstExp* Mon_AstExpNewBin(Mon_AstExp* l, Mon_AstExp* r, Mon_BinopKind kind) {
     MON_CANT_BE_NULL(l);
     MON_CANT_BE_NULL(r);
@@ -23,6 +27,8 @@ Mon_AstExp* Mon_AstExpNewBin(Mon_AstExp* l, Mon_AstExp* r, Mon_BinopKind kind) {
     ret->exp.binaryOperation.right = r;
     ret->exp.binaryOperation.binOpKind = kind;
 
+    InitializeExpSemantics(ret);
+
     return ret;
 }
 
@@ -36,6 +42,8 @@ Mon_AstExp* Mon_AstExpNewCall(Mon_AstCall* call) {
 
     ret->expKind = MON_EXP_CALL;
     ret->exp.callExpr = call;
+
+    InitializeExpSemantics(ret);
 
     return ret;
 }
@@ -57,6 +65,8 @@ Mon_AstExp* Mon_AstExpNewNew(const char* typeName, Mon_AstExp* arrSizeExp) {
     ret->expKind = MON_EXP_NEW;
     ret->exp.newExpr.arraySizeExp = arrSizeExp;
 
+    InitializeExpSemantics(ret);
+
     return ret;
 }
 
@@ -71,6 +81,8 @@ Mon_AstExp* Mon_AstExpNewUn(Mon_AstExp* operand, Mon_UnopKind unOpKind) {
     ret->expKind = MON_EXP_UNOP;
     ret->exp.unaryOperation.operand = operand;
     ret->exp.unaryOperation.unOpKind = unOpKind;
+
+    InitializeExpSemantics(ret);
 
     return ret;
 }
@@ -89,6 +101,8 @@ Mon_AstExp* Mon_AstExpNewCond(Mon_AstCond* cond, Mon_AstExp* thenExp, Mon_AstExp
     ret->exp.conditionalExpr.condition = cond;
     ret->exp.conditionalExpr.thenExpr = thenExp;
     ret->exp.conditionalExpr.elseExpr = elseExp;
+
+    InitializeExpSemantics(ret);
 
     return ret;
 }
@@ -111,6 +125,8 @@ Mon_AstExp* Mon_AstExpNewCast(Mon_AstExp* castee, const char* typeName) {
     ret->expKind = MON_EXP_CAST;
     ret->exp.castExpr.castee = castee;
 
+    InitializeExpSemantics(ret);
+
     return ret;
 }
 
@@ -124,6 +140,8 @@ Mon_AstExp* Mon_AstExpNewVar(Mon_AstVar* var) {
 
     ret->expKind = MON_EXP_VAR;
     ret->exp.varExpr = var;
+
+    InitializeExpSemantics(ret);
 
     return ret;
 }
@@ -149,6 +167,9 @@ Mon_AstExp* Mon_AstExpNewLiteral(Mon_Literal literal) {
     }
 
     ret->expKind = MON_EXP_LITERAL;
+
+    InitializeExpSemantics(ret);
+
     return ret;
 }
 

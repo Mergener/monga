@@ -61,7 +61,7 @@ static void XmlDumpVarNode(AstDumpContext* ctx, const Mon_AstVar* var) {
 
     switch (var->varKind) {
         case MON_VAR_DIRECT:
-            DUMPF_OR_STOP(ctx, "<Var>%s</Var>", var->var.direct);
+            DUMPF_OR_STOP(ctx, "<Var>%s</Var>", var->var.direct.name);
             break;
 
         case MON_VAR_FIELD:
@@ -255,7 +255,13 @@ static void XmlDumpExpNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
             break;
 
         case MON_EXP_VAR:
+            DUMPF_OR_STOP(ctx, "<ExpVar>");
+            ctx->indentLevel++;
+
             XmlDumpVarNode(ctx, exp->exp.varExpr);
+
+            ctx->indentLevel--;
+            DUMPF_OR_STOP(ctx, "</ExpVar>");
             break;
 
         case MON_EXP_UNOP:

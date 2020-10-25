@@ -56,7 +56,7 @@ Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
     return MON_SUCCESS;
 }
 
-Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
+void Mon_VectorRemove(Mon_Vector* vector, int index) {
     MON_CANT_BE_NULL(vector);
     MON_ASSERT(((unsigned int)index) < (unsigned int)vector->_count, 
         "Specified index (%d) cannot be >= vector element count (%d).",
@@ -79,8 +79,10 @@ Mon_RetCode Mon_VectorRemove(Mon_Vector* vector, int index) {
             vector->_cap = newCap;
         }
     }
+}
 
-    return MON_SUCCESS;
+void Mon_VectorRemoveLast(Mon_Vector* vector) {
+    Mon_VectorRemove(vector, vector->_count-1);
 }
 
 bool Mon_VectorEmpty(const Mon_Vector* vector) {

@@ -48,7 +48,7 @@ def test_reducedump(monga_path, input_file_path):
 	test_file([monga_path, '-r', input_file_path], input_file_path)
 
 def test_all_lex(monga_path, lex_cases_path):
-	print('Testing Ast Dump...')
+	print('Testing Lex Dump...')
 
 	for file in os.listdir(lex_cases_path):
 		if not file.endswith(".expected"):
@@ -80,6 +80,6 @@ def test_all_reducedump(monga_path, astdump_cases_path):
 def test_all(monga_path):
 	test_all_lex(monga_path, LEX_CASES_PATH)
 	test_all_reducedump(monga_path, REDUCE_DUMP_CASES_PATH)
-	#test_all_astdump(monga_path, AST_DUMP_CASES_PATH)
+	test_all_astdump(monga_path, AST_DUMP_CASES_PATH)
 
 test_all(MONGA_PATH)

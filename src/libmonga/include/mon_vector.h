@@ -29,13 +29,13 @@ typedef struct {
 } Mon_Vector;
 
 /**
- *    Initializes a vector. Must be finalized with Mon_VectorFinalize once its use
- *    is finished.
- *    
- *    @param vector The vector to be initialized.
- *    @return One of the following:
- *        MON_SUCCESS :: Vector initialized succesfully.
- *        MON_ERR_NOMEM :: Not enough memory to initialize the vector.
+ *  Initializes a vector. Must be finalized with Mon_VectorFinalize once its use
+ *  is finished.
+ *  
+ *  @param vector The vector to be initialized.
+ *  @return One of the following:
+ *   MON_SUCCESS :: Vector initialized succesfully.
+ *   MON_ERR_NOMEM :: Not enough memory to initialize the vector.
  */
 MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorInit(Mon_Vector* vector);
 
@@ -59,46 +59,49 @@ MON_PUBLIC void* MON_CALL Mon_VectorGet(const Mon_Vector* vector, int index);
 MON_PUBLIC int MON_CALL Mon_VectorCount(const Mon_Vector* vector);
 
 /**
- *     Pushes an element onto the end of a vector.
+ *  Pushes an element onto the end of a vector.
  * 
- *     @param vector The vector to push to.
- *     @param obj The object to be pushed onto the vector.
+ *  @param vector The vector to push to.
+ *  @param obj The object to be pushed onto the vector.
  * 
- *    @return One of the following:
- *        MON_SUCCESS :: Element pushed succesfully.
- *        MON_ERR_NOMEM :: Not enough memory to initialize the vector.
+ *  @return One of the following:
+ *   MON_SUCCESS :: Element pushed succesfully.
+ *   MON_ERR_NOMEM :: Not enough memory to initialize the vector.
  */ 
 MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorPush(Mon_Vector* vector, const void* obj);
 
 /**
- *     Pops an element from a vector.
+ *  Removes an element from a vector.
  * 
- *     @param vector The non-empty vector to pop from.
- *     @param ret Pointer to return the popped value to.
- * 
- *    @return One of the following:
- *        MON_SUCCESS :: Element popped succesfully.
+ *  @param vector The non-empty vector to remove an element from.
  */ 
-MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorRemove(Mon_Vector* vector, int index);
+MON_PUBLIC void MON_CALL Mon_VectorRemove(Mon_Vector* vector, int index);
 
 /**
- *     Checks whether a vector is empty.
+ *  Removes the last element of the vector.
  * 
- *     @param vector The vector.
+ *  @param vector The non-empty vector to remove an element from.
+ */
+MON_PUBLIC void MON_CALL Mon_VectorRemoveLast(Mon_Vector* vector);
+
+/**
+ *  Checks whether a vector is empty.
  * 
- *    @return True if the vector is empty, false otherwise.
+ *  @param vector The vector.
+ * 
+ *  @return True if the vector is empty, false otherwise.
  */ 
 MON_PUBLIC bool MON_CALL Mon_VectorEmpty(const Mon_Vector* vector);
 
 /**
- *     Clears a vector, removing all its elements.
+ *  Clears a vector, removing all its elements.
  * 
- *     @param vector The vector.
+ *  @param vector The vector.
  */ 
 MON_PUBLIC void MON_CALL Mon_VectorClear(Mon_Vector* vector);
 
 /**
- *    Finalizes a vector, cleaning up any resources used by it.
+ *  Finalizes a vector, cleaning up any resources used by it.
  *
  *  @param vector The vector to be finalized.
  */ 

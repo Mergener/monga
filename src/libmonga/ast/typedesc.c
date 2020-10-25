@@ -36,6 +36,20 @@ Mon_AstTypeDesc* Mon_AstTypeDescNewArray(Mon_AstTypeDesc* innerTypeDesc) {
     return ret;
 }
 
+Mon_AstTypeDesc* Mon_AstTypeDescNewPrimitive(Mon_PrimitiveTypeCode typeCode) {
+    MON_CANT_BE_NULL(aliasedTypeName);
+
+    Mon_AstTypeDesc* ret = Mon_Alloc(sizeof(Mon_AstTypeDesc));
+    if (ret == NULL) {
+        return NULL;
+    }
+
+    ret->typeDescKind = MON_TYPEDESC_PRIMITIVE;
+    ret->typeDesc.primitive.typeCode = typeCode;
+
+    return ret;    
+}
+
 Mon_AstTypeDesc* Mon_AstTypeDescNewAlias(const char* aliasedTypeName) {
     MON_CANT_BE_NULL(aliasedTypeName);
 

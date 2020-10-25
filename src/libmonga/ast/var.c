@@ -50,8 +50,8 @@ Mon_AstVar* Mon_AstVarNewDirect(const char* varName) {
         return NULL;
     }
 
-    ret->var.direct = DuplicateString(varName, strlen(varName));
-    if (ret->var.direct == NULL) {
+    ret->var.direct.name = DuplicateString(varName, strlen(varName));
+    if (ret->var.direct.name == NULL) {
         Mon_Free(ret);
         return NULL;
     }
@@ -82,7 +82,7 @@ void Mon_AstVarDestroy(Mon_AstVar* node, bool rec) {
             break;
 
         case MON_VAR_DIRECT:
-            Mon_Free(node->var.direct);
+            Mon_Free(node->var.direct.name);
             break;
 
         default:

@@ -29,6 +29,8 @@ Mon_AstField* Mon_AstFieldNew(const char* typeName, const char* fieldName) {
         return NULL;
     }
 
+    ret->semantic.type = NULL;
+
     return ret;
 }
 
