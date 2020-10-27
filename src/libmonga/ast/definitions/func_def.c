@@ -5,6 +5,8 @@
 #include "mon_alloc.h"
 #include "../../strutils.h"
 
+#include "ast/mon_astbase.h"
+
 Mon_AstFuncDef* Mon_AstFuncDefNew(const char* funcName,
                                   size_t funcNameLen,
                                   const char* funcRetTypeName,

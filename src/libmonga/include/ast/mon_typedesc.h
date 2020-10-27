@@ -5,7 +5,11 @@
 
 #include "mon_vector.h"
 
+#include "ast/mon_astbase.h"
+
 C_LINKAGE_BEGIN
+
+typedef struct Mon_AstTypeDef_ Mon_AstTypeDef;
 
 /**
  *  A type description node. A type description defines the properties

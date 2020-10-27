@@ -680,6 +680,9 @@ static void XmlDumpTypedesc(AstDumpContext* ctx, const Mon_AstTypeDesc* typeDesc
             ctx->indentLevel--;
             DUMPF_OR_STOP(ctx, "</Array>");
             break;
+        
+        default:
+            break;
     }
 
     ctx->indentLevel--;

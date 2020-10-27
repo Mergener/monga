@@ -5,7 +5,11 @@
 
 #include <stdlib.h>
 
+#include "ast/mon_astbase.h"
+
 C_LINKAGE_BEGIN
+
+typedef struct Mon_AstTypeDef_ Mon_AstTypeDef;
 
 /** Contains data that defines a variable, regardless of its scope. */
 typedef struct Mon_AstVarDef_ {

@@ -53,6 +53,11 @@ typedef struct {
 
 } Mon_SemAnalysisCtx;
 
+// Foward declarations
+static bool ResolveExpression(const Mon_SemAnalysisCtx* ctx, Mon_AstExp* exp);
+static bool ResolveBlock(Mon_SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDef* enclosingFunction);
+//
+
 /**
  * 	Pushes a scope onto the scope stack. longjmps if memory fails.
  */
@@ -110,7 +115,7 @@ static void Cleanup(Mon_SemAnalysisCtx* ctx) {
     while (curr != NULL) {
         Scope* parent = curr->parentScope;
         DestroyScope(curr);
-        curr = curr->parentScope;
+        curr = parent;
     }
 }
 
@@ -124,6 +129,8 @@ static void LogError(const Mon_SemAnalysisCtx* ctx, const Mon_AstNodeHeader* err
     va_list args;
     va_start(args, fmt);
 
+    fprintf(ctx->errStream, "[Error] At line %d, column %d: ",
+        errNodeHeader->line, errNodeHeader->column);
     vfprintf(ctx->errStream, fmt, args);
     fprintf(ctx->errStream, "\n");
 
@@ -220,8 +227,6 @@ static Mon_AstVarDef* FindVar(const Scope* scope, const char* name, bool rec) {
 static Mon_AstTypeDef* GetVarType(Mon_AstVar* var) {
     MON_CANT_BE_NULL(var);
 
-    Mon_AstVarDef* varDef = NULL;
-
     switch (var->varKind) {
         case MON_VAR_DIRECT:
             if (var->var.direct.semantic.definitionKind == MON_SEM_VARDEF_VAR) {
@@ -256,7 +261,7 @@ static bool ResolveVar(const Mon_SemAnalysisCtx* ctx, Mon_AstVar* var) {
     Scope* s = ctx->currentScope;    
 
     switch (var->varKind) {
-        case MON_VAR_DIRECT:
+        case MON_VAR_DIRECT: {
             Symbol* sym = FindSymbol(s, var->var.direct.name, true);
             if (sym == NULL) {
                 LogError(ctx, &var->header, "Variable '%s' was not declared in this scope.", 
@@ -279,6 +284,7 @@ static bool ResolveVar(const Mon_SemAnalysisCtx* ctx, Mon_AstVar* var) {
                         var->var.direct.name, GetSymbolKindName(sym->kind));
                 return false;
             }
+        }
 
         case MON_VAR_FIELD:
             if (!ResolveExpression(ctx, var->var.field.expr)) {
@@ -315,7 +321,7 @@ static bool ResolveVar(const Mon_SemAnalysisCtx* ctx, Mon_AstVar* var) {
 
             // Indexed expression must be indexable.
             if (!IsIndexableType(var->var.indexed.indexedExpr->semantic.type)) {
-                LogError(ctx, &var->var.indexed.indexedExpr, "Cannot index expression of type %s.", 
+                LogError(ctx, &var->var.indexed.indexedExpr->header, "Cannot index expression of type %s.", 
                          var->var.indexed.indexedExpr->semantic.type->typeName);
                 return false;
             }
@@ -335,8 +341,6 @@ static bool ResolveVar(const Mon_SemAnalysisCtx* ctx, Mon_AstVar* var) {
     return false;
 }
 
-static bool ResolveExpression(const Mon_SemAnalysisCtx* ctx, Mon_AstExp* exp);
-
 /**
  *  Resolves the semantics of a function call, filling its 'semantic' fields.
  *  Returns true if the semantics were resolved succesfully, false otherwise.
@@ -350,12 +354,12 @@ static bool ResolveCall(const Mon_SemAnalysisCtx* ctx, Mon_AstCall* call) {
     // Find function definition
     Symbol* sym = FindSymbol(ctx->currentScope, call->funcName, true);
     if (sym == NULL) {
-        LogError(ctx->currentScope, &call->header, "Function '%s' was not defined in this scope.", call->funcName);
+        LogError(ctx, &call->header, "Function '%s' was not defined in this scope.", call->funcName);
         return false;
     }
 
     if (sym->kind != SYM_FUNC) {
-        LogError(ctx->currentScope, &call->header, "Cannot call '%s': a %s is not callable.",
+        LogError(ctx, &call->header, "Cannot call '%s': a %s is not callable.",
             call->funcName,
             GetSymbolKindName(sym->kind));
         return false;
@@ -366,14 +370,14 @@ static bool ResolveCall(const Mon_SemAnalysisCtx* ctx, Mon_AstCall* call) {
     int expectedArgsCount = Mon_VectorCount(&funcDef->parameters);
 
     if (passedArgsCount < expectedArgsCount) {
-        LogError(ctx->currentScope, &call->header, "Too few arguments to call %s. (expected %d, got %d).",
+        LogError(ctx, &call->header, "Too few arguments to call %s. (expected %d, got %d).",
             call->funcName,
             expectedArgsCount,
             passedArgsCount);
         return false;
     }
     if (passedArgsCount > expectedArgsCount) {
-        LogError(ctx->currentScope, &call->header, "Too many arguments to call '%s'. (expected %d, got %d).",
+        LogError(ctx, &call->header, "Too many arguments to call '%s'. (expected %d, got %d).",
             call->funcName,
             expectedArgsCount,
             passedArgsCount);
@@ -671,7 +675,7 @@ static bool ResolveExpression(const Mon_SemAnalysisCtx* ctx, Mon_AstExp* exp) {
             exp->semantic.type = exp->exp.callExpr->semantic.callee->semantic.returnType;
             return true;
 
-        case MON_EXP_NEW:
+        case MON_EXP_NEW: {
             Mon_AstTypeDef* type = FindType(ctx->currentScope, exp->exp.newExpr.typeName, true);
             if (type == NULL) {
                 LogError(ctx, &exp->header, "Cannot resolve %s into a type.", exp->exp.newExpr.typeName);
@@ -697,6 +701,7 @@ static bool ResolveExpression(const Mon_SemAnalysisCtx* ctx, Mon_AstExp* exp) {
             // type is the user-specified type in instantiation.
             exp->semantic.type = type;
             return true;
+        }
 
         default:
             MON_ASSERT(false, "Unimplemented expKind. (got %d).", (int)exp->expKind);
@@ -764,6 +769,40 @@ static bool ResolveStatement(Mon_SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mo
     }
 }
 
+static bool ResolveVarDefinition(Mon_SemAnalysisCtx* ctx, Mon_AstVarDef* varDef) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(varDef);
+
+    // Find if a variable with the same name already exists in this scope
+    Mon_AstVarDef* prevVarDef = FindVar(ctx->currentScope, varDef->varName, false);
+    if (prevVarDef != NULL) {
+        LogError(ctx, &varDef->header, "Redeclaration of variable %s (previously declared at line %d, col %d).",
+                 varDef->varName,
+                 prevVarDef->header.line,
+                 prevVarDef->header.column);
+        return false;
+    }
+
+    // Find if variable type exists
+    Mon_AstTypeDef* type = FindType(ctx->currentScope, varDef->typeName, true);
+    if (type == NULL) {
+        LogError(ctx, &varDef->header, "Unknown type %s for variable %s.", varDef->typeName, varDef->varName);
+        return false;
+    }
+
+    // Everything OK, simply add the variable to the current scope.
+    Symbol* s = NewVarSymbol(varDef);
+    if (s == NULL) {
+        THROW(ctx);
+    }
+    if (Mon_VectorPush(&ctx->currentScope->symbols, s) != MON_SUCCESS) {
+        DestroySymbol(s);
+        THROW(ctx);
+    }
+
+    return true;
+}
+
 static bool ResolveBlock(Mon_SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDef* enclosingFunction) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(block);
@@ -771,8 +810,8 @@ static bool ResolveBlock(Mon_SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFu
 
     PushScope(ctx);
 
-    MON_VECTOR_FOREACH(&block->varDefs, Mon_AstVar*, var,
-        if (!ResolveVar(ctx, var)) {
+    MON_VECTOR_FOREACH(&block->varDefs, Mon_AstVarDef*, varDef,
+        if (!ResolveVarDefinition(ctx, varDef)) {
             PopScope(ctx);
             return false;
         }
@@ -873,7 +912,7 @@ static bool ResolveTypeDescription(Mon_SemAnalysisCtx* ctx, Mon_AstTypeDesc* typ
             typeDesc->typeDesc.alias.semantic.aliasedType = typeDef;
             return true;
 
-        case MON_TYPEDESC_RECORD:
+        case MON_TYPEDESC_RECORD: {
             int fieldCount = Mon_VectorCount(&typeDesc->typeDesc.record.fields);
 
             // Create a buffer to keep used field names.
@@ -908,6 +947,7 @@ static bool ResolveTypeDescription(Mon_SemAnalysisCtx* ctx, Mon_AstTypeDesc* typ
             }
             Mon_Free(buf);
             return true;
+        }
 
         case MON_TYPEDESC_ARRAY:
             return ResolveTypeDescription(ctx, typeDesc->typeDesc.array.innerTypeDesc);
@@ -956,40 +996,6 @@ static bool ResolveTypeDefinition(Mon_SemAnalysisCtx* ctx, Mon_AstTypeDef* typeD
         Mon_VectorRemove(&ctx->currentScope->symbols, index);
         return false;
     }
-    return true;
-}
-
-static bool ResolveVarDefinition(Mon_SemAnalysisCtx* ctx, Mon_AstVarDef* varDef) {
-    MON_CANT_BE_NULL(ctx);
-    MON_CANT_BE_NULL(varDef);
-
-    // Find if a variable with the same name already exists in this scope
-    Mon_AstVarDef* prevVarDef = FindVar(ctx->currentScope, varDef->varName, false);
-    if (prevVarDef != NULL) {
-        LogError(ctx, &varDef->header, "Redeclaration of variable %s (previously declared at line %d, col %d).",
-                 varDef->varName,
-                 prevVarDef->header.line,
-                 prevVarDef->header.column);
-        return false;
-    }
-
-    // Find if variable type exists
-    Mon_AstTypeDef* type = FindType(ctx->currentScope, varDef->typeName, true);
-    if (type == NULL) {
-        LogError(ctx, &varDef->header, "Unknown type %s for variable %s.", varDef->typeName, varDef->varName);
-        return false;
-    }
-
-    // Everything OK, simply add the variable to the current scope.
-    Symbol* s = NewVarSymbol(varDef);
-    if (s == NULL) {
-        THROW(ctx);
-    }
-    if (Mon_VectorPush(&ctx->currentScope->symbols, s) != MON_SUCCESS) {
-        DestroySymbol(s);
-        THROW(ctx);
-    }
-
     return true;
 }
 

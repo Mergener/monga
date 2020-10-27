@@ -5,6 +5,8 @@
 
 #include <stdbool.h>
 
+#include "ast/mon_astbase.h"
+
 C_LINKAGE_BEGIN
 
 typedef struct Mon_AstCond_ Mon_AstCond;

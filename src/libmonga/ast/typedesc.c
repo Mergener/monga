@@ -37,8 +37,6 @@ Mon_AstTypeDesc* Mon_AstTypeDescNewArray(Mon_AstTypeDesc* innerTypeDesc) {
 }
 
 Mon_AstTypeDesc* Mon_AstTypeDescNewPrimitive(Mon_PrimitiveTypeCode typeCode) {
-    MON_CANT_BE_NULL(aliasedTypeName);
-
     Mon_AstTypeDesc* ret = Mon_Alloc(sizeof(Mon_AstTypeDesc));
     if (ret == NULL) {
         return NULL;
