@@ -1,10 +1,10 @@
 #include "types.h"
 
+#include <string.h>
+
 #include "mon_debug.h"
 
 Mon_AstTypeDef* GetUnderlyingType(const Mon_AstTypeDef* type) {
-    MON_CANT_BE_NULL(type);
-
     while (type != NULL) {
         switch (type->typeDesc->typeDescKind) {
             case MON_TYPEDESC_ALIAS:
@@ -25,22 +25,40 @@ Mon_AstTypeDef* GetUnderlyingType(const Mon_AstTypeDef* type) {
     return NULL;
 }
 
-bool IsTypeAssignableFrom(const Mon_AstTypeDef* a, const Mon_AstTypeDef* b) {
-    MON_CANT_BE_NULL(a);
-    MON_CANT_BE_NULL(b);
-
-    switch (a->typeDesc->typeDescKind) {
-
+bool IsIntegerType(const Mon_AstTypeDef* type) {
+    if (type == NULL) {
+        return false;
     }
+
+    type = GetUnderlyingPrimitiveType(type);
+    if (type == NULL) {
+        return false;
+    }
+
+    return type->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_INT32;
+}
+
+bool IsTypeAssignableFrom(const Mon_AstTypeDef* a, const Mon_AstTypeDef* b) {
+    if (a == NULL || b == NULL) {
+        return false;
+    }
+
+    a = GetUnderlyingType(a);
+    b = GetUnderlyingType(b);
+
+    return a == b;
 }
 
 bool IsTypeCastableFrom(const Mon_AstTypeDef* a, const Mon_AstTypeDef* b) {
-    MON_CANT_BE_NULL(a);
-    MON_CANT_BE_NULL(b);
+    if (a == NULL || b == NULL) {
+        return false;
+    }
 }
 
 Mon_AstTypeDef* GetUnderlyingPrimitiveType(const Mon_AstTypeDef* type) {
-    MON_CANT_BE_NULL(type);
+    if (type == NULL) {
+        return NULL;
+    }
 
     do {
         if (type->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE) {
@@ -56,7 +74,9 @@ Mon_AstTypeDef* GetUnderlyingPrimitiveType(const Mon_AstTypeDef* type) {
 }
 
 Mon_AstTypeDef* GetUnopResultType(const Mon_AstTypeDef* type, Mon_UnopKind unop) {
-    MON_CANT_BE_NULL(type);
+    if (type == NULL) {
+        return NULL;
+    }
 
     Mon_AstTypeDef* underlying = GetUnderlyingPrimitiveType(type);
     if (underlying == NULL) {
@@ -80,8 +100,9 @@ Mon_AstTypeDef* GetUnopResultType(const Mon_AstTypeDef* type, Mon_UnopKind unop)
 Mon_AstTypeDef* GetBinopResultType(const Mon_AstTypeDef* ltype, 
                                    const Mon_AstTypeDef* rtype, 
                                    Mon_BinopKind binop) {
-    MON_CANT_BE_NULL(ltype);
-    MON_CANT_BE_NULL(rtype);
+    if (ltype == NULL || rtype == NULL) {
+        return NULL;
+    }
 
     // First, check if primitive operations (such as float/integer binary operations)
     // are available.
@@ -128,8 +149,7 @@ Mon_AstTypeDef* GetBinopResultType(const Mon_AstTypeDef* ltype,
 }
 
 static Symbol* ConstructBuiltinType(const char* name, 
-                                    Mon_PrimitiveTypeCode typeCode, 
-                                    bool isRef) {
+                                    Mon_PrimitiveTypeCode typeCode) {
     MON_CANT_BE_NULL(name);
 
     Mon_AstTypeDesc* typeDesc = Mon_AstTypeDescNewPrimitive(typeCode);
@@ -151,11 +171,103 @@ static Symbol* ConstructBuiltinType(const char* name,
 
     typeDesc->header.column = -1;
     typeDesc->header.line = -1;
-    typeDesc->semantic.isRefType = isRef;
     symbol->definition.type = typeDef;
     symbol->kind = SYM_TYPE;
 
     return symbol;
+}
+
+Mon_AstTypeDef* GetCondExpResultType(const Mon_AstTypeDef* thenType, const Mon_AstTypeDef* elseType) {
+    if (thenType == NULL || elseType == NULL) {
+        return NULL;
+    }
+    
+    if (!IsTypeAssignableFrom(thenType,
+                              elseType)) {
+        return NULL;
+    }
+    return thenType;
+}
+
+Mon_AstField* GetTypeField(const Mon_AstTypeDef* type, const char* fieldName) {
+    if (type == NULL) {
+        return NULL;
+    }
+
+    if (type->typeDesc->typeDescKind != MON_TYPEDESC_RECORD) {
+        return NULL;
+    }
+
+    MON_VECTOR_FOREACH(&type->typeDesc->typeDesc.record.fields, Mon_AstField*, field,
+        if (!strcmp(field->fieldName, fieldName)) {
+            return field;
+        }
+    );
+
+    return NULL;
+}
+
+bool IsStructuredType(const Mon_AstTypeDef* type) {
+    if (type == NULL) {
+        return false;
+    }
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
+        return IsStructuredType(type->typeDesc->typeDesc.alias.semantic.aliasedType);
+    }
+
+    return type->typeDesc->typeDescKind == MON_TYPEDESC_RECORD;
+}
+
+bool IsIndexableType(const Mon_AstTypeDef* type) {
+    if (type == NULL) {
+        return false;
+    }
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
+        return IsIndexableType(type->typeDesc->typeDesc.alias.semantic.aliasedType);
+    }
+
+    return type->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY;
+}
+
+bool IsRefType(const Mon_AstTypeDef* type) {
+    if (type == NULL) {
+        return false;
+    }
+
+    type = GetUnderlyingType(type);
+
+    return type->typeDesc->typeDescKind != MON_TYPEDESC_PRIMITIVE;
+}
+
+bool TypeCanCompare(const Mon_AstTypeDef* a, 
+                    const Mon_AstTypeDef* b, 
+                    Mon_ComparKind comparKind) {
+    if (a == NULL || b == NULL) {
+        return false;
+    }
+
+    a = GetUnderlyingType(a);
+    b = GetUnderlyingType(b);
+
+    switch (comparKind) {
+        case MON_COMPAR_EQ:
+        case MON_COMPAR_NE:
+            return IsTypeAssignableFrom(a, b);
+
+        case MON_COMPAR_GT:
+        case MON_COMPAR_GE:
+        case MON_COMPAR_LE:
+        case MON_COMPAR_LT:
+            return IsIntegerType(a) && IsIntegerType(b);
+
+        default:
+            MON_ASSERT(false, "Unimplemented comparison kind. (got %d)", (int)comparKind);
+            return false;
+    }
+
+    return false;
 }
 
 bool ConstructBuiltinTypes(Symbol*** outPtr, int* count) {

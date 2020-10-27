@@ -21,7 +21,9 @@ typedef enum {
 
     /** 
      *  A primitive type description. Primitive types are the most
-     *  basic types that can exist (int, float, char...).
+     *  basic types that can exist (int, float, char...). Primitive
+     *  types are always stack allocated and variables of primitive types
+     *  contain their values instead of references.
      */
     MON_TYPEDESC_PRIMITIVE
 
@@ -98,10 +100,6 @@ struct Mon_AstTypeDesc_ {
         Mon_TypeDescPrimitive primitive;
 
     } typeDesc;
-
-    struct {
-        bool isRefType;
-    } semantic;
 };
 
 /**
