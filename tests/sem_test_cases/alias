@@ -1,0 +1,9 @@
+type integer = int;
+
+function foo() {
+	var i : int;
+	var i2 : integer;
+
+	i2 = 3;
+	i = i2;
+}

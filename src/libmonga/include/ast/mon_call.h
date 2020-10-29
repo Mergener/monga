@@ -26,6 +26,7 @@ typedef struct Mon_AstCall_ {
 
     struct {
 
+        /** Definition of the function being called. */
         Mon_AstFuncDef* callee;
 
     } semantic;

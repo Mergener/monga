@@ -1,0 +1,2 @@
+[Error] At line 11, column 5: Specified field 'z' does not exist in value of type 'Vec2'.
+Semantic errors were caught during analysis.

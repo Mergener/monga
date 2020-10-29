@@ -1,0 +1,2 @@
+[Error] At line 2, column 9: Function foo cannot have an empty return statement (must return value of type int).
+Semantic errors were caught during analysis.

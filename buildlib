@@ -24,10 +24,10 @@ OUT_PATH_HEADERS="bin/builds/libmonga/include"
 COMPILER_ARGS="-Wall -Wextra -I$GEN_SRC_PATH -I$EXPORT_HEADERS_PATH -I$SRC_PATH -DMON_COMPILING_LIB"
 
 # Extra debug arguments passed to the compiler
-DEBUG_ARGS="-DMON_DEBUG"
+DEBUG_ARGS="-DMON_DEBUG\ -g\ -Og"
 
 # Extra release arguments passed to the compiler
-RELEASE_ARGS="-DNDEBUG"
+RELEASE_ARGS="-DNDEBUG\ -O2"
 
 #####################################################
 
@@ -39,12 +39,14 @@ function build_lib {
 
 	# generate object files
 	for file in $(find $SRC_PATH -name "*.c"); do
-		echo "Compiling $file..."
-		gcc $COMPILER_ARGS $2 -fpic -c $file 
+		cmd="gcc $COMPILER_ARGS $2 -fpic -c $file"
+		echo $cmd
+		eval $cmd
 	done
 	for file in $GEN_SRC_PATH/*.c; do
-		echo "Compiling $file..."
-		gcc $COMPILER_ARGS $2 -fpic -c $file
+		cmd="gcc $COMPILER_ARGS $2 -fpic -c $file"
+		echo $cmd
+		eval $cmd
 	done
 
 	wait

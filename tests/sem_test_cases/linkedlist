@@ -1,0 +1,8 @@
+type Node = {
+	value : int;
+	next : Node;
+};
+
+type LinkedList = {
+	head : Node;
+};

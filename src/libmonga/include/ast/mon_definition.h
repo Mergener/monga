@@ -9,6 +9,8 @@
 #include "definitions/mon_type_def.h"
 #include "definitions/mon_var_def.h"
 
+#include "ast/mon_astbase.h"
+
 C_LINKAGE_BEGIN
 
 typedef enum {
@@ -25,6 +27,8 @@ typedef enum {
 } Mon_AstDefKind;
 
 typedef struct Mon_AstDef_ {
+
+    Mon_AstNodeHeader header;
 
     /** This node definition kind. Indicates what is this definition node is actually defining. */
     Mon_AstDefKind defKind;

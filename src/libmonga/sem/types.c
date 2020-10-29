@@ -4,56 +4,85 @@
 
 #include "mon_debug.h"
 #include "mon_alloc.h"
+#include "../strutils.h"
 
 Mon_AstTypeDef* GetUnderlyingType(Mon_AstTypeDef* type) {
-    while (type != NULL) {
-        switch (type->typeDesc->typeDescKind) {
-            case MON_TYPEDESC_ALIAS:
-                type = type->typeDesc->typeDesc.alias.semantic.aliasedType;
-                break;
+    MON_CANT_BE_NULL(type);
 
-            case MON_TYPEDESC_RECORD:
-            case MON_TYPEDESC_ARRAY:
-            case MON_TYPEDESC_PRIMITIVE:
-                return type;
-
-            default:
-                MON_ASSERT(false, "Unimplemented typedesc kind. (got %d)", (int)type->typeDesc->typeDescKind);
-                return NULL;
-        }
+    while (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
+        type = type->typeDesc->typeDesc.alias.semantic.aliasedType;
     }
 
-    return NULL;
+    return type;
 }
 
 bool IsIntegerType(Mon_AstTypeDef* type) {
-    if (type == NULL) {
-        return false;
-    }
+    MON_CANT_BE_NULL(type);
 
-    type = GetUnderlyingPrimitiveType(type);
-    if (type == NULL) {
+    type = GetUnderlyingType(type);
+    if (type->typeDesc->typeDescKind != MON_TYPEDESC_PRIMITIVE) {
         return false;
     }
 
     return type->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_INT32;
 }
 
-bool IsTypeAssignableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
-    if (a == NULL || b == NULL) {
+bool IsFloatingPointType(Mon_AstTypeDef* type) {
+    MON_CANT_BE_NULL(type);
+
+    type = GetUnderlyingType(type);
+    if (type->typeDesc->typeDescKind != MON_TYPEDESC_PRIMITIVE) {
         return false;
     }
 
+    return type->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_FLOAT32;
+}
+
+bool IsNumericType(Mon_AstTypeDef* type) {
+    MON_CANT_BE_NULL(type);
+    
+    return IsIntegerType(type) || IsFloatingPointType(type);
+}
+
+bool IsTypeAssignableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
+    MON_CANT_BE_NULL(a);
+    MON_CANT_BE_NULL(b);
+
     a = GetUnderlyingType(a);
     b = GetUnderlyingType(b);
+
+    if (a->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY && 
+        b->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY) {
+        
+        Mon_AstTypeDesc* adesc = a->typeDesc;
+        Mon_AstTypeDesc* bdesc = b->typeDesc;
+
+        while (true) {
+            if (adesc->typeDescKind != bdesc->typeDescKind) {
+                return false;
+            }
+
+            if (adesc->typeDescKind == MON_TYPEDESC_ARRAY) {
+                adesc = adesc->typeDesc.array.innerTypeDesc;
+                bdesc = bdesc->typeDesc.array.innerTypeDesc;
+            } else {
+                break;
+            }
+        }
+
+        if (adesc->typeDescKind == MON_TYPEDESC_ALIAS &&
+            bdesc->typeDescKind == MON_TYPEDESC_ALIAS) {
+            return GetUnderlyingType(adesc->typeDesc.alias.semantic.aliasedType) ==
+                GetUnderlyingType(bdesc->typeDesc.alias.semantic.aliasedType);
+        }
+    }
 
     return a == b;
 }
 
 bool IsTypeCastableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
-    if (a == NULL || b == NULL) {
-        return false;
-    }
+    MON_CANT_BE_NULL(a);
+    MON_CANT_BE_NULL(b);
 
     a = GetUnderlyingType(a);
     b = GetUnderlyingType(b);
@@ -67,101 +96,74 @@ bool IsTypeCastableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
     return a == b;
 }
 
-Mon_AstTypeDef* GetUnderlyingPrimitiveType(Mon_AstTypeDef* type) {
-    if (type == NULL) {
-        return NULL;
-    }
-
-    do {
-        if (type->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE) {
-            return type;
-        } else if (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
-            type = type->typeDesc->typeDesc.alias.semantic.aliasedType;
-        } else {
-            return NULL;
-        }		
-    } while (type != NULL);
-
-    return NULL;
-}
-
 Mon_AstTypeDef* GetUnopResultType(Mon_AstTypeDef* type, Mon_UnopKind unop) {
-    if (type == NULL) {
+    MON_CANT_BE_NULL(type);
+
+    Mon_AstTypeDef* underlying = GetUnderlyingType(type);
+    if (!IsNumericType(underlying)) {
         return NULL;
     }
 
-    Mon_AstTypeDef* underlying = GetUnderlyingPrimitiveType(type);
-    if (underlying == NULL) {
+    if (unop == MON_UNOP_BITNOT) {
+        return IsIntegerType(type) ? type : NULL;
+    } else if (unop == MON_UNOP_NEGATIVE) {
+        return type;
+    } else {
+        MON_ASSERT(false, "Unimplemented unop kind. (got %d)", (int)unop);
         return NULL;
     }
-    Mon_PrimitiveTypeCode typeCode = underlying->typeDesc->typeDesc.primitive.typeCode;
-
-    switch (unop) {
-        case MON_UNOP_NEGATIVE:
-            return type;
-
-        case MON_UNOP_BITNOT:
-            if (typeCode != MON_PRIMITIVE_INT32) {
-                return NULL;
-            }
-            return type;
-    }
-    return NULL;
 }
 
 Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype, 
                                    Mon_AstTypeDef* rtype, 
                                    Mon_BinopKind binop) {
-    if (ltype == NULL || rtype == NULL) {
-        return NULL;
-    }
+    MON_CANT_BE_NULL(ltype);
+    MON_CANT_BE_NULL(rtype);
 
-    // First, check if primitive operations (such as float/integer binary operations)
-    // are available.
+    ltype = GetUnderlyingType(ltype);
+    rtype = GetUnderlyingType(rtype);
 
-    Mon_AstTypeDef* lprim = GetUnderlyingPrimitiveType(ltype);
-    Mon_AstTypeDef* rprim = GetUnderlyingPrimitiveType(ltype);
-
-    if (lprim != NULL && rprim != NULL) {
-        Mon_PrimitiveTypeCode lcode = lprim->typeDesc->typeDesc.primitive.typeCode;
-        Mon_PrimitiveTypeCode rcode = rprim->typeDesc->typeDesc.primitive.typeCode;
-
-        switch (binop) {
-            case MON_BINOP_ADD:
-            case MON_BINOP_SUB:
-            case MON_BINOP_MUL:
-            case MON_BINOP_MODULO:
-            case MON_BINOP_DIV:
-                // If any of the underlying types is a floating point type,
-                // we always return the floating point type alternative.
-                if (lcode == MON_PRIMITIVE_FLOAT32) {
-                    return ltype;
-                } 
-                if (rcode == MON_PRIMITIVE_FLOAT32) {
-                    return rtype;
-                }
+    switch (binop) {
+        case MON_BINOP_ADD:            
+        case MON_BINOP_SUB:            
+        case MON_BINOP_MUL:            
+        case MON_BINOP_DIV:            
+        case MON_BINOP_MODULO:
+            if (IsTypeAssignableFrom(ltype, rtype) &&
+                IsNumericType(ltype) &&
+                IsNumericType(rtype)) {
                 return ltype;
-
-            case MON_BINOP_SHR:
-            case MON_BINOP_SHL:
-            case MON_BINOP_BITAND:
-            case MON_BINOP_BITOR:
-            case MON_BINOP_XOR:
-                // These operations can only be performed on integers
-                if (lcode != MON_PRIMITIVE_INT32 || rcode != MON_PRIMITIVE_INT32) {
-                    return NULL;
-                }
+            }
+            return NULL;
+            
+        case MON_BINOP_SHR:            
+        case MON_BINOP_SHL:
+            if (IsTypeAssignableFrom(ltype, rtype) &&
+                IsIntegerType(ltype) &&
+                IsIntegerType(rtype)) {
                 return ltype;
-        }
+            }
+            return NULL;
+
+        case MON_BINOP_BITAND:            
+        case MON_BINOP_BITOR:            
+        case MON_BINOP_XOR:
+            if (ltype == rtype &&
+                IsIntegerType(ltype)) {
+                return ltype;
+            }
+            return NULL;
+
+        default:
+            MON_ASSERT(false, "Unimplemented binop kind. (got %d)", (int)binop);
+            return NULL;
     }
-
-    // TO-DO: add support for operator overloading here
-
+            
     return NULL;
 }
 
-static Symbol* ConstructBuiltinType(const char* name, 
-                                    Mon_PrimitiveTypeCode typeCode) {
+static Symbol* ConstructBuiltinPrimitive(const char* name, 
+                                         Mon_PrimitiveTypeCode typeCode) {
     MON_CANT_BE_NULL(name);
 
     Mon_AstTypeDesc* typeDesc = Mon_AstTypeDescNewPrimitive(typeCode);
@@ -175,7 +177,7 @@ static Symbol* ConstructBuiltinType(const char* name,
         return NULL;
     }
 
-    Symbol* symbol = Mon_Alloc(sizeof(Symbol));
+    Symbol* symbol = NewTypeSymbol(typeDef);
     if (symbol == NULL) {
         Mon_AstTypeDefDestroy(typeDef, true);
         return NULL;
@@ -183,16 +185,19 @@ static Symbol* ConstructBuiltinType(const char* name,
 
     typeDesc->header.column = -1;
     typeDesc->header.line = -1;
+    typeDef->header.column = -1;
+    typeDef->header.line = -1;
+
     symbol->definition.type = typeDef;
+    
     symbol->kind = SYM_TYPE;
 
     return symbol;
 }
 
 Mon_AstTypeDef* GetCondExpResultType(Mon_AstTypeDef* thenType, Mon_AstTypeDef* elseType) {
-    if (thenType == NULL || elseType == NULL) {
-        return NULL;
-    }
+    MON_CANT_BE_NULL(thenType);
+    MON_CANT_BE_NULL(elseType);
     
     if (!IsTypeAssignableFrom(thenType,
                               elseType)) {
@@ -202,9 +207,8 @@ Mon_AstTypeDef* GetCondExpResultType(Mon_AstTypeDef* thenType, Mon_AstTypeDef* e
 }
 
 Mon_AstField* GetTypeField(Mon_AstTypeDef* type, char* fieldName) {
-    if (type == NULL) {
-        return NULL;
-    }
+    MON_CANT_BE_NULL(type);
+    MON_CANT_BE_NULL(fieldName);
 
     if (type->typeDesc->typeDescKind != MON_TYPEDESC_RECORD) {
         return NULL;
@@ -220,9 +224,7 @@ Mon_AstField* GetTypeField(Mon_AstTypeDef* type, char* fieldName) {
 }
 
 bool IsStructuredType(Mon_AstTypeDef* type) {
-    if (type == NULL) {
-        return false;
-    }
+    MON_CANT_BE_NULL(type);
 
     if (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
         return IsStructuredType(type->typeDesc->typeDesc.alias.semantic.aliasedType);
@@ -232,9 +234,7 @@ bool IsStructuredType(Mon_AstTypeDef* type) {
 }
 
 bool IsIndexableType(Mon_AstTypeDef* type) {
-    if (type == NULL) {
-        return false;
-    }
+    MON_CANT_BE_NULL(type);
 
     if (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
         return IsIndexableType(type->typeDesc->typeDesc.alias.semantic.aliasedType);
@@ -244,9 +244,7 @@ bool IsIndexableType(Mon_AstTypeDef* type) {
 }
 
 bool IsRefType(Mon_AstTypeDef* type) {
-    if (type == NULL) {
-        return false;
-    }
+    MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
 
@@ -256,9 +254,8 @@ bool IsRefType(Mon_AstTypeDef* type) {
 bool TypeCanCompare(Mon_AstTypeDef* a, 
                     Mon_AstTypeDef* b, 
                     Mon_ComparKind comparKind) {
-    if (a == NULL || b == NULL) {
-        return false;
-    }
+    MON_CANT_BE_NULL(a);
+    MON_CANT_BE_NULL(b);
 
     a = GetUnderlyingType(a);
     b = GetUnderlyingType(b);
@@ -282,8 +279,36 @@ bool TypeCanCompare(Mon_AstTypeDef* a,
     return false;
 }
 
-bool ConstructBuiltinTypes(Symbol*** outPtr, int* count) {
-    **outPtr = NULL;
-    *count = 0;
-    return false;
+bool ConstructBuiltinTypes(Mon_Vector* vec) {
+    MON_CANT_BE_NULL(vec);
+
+    struct {
+        const char* name;
+        Mon_PrimitiveTypeCode typeCode;
+    } builtinPrimitives[] = {
+        { "int", MON_PRIMITIVE_INT32 },
+        { "float", MON_PRIMITIVE_FLOAT32 },
+        { "void", MON_PRIMITIVE_VOID }
+    };
+
+    const int primCount = sizeof(builtinPrimitives)/sizeof(*builtinPrimitives);
+
+    int firstIndex = Mon_VectorCount(vec);
+    for (int i = 0; i < primCount; ++i) {
+        Symbol* s = ConstructBuiltinPrimitive(builtinPrimitives[i].name, builtinPrimitives[i].typeCode);
+        if (s == NULL) {
+            return false;
+        }
+        if (Mon_VectorPush(vec, s) != MON_SUCCESS) {
+            // Delete all previously created symbols.
+            for (int j = i - 1; j >= firstIndex; --j) {
+                DestroySymbol(Mon_VectorGet(vec, j));
+                Mon_VectorRemove(vec, j);
+            }
+            DestroySymbol(s);
+            return false;
+        }
+    }
+
+    return true;
 }

@@ -2,10 +2,12 @@
 
 #include <mon_debug.h>
 
-#include "mon_alloc.h"
-#include "../../strutils.h"
-
 #include "ast/mon_astbase.h"
+
+#include "mon_alloc.h"
+
+#include "../../sem/types.h"
+#include "../../strutils.h"
 
 Mon_AstFuncDef* Mon_AstFuncDefNew(const char* funcName,
                                   size_t funcNameLen,
@@ -44,8 +46,6 @@ Mon_AstFuncDef* Mon_AstFuncDefNew(const char* funcName,
     ret->funcNameLength = funcNameLen;
     ret->parameters = params;
     ret->body = body;
-
-    ret->semantic.returnType = NULL;
 
     return ret;
 }

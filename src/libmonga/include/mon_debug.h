@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 C_LINKAGE_BEGIN
 

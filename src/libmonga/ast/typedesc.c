@@ -91,9 +91,16 @@ void Mon_AstTypeDescDestroy(Mon_AstTypeDesc* typeDesc, bool rec) {
                 Mon_AstTypeDescDestroy(typeDesc->typeDesc.array.innerTypeDesc, true);
             }
             break;
+
+        case MON_TYPEDESC_NULL:
+        case MON_TYPEDESC_ERROR:
+            // Nothing else to do.
+            break;
         
         default:
             MON_ASSERT(false, "Unimplemented typeDescKind. (got %d)", (int)typeDesc->typeDescKind);
             break;
     }
+
+    Mon_Free(typeDesc);
 }

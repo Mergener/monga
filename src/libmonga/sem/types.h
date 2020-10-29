@@ -8,13 +8,6 @@
 #include "symbol.h"
 #include "mon_vector.h"
 
-//
-//	This header contains auxiliary function for semantic-evaluated type nodes.
-//	Note that _all_ functions below expect a type to have been previously semantically
-//	evaluated. For convenience when checking for types in which semantic evaluation has
-//	failed, all functions below handle the case where a specified type parameter is NULL.
-//
-
 /**
  * 	Returns the underlying type of a given type definition. If the type definition
  * 	is a record, primitive or array, the returned type is the type itself. If the
@@ -29,21 +22,15 @@
 MON_PRIVATE Mon_AstTypeDef* GetUnderlyingType(Mon_AstTypeDef* type);
 
 /**
- * 	For a given type node, returns it's underlying primitive if it's descriptor is either
- * 	a primitive itself or an alias. For type nodes that are not aliases or primitives,
- * 	returns NULL.
- */
-MON_PRIVATE Mon_AstTypeDef* GetUnderlyingPrimitiveType(Mon_AstTypeDef* type);
-
-/**
- * 	Constructs builtin types and fills outPtr with a pointer to an
- * 	array of pointers to the newly constructed builtin types and count
- * 	with the number of constructed pointers.
+ * 	Constructs builtin type symbols and fills 'vec' with pointers to them.
+ * 
+ *  The ownership is transferred to the caller of this function.
+ *  All added elements are of type 'Symbol' and kind 'SYM_TYPE'.
  * 
  * 	Returns true if the function functioned succesfully or false if 
  * 	an allocation failed.
  */
-MON_PRIVATE bool ConstructBuiltinTypes(Symbol*** outPtr, int* count);
+MON_PRIVATE bool ConstructBuiltinTypes(Mon_Vector* vec);
 
 /**
  * 	Returns true if type 'a' is trivially assignable from type 'b'.
@@ -88,7 +75,22 @@ MON_PRIVATE Mon_AstTypeDef* GetCondExpResultType(Mon_AstTypeDef* thenType, Mon_A
  */
 MON_PRIVATE Mon_AstField* GetTypeField(Mon_AstTypeDef* type, char* fieldName);
 
+/**
+ *  Returns true if the specified type is an integer type.
+ */
 MON_PRIVATE bool IsIntegerType(Mon_AstTypeDef* type);
+
+/**
+ *  Returns true if the specified type is a numeric type (either floating point or integer).
+ *  _All_ numeric types are primitives, even though not necessarily all primitives are
+ *  numeric.
+ */
+MON_PRIVATE bool IsNumericType(Mon_AstTypeDef* type);
+
+/**
+ *  Returns true if the specified type is a floating point type. 
+ */
+MON_PRIVATE bool IsFloatingPointType(Mon_AstTypeDef* type);
 
 /**
  * 	True if the type contains fields that can be accessed.

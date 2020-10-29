@@ -1,0 +1,22 @@
+type Vec2 = {
+	x : float;
+	y : float;
+};
+
+function add(v1 : Vec2, v2 : Vec2): Vec2 {
+	var ret : Vec2;
+
+	ret = new Vec2;
+
+	ret.x = v1.x + v2.x;
+	ret.y = v1.y + v2.y;
+
+	return ret;
+}
+
+function main() {
+	var v1 : Vec2;
+	var v2 : Vec2;
+
+	@add(v1, v2);
+}

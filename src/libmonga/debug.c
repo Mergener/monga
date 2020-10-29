@@ -9,7 +9,7 @@ static void DefaultAssertProc(const char* fileName,
                               int line,
                               const char* msgFmt,
                               va_list msgArgs) {
-    fprintf(stderr, "\n*** Monga Assertion failed! (in file %s, function %s, line %d)\nMessage:", fileName, funcName, line);
+    fprintf(stderr, "\n***\nMonga Assertion failed! (in file %s, function %s, line %d)\n\tMessage: ", fileName, funcName, line);
     vfprintf(stderr, msgFmt, msgArgs);
     fprintf(stderr, "\n***\n");
     exit(EXIT_FAILURE);

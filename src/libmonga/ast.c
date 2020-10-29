@@ -41,7 +41,7 @@ Mon_RetCode Mon_DumpAst(const Mon_Ast* ast,
     }
 }
 
-void Mon_AstFinalize(Mon_Ast* ast) {
+void Mon_AstDestroy(Mon_Ast* ast) {
     if (ast != NULL) {
         MON_VECTOR_FOREACH(&ast->defsVector, Mon_AstDef*, def,
             Mon_AstDefDestroy(def, true);

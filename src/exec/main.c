@@ -7,12 +7,14 @@
 #include "mon_lex.h"
 #include "mon_parser.h"
 #include "mon_error.h"
+#include "mon_sem.h"
 
 enum ExecutionMode {
     NONE,
     LEX_DUMP,
     REDUCE_DUMP,
     AST_DUMP,
+    SEM_TEST,
     COMPILER
 };
 
@@ -25,6 +27,10 @@ struct AstDumpArgs {
 };
 
 struct ReduceDumpArgs {
+    const char* inputFilePath;
+};
+
+struct SemTestArgs {
     const char* inputFilePath;
 };
 
@@ -42,6 +48,9 @@ struct ProgramArgs {
 
         /** ReduceDump args. Available if execMode == REDUCE_DUMP */
         struct ReduceDumpArgs reduceDump;
+
+        /** SemTest args. Available if execMode == SEM_TEST */
+        struct SemTestArgs semTest;
 
     } args;
 };
@@ -123,6 +132,25 @@ static struct ProgramArgs ParseArgs(int argc, char** argv) {
 
             ret.args.reduceDump.inputFilePath = argv[i];
         }
+        // Semtest mode
+        else if (!strcmp(argv[i], "-s")) {
+
+            if (ret.execMode != NONE) {
+                ErrorOneExecMode(argv[0]);
+            }
+
+            ret.execMode = SEM_TEST;
+
+            ++i;
+            if (i == argc || argv[i][0] == '-') {
+                // No file argument for semtest mode provided.
+                perror("Expected an input source file for semantic test mode.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            ret.args.semTest.inputFilePath = argv[i];
+
+        }
     }
 
     return ret;
@@ -169,6 +197,35 @@ static void RunAstDump(const struct AstDumpArgs* args) {
     }
 }
 
+static void RunSemTest(const struct SemTestArgs* args) {
+    FILE* inputStream;
+
+    if (args->inputFilePath == NULL) {
+        inputStream = stdin;
+    } else {
+        inputStream = fopen(args->inputFilePath, "r");
+
+        if (inputStream == NULL) {
+            fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
+            exit(MON_ERR_FILENOTFOUND);
+        }
+    }
+
+    Mon_Ast ast;
+    Mon_RetCode ret = Mon_Parse(inputStream, &ast, MON_PARSEFLAGS_NONE);
+    if (ret != MON_SUCCESS) {
+        fprintf(stderr, "Errors during syntax analysis.\n");
+        return;
+    }
+
+    ret = Mon_SemAnalyse(&ast, stderr);
+    if (ret != MON_SUCCESS) {
+        fprintf(stderr, "Semantic errors were caught during analysis.\n");
+        return;
+    }
+    printf("Semantic analysis completed with success.\n");
+}
+
 static void RunReduceDump(const struct ReduceDumpArgs* args) {
     FILE* inputStream;
 
@@ -205,6 +262,10 @@ static void Run(const struct ProgramArgs* args) {
 
         case COMPILER:
             fprintf(stderr, "Cannot execute in compilation mode; compiler not yet implemented.\n");
+            break;
+
+        case SEM_TEST:
+            RunSemTest(&args->args.semTest);
             break;
 
         default:

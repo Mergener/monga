@@ -3,8 +3,10 @@
 #include <mon_debug.h>
 
 #include "mon_alloc.h"
-#include "../../strutils.h"
 #include "ast/mon_typedesc.h"
+
+#include "../../sem/types.h"
+#include "../../strutils.h"
 
 Mon_AstTypeDef* Mon_AstTypeDefNew(const char* name,
                                   size_t nameLen,

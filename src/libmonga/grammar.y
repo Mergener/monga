@@ -21,6 +21,9 @@
 #define ADD_TO_VECTOR(vec, value) \
     if (Mon_VectorPush(&vec, value) != MON_SUCCESS) { \
     }
+#define FILL_NODE_HEADER(header) \
+    header.line = Mon_TkLine; \
+    header.column = Mon_TkColumn
 
 int yylex();
 void yyerror(const char* s);
@@ -31,6 +34,9 @@ void yyerror(const char* s);
  *  See parser.c for detailed information. 
  */
 extern Mon_Ast* mon_TargetAst;
+
+extern int Mon_TkLine;
+extern int Mon_TkColumn;
 
 extern bool mon_DumpReduces;
 
@@ -146,6 +152,8 @@ definition:
         $$ = Mon_AstDefNewVar($1); 
 
         THROW_IF_ALLOC_FAIL($$);
+
+        FILL_NODE_HEADER($$->header);
     }
 
     | def_function { 
@@ -154,6 +162,8 @@ definition:
         $$ = Mon_AstDefNewFunc($1); 
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | def_type { 
@@ -162,6 +172,8 @@ definition:
         $$ = Mon_AstDefNewType($1); 
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -172,6 +184,8 @@ def_variable:
         $$ = Mon_AstVarDefNew($2.name, $2.length, $4.name, $4.length);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -220,6 +234,8 @@ def_type:
         $$ = Mon_AstTypeDefNew($2.name, $2.length, $4);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -230,6 +246,8 @@ typedesc:
         $$ = Mon_AstTypeDescNewAlias($1.name);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | '[' typedesc ']' {
@@ -238,6 +256,8 @@ typedesc:
         $$ = Mon_AstTypeDescNewArray($2);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | '{' field_defs '}' {
@@ -246,6 +266,8 @@ typedesc:
         $$ = Mon_AstTypeDescNewRecord(&$2);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -256,6 +278,8 @@ def_field:
         $$ = Mon_AstFieldNew($3.name, $1.name);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -288,6 +312,8 @@ def_function:
         );
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -343,6 +369,8 @@ parameter:
         $$ = Mon_AstParamNew($1.name, $1.length, $3.name, $3.length);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -353,6 +381,8 @@ block:
         $$ = Mon_AstBlockNew($2, $3);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -363,6 +393,8 @@ statement:
         $$ = Mon_AstStatementNewIf($2, $3, $4);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | MON_TK_WHILE cond block {
@@ -371,6 +403,8 @@ statement:
         $$ = Mon_AstStatementNewWhile($2, $3);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | var '=' exp ';' {
@@ -379,6 +413,8 @@ statement:
         $$ = Mon_AstStatementNewAssignment($1, $3);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | MON_TK_RETURN opt_exp ';' {
@@ -387,6 +423,8 @@ statement:
         $$ = Mon_AstStatementNewReturn($2);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | call ';' {
@@ -395,6 +433,8 @@ statement:
         $$ = Mon_AstStatementNewCall($1);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | '@' exp ';' {
@@ -403,6 +443,8 @@ statement:
         $$ = Mon_AstStatementNewEcho($2);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | block {
@@ -411,6 +453,8 @@ statement:
         $$ = Mon_AstStatementNewBlock($1);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -465,6 +509,8 @@ var:
         $$ = Mon_AstVarNewDirect($1.name);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_primary '.' MON_TK_IDENTIFIER {
@@ -473,6 +519,8 @@ var:
         $$ = Mon_AstVarNewField($1, $3.name);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_primary bracket_exp {
@@ -481,6 +529,8 @@ var:
         $$ = Mon_AstVarNewIndexed($1, $2);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -533,6 +583,8 @@ exp_primary:
         $$ = Mon_AstExpNewLiteral($1);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | var {
@@ -541,6 +593,8 @@ exp_primary:
         $$ = Mon_AstExpNewVar($1);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | call {
@@ -549,6 +603,8 @@ exp_primary:
         $$ = Mon_AstExpNewCall($1);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -565,6 +621,8 @@ exp_postfix:
         $$ = Mon_AstExpNewCast($1, $3.name);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
               
@@ -581,6 +639,8 @@ exp_unary:
         $$ = Mon_AstExpNewUn($2, MON_UNOP_NEGATIVE);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -597,6 +657,8 @@ exp_multiplicative:
         $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_MUL);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_multiplicative '/' exp_unary {
@@ -605,6 +667,8 @@ exp_multiplicative:
         $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_DIV);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -621,6 +685,8 @@ exp_additive:
         $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_ADD);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_additive '-' exp_multiplicative {
@@ -629,6 +695,8 @@ exp_additive:
         $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_SUB);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -645,6 +713,8 @@ exp_conditional:
         $$ = Mon_AstExpNewCond($1, $3, $5);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | MON_TK_NEW type opt_bracket_exp {
@@ -653,6 +723,8 @@ exp_conditional:
         $$ = Mon_AstExpNewNew($2.name, $3);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -699,6 +771,8 @@ cond_primary:
         $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_EQ);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_additive MON_TK_OP_NE exp_additive {
@@ -707,6 +781,8 @@ cond_primary:
         $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_NE);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_additive MON_TK_OP_LE exp_additive {
@@ -715,6 +791,8 @@ cond_primary:
         $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_LE);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_additive MON_TK_OP_GE exp_additive {
@@ -723,6 +801,8 @@ cond_primary:
         $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_GE);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_additive '>' exp_additive {
@@ -731,6 +811,8 @@ cond_primary:
         $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_GT);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 
     | exp_additive '<' exp_additive {
@@ -739,6 +821,8 @@ cond_primary:
         $$ = Mon_AstCondNewCompar($1, $3, MON_COMPAR_LT);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -770,6 +854,8 @@ cond_and:
         $$ = Mon_AstCondNewBin($1, $3, MON_BINCOND_AND);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -786,6 +872,8 @@ cond_or:
         $$ = Mon_AstCondNewBin($1, $3, MON_BINCOND_OR);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 
@@ -796,6 +884,8 @@ call:
         $$ = Mon_AstCallNew($1.name, $1.length, $3);
 
         THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
     }
 ;
 

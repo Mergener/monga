@@ -10,6 +10,7 @@ C_LINKAGE_BEGIN
 typedef struct Mon_AstParam_  Mon_AstParam;
 typedef struct Mon_AstVarDef_ Mon_AstVarDef;
 typedef struct Mon_AstVar_    Mon_AstVar;
+typedef struct Mon_AstField_  Mon_AstField;
 
 typedef enum {
 
@@ -39,7 +40,7 @@ typedef struct Mon_AstVar_ {
             char* fieldName;
 
             struct {
-                Mon_AstTypeDef* type;
+                Mon_AstField* field;
             } semantic;
 
         } field;
@@ -51,10 +52,6 @@ typedef struct Mon_AstVar_ {
 
             /** The expression that yields the target index of the accessed array. */
             Mon_AstExp* indexExpr;
-
-            struct {
-                Mon_AstTypeDef* type;
-            } semantic;
 
         } indexed;
 
@@ -77,6 +74,10 @@ typedef struct Mon_AstVar_ {
         } direct;
 
     } var;
+
+    struct {
+        Mon_AstTypeDef* type;
+    } semantic;
 
 } Mon_AstVar;
 

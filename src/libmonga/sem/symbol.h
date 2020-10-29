@@ -11,7 +11,8 @@ typedef enum {
     SYM_PARAM,
     SYM_FUNC,
     SYM_VAR,
-    SYM_TYPE
+    SYM_TYPE,
+    SYM_FIELD
 
 } SymbolKind;
 
@@ -40,7 +41,12 @@ typedef struct {
 
         /** A type symbol. Available if kind == SYM_TYPE. */
         Mon_AstTypeDef* type;
+
+        /** A record field symbol. Available if kind == SYM_FIELD. */
+        Mon_AstField* field;
     } definition;
+
+    const char* symName;
 
 } Symbol;
 
@@ -48,6 +54,7 @@ MON_PRIVATE Symbol* NewParamSymbol(Mon_AstParam* param);
 MON_PRIVATE Symbol* NewFuncSymbol(Mon_AstFuncDef* func);
 MON_PRIVATE Symbol* NewTypeSymbol(Mon_AstTypeDef* type);
 MON_PRIVATE Symbol* NewVarSymbol(Mon_AstVarDef* var);
+MON_PRIVATE Symbol* NewFieldSymbol(Mon_AstField* field);
 
 /**
  * 	Returns the name of a symbol.

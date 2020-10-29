@@ -45,7 +45,7 @@ static void AstLeakTest() {
 
 	ConstructSampleAst(&ast);
 
-	Mon_AstFinalize(&ast);
+	Mon_AstDestroy(&ast);
 
 	int finalAllocCount = GetAllocCount();
 	MON_ASSERT(finalAllocCount == initialAllocCount,

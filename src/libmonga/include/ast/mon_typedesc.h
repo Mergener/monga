@@ -29,7 +29,14 @@ typedef enum {
      *  types are always stack allocated and variables of primitive types
      *  contain their values instead of references.
      */
-    MON_TYPEDESC_PRIMITIVE
+    MON_TYPEDESC_PRIMITIVE,
+
+    //  
+    //  The following type descriptions are reserved to monga:
+    //
+
+    MON_TYPEDESC_NULL,
+    MON_TYPEDESC_ERROR
 
 } Mon_AstTypeDescKind;
 
@@ -64,13 +71,17 @@ typedef struct {
 typedef struct {
 
     Mon_AstTypeDesc* innerTypeDesc;
+    struct {
+        Mon_AstTypeDef* innerTypeDef;
+    } semantic;
 
 } Mon_TypeDescArray;
 
 typedef enum {
 
     MON_PRIMITIVE_INT32,
-    MON_PRIMITIVE_FLOAT32
+    MON_PRIMITIVE_FLOAT32,
+    MON_PRIMITIVE_VOID
 
 } Mon_PrimitiveTypeCode;
 

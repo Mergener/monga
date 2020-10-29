@@ -1,0 +1,7 @@
+function foo(): int {
+	var x : int;
+	var f : someType;
+
+	x = f.value;
+	return x;
+}

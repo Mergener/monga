@@ -1,0 +1,11 @@
+function main() {
+	var i : int;
+
+	i = 5;
+
+	while (i > 0) {
+		@i*2;
+
+		i = i - 1;
+	}
+}

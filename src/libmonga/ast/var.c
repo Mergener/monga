@@ -5,6 +5,7 @@
 
 #include "mon_alloc.h"
 #include "../strutils.h"
+#include "../sem/types.h"
 
 Mon_AstVar* Mon_AstVarNewIndexed(Mon_AstExp* indexedExpr, Mon_AstExp* indexExpr) {
     MON_CANT_BE_NULL(indexedExpr);
@@ -18,6 +19,8 @@ Mon_AstVar* Mon_AstVarNewIndexed(Mon_AstExp* indexedExpr, Mon_AstExp* indexExpr)
     ret->varKind = MON_VAR_INDEXED;
     ret->var.indexed.indexedExpr = indexedExpr;
     ret->var.indexed.indexExpr = indexExpr;
+
+    ret->semantic.type = NULL;
 
     return ret;
 }
@@ -39,6 +42,9 @@ Mon_AstVar* Mon_AstVarNewField(Mon_AstExp* expr, const char* fieldName) {
     ret->varKind = MON_VAR_FIELD;
     ret->var.field.expr = expr;
 
+    ret->semantic.type = NULL;
+    ret->var.field.semantic.field = NULL;
+
     return ret;
 }
 
@@ -57,6 +63,9 @@ Mon_AstVar* Mon_AstVarNewDirect(const char* varName) {
     }
 
     ret->varKind = MON_VAR_DIRECT;
+    ret->semantic.type = NULL;
+    ret->var.direct.semantic.definitionKind = MON_SEM_VARDEF_VAR;
+    ret->var.direct.semantic.definition.varDef = NULL;
 
     return ret;
 }

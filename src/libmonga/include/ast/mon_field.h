@@ -10,7 +10,7 @@ C_LINKAGE_BEGIN
 /**
  *  A record field declaration.
  */
-typedef struct {
+typedef struct Mon_AstField_ {
 
     Mon_AstNodeHeader header;
 

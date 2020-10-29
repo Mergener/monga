@@ -15,7 +15,7 @@ DEBUG_LIB_PATH="bin/builds/libmonga/debug"
 DEBUG_OUT_PATH="bin/builds/monga/debug"
 
 # Compilation args
-DEBUG_COMPILER_ARGS="-O1"
+DEBUG_COMPILER_ARGS="-O1 -g"
 
 ### RELEASE
 # Library path
