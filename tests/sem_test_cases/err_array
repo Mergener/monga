@@ -1,0 +1,5 @@
+type floatarray = [float];
+
+function foo(): floatarray {
+    return new int[25];
+}

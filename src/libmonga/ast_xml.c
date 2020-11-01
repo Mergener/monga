@@ -314,6 +314,10 @@ static void XmlDumpExpNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
         case MON_EXP_CALL:
             XmlDumpCallNode(ctx, exp->exp.callExpr);
             break;
+
+        case MON_EXP_NULL:
+            DUMPF_OR_STOP(ctx, "<Null></Null>");
+            break;
     }
 }
 

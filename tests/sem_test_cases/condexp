@@ -1,0 +1,7 @@
+type T = {
+    x : float;
+};
+
+function foo(a : int): T {
+    return (a > 5) ? new T : foo(a+1);
+}

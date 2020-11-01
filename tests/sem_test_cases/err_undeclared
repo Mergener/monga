@@ -1,0 +1,10 @@
+type T = {
+	a : int;
+	b : float;
+};
+
+function main() {
+	var i : int;
+
+	i = x;
+}

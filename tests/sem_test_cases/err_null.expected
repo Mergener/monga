@@ -1,0 +1,2 @@
+[Error] At line 7, column 14: Cannot assign value of type '<null-type>' to lvalue of type 'int'.
+Semantic errors were caught during analysis.

@@ -24,7 +24,15 @@ bool IsIntegerType(Mon_AstTypeDef* type) {
         return false;
     }
 
-    return type->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_INT32;
+    switch (type->typeDesc->typeDesc.primitive.typeCode) {
+        case MON_PRIMITIVE_INT8:
+        case MON_PRIMITIVE_INT16:
+        case MON_PRIMITIVE_INT32:
+        case MON_PRIMITIVE_INT64:
+            return true;
+
+        default: return false;
+    }
 }
 
 bool IsFloatingPointType(Mon_AstTypeDef* type) {
@@ -35,7 +43,14 @@ bool IsFloatingPointType(Mon_AstTypeDef* type) {
         return false;
     }
 
-    return type->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_FLOAT32;
+
+    switch (type->typeDesc->typeDesc.primitive.typeCode) {
+        case MON_PRIMITIVE_FLOAT32:
+        case MON_PRIMITIVE_FLOAT64:
+            return true;
+
+        default: return false;
+    }
 }
 
 bool IsNumericType(Mon_AstTypeDef* type) {
@@ -51,6 +66,13 @@ bool IsTypeAssignableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
     a = GetUnderlyingType(a);
     b = GetUnderlyingType(b);
 
+    // 'null' is assignable to any reference type.
+    if (b->typeDesc->typeDescKind == MON_TYPEDESC_NULL) {
+        return IsRefType(a);
+    }
+
+    // Two arrays are only indexable if the underlying type
+    // of their contained elements is the exact same.
     if (a->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY && 
         b->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY) {
         
@@ -93,7 +115,7 @@ bool IsTypeCastableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
         return true;
     }
 
-    return a == b;
+    return IsTypeAssignableFrom(a, b);
 }
 
 Mon_AstTypeDef* GetUnopResultType(Mon_AstTypeDef* type, Mon_UnopKind unop) {
@@ -160,39 +182,6 @@ Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype,
     }
             
     return NULL;
-}
-
-static Symbol* ConstructBuiltinPrimitive(const char* name, 
-                                         Mon_PrimitiveTypeCode typeCode) {
-    MON_CANT_BE_NULL(name);
-
-    Mon_AstTypeDesc* typeDesc = Mon_AstTypeDescNewPrimitive(typeCode);
-    if (typeDesc == NULL) {
-        return NULL;
-    }
-
-    Mon_AstTypeDef* typeDef = Mon_AstTypeDefNew(name, strlen(name), typeDesc);
-    if (typeDef == NULL) {
-        Mon_AstTypeDescDestroy(typeDesc, false);
-        return NULL;
-    }
-
-    Symbol* symbol = NewTypeSymbol(typeDef);
-    if (symbol == NULL) {
-        Mon_AstTypeDefDestroy(typeDef, true);
-        return NULL;
-    }
-
-    typeDesc->header.column = -1;
-    typeDesc->header.line = -1;
-    typeDef->header.column = -1;
-    typeDef->header.line = -1;
-
-    symbol->definition.type = typeDef;
-    
-    symbol->kind = SYM_TYPE;
-
-    return symbol;
 }
 
 Mon_AstTypeDef* GetCondExpResultType(Mon_AstTypeDef* thenType, Mon_AstTypeDef* elseType) {
@@ -282,27 +271,52 @@ bool TypeCanCompare(Mon_AstTypeDef* a,
 bool ConstructBuiltinTypes(Mon_Vector* vec) {
     MON_CANT_BE_NULL(vec);
 
+    // Create special typedescs:
+    // <null-type>:
+    Mon_AstTypeDesc* nullTypeDesc = Mon_Alloc(sizeof(Mon_AstTypeDesc));
+    if (nullTypeDesc == NULL) {
+        return false;
+    }
+    nullTypeDesc->typeDescKind = MON_TYPEDESC_NULL;
+    nullTypeDesc->header.line = nullTypeDesc->header.column = -1;
+
+    // <error-type>:
+    Mon_AstTypeDesc* errorTypeDesc = Mon_Alloc(sizeof(Mon_AstTypeDesc));
+    if (errorTypeDesc == NULL) {
+        Mon_Free(errorTypeDesc);
+        return false;
+    }
+    errorTypeDesc->typeDescKind = MON_TYPEDESC_ERROR;
+    errorTypeDesc->header.line = errorTypeDesc->header.column = -1;
+
     struct {
         const char* name;
-        Mon_PrimitiveTypeCode typeCode;
-    } builtinPrimitives[] = {
-        { "int", MON_PRIMITIVE_INT32 },
-        { "float", MON_PRIMITIVE_FLOAT32 },
-        { "void", MON_PRIMITIVE_VOID }
+        Mon_AstTypeDesc* typeDesc;
+    } builtins[] = {
+        { "char", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_CHAR) },
+        { "byte", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT8) },
+        { "short", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT16) },
+        { "int", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
+        { "long", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
+        { "float", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
+        { "double", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
+        { "void", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_VOID) },
+        { "<null-type>", nullTypeDesc },
+        { "<error-type>", errorTypeDesc }
     };
 
-    const int primCount = sizeof(builtinPrimitives)/sizeof(*builtinPrimitives);
+    const int count = sizeof(builtins)/sizeof(*builtins);
 
     int firstIndex = Mon_VectorCount(vec);
-    for (int i = 0; i < primCount; ++i) {
-        Symbol* s = ConstructBuiltinPrimitive(builtinPrimitives[i].name, builtinPrimitives[i].typeCode);
-        if (s == NULL) {
-            return false;
-        }
-        if (Mon_VectorPush(vec, s) != MON_SUCCESS) {
+    for (int i = 0; i < count; ++i) {
+        Symbol* s = NewTypeSymbol(Mon_AstTypeDefNew(builtins[i].name, strlen(builtins[i].name), builtins[i].typeDesc));
+        
+        if (s == NULL || Mon_VectorPush(vec, s) != MON_SUCCESS) {
             // Delete all previously created symbols.
             for (int j = i - 1; j >= firstIndex; --j) {
-                DestroySymbol(Mon_VectorGet(vec, j));
+                s = Mon_VectorGet(vec, j);
+                Mon_AstTypeDefDestroy(s->definition.type, true);
+                DestroySymbol(s);
                 Mon_VectorRemove(vec, j);
             }
             DestroySymbol(s);

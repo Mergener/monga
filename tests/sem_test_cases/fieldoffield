@@ -1,0 +1,19 @@
+type A = {
+    value : int;
+};
+
+type B = {
+    a : A;
+};
+
+type C = {
+    c : C;
+    b : B;
+};
+
+function foo() {
+    var c : C;
+
+    c.c.c.c.c.b.a.value = 5;
+    c.c.c = new C;
+}

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+function gen_cases {
+	for f in $2/*; do
+		[ -e "$f" ] || continue
+
+		if [[ $f == *.expected ]]; 	then
+			# Ignore reference files
+			continue
+		fi
+
+		if [ -f "$f.expected" ]; then
+			# Ignore files that already have a reference
+			continue
+		fi
+
+		./bin/builds/monga/debug/monga $1 $f > $f.expected 2>&1
+	done
+}
+
+gen_cases -s tests/sem_test_cases
+gen_cases -r tests/reduce_dump_cases
+gen_cases -p tests/ast_dump_cases
+gen_cases -l tests/lex_cases

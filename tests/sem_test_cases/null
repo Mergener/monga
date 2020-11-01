@@ -1,0 +1,9 @@
+type R = { 
+    v : int;
+};
+
+function main() {
+    var r : R;
+
+    r = null;
+}

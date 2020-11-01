@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include "grammar.tab.h"
 
@@ -54,6 +55,7 @@ static void DumpReduce(const char* fmt, ...);
 %token MON_TK_RETURN
 %token MON_TK_NEW
 %token MON_TK_AS
+%token MON_TK_NULL
 %token MON_TK_LIT_INT
 %token MON_TK_LIT_FLOAT
 %token MON_TK_LIT_STRING
@@ -82,7 +84,7 @@ static void DumpReduce(const char* fmt, ...);
     Mon_Ast* ast;
 
     Mon_Vector        vector;
-
+    bool              boolean;
     Mon_AstDef*       defNode;
     Mon_AstBlock*     blockNode;
     Mon_AstTypeDef*   typeDefNode;
@@ -96,6 +98,7 @@ static void DumpReduce(const char* fmt, ...);
     Mon_AstCall*      callNode;
     Mon_AstTypeDesc*  typeDescNode;
     Mon_AstField*     fieldNode;
+    
 }
 
 %type <identifier>    MON_TK_IDENTIFIER type opt_ret_type
@@ -126,6 +129,8 @@ module:
 
     | /* nothing */ {
         DumpReduce("module r2");
+
+        INIT_VECTOR(mon_TargetAst->defsVector);
     }
 ;
 
@@ -225,7 +230,7 @@ type:
 
         $$ = $1;
     }
-; 
+;
 
 def_type: 
     MON_TK_TYPE MON_TK_IDENTIFIER '=' typedesc ';' {
@@ -605,6 +610,12 @@ exp_primary:
         THROW_IF_ALLOC_FAIL($$);
         
         FILL_NODE_HEADER($$->header);
+    }
+
+    | MON_TK_NULL {
+        DumpReduce("exp_primary r5");
+
+        $$ = Mon_AstExpNewNull();
     }
 ;
 

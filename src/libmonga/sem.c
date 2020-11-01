@@ -400,7 +400,7 @@ static bool ResolveCall(SemAnalysisCtx* ctx, Mon_AstCall* call) {
         Mon_AstParam* paramDef = Mon_VectorGet(&funcDef->parameters, i);
 
         if (!IsTypeAssignableFrom(paramDef->semantic.type, paramExp->semantic.type)) {
-            LogError(ctx, &paramDef->header, "Parameter type mismatch in '%s' function call. Passed argument %d, of type '%s', "
+            LogError(ctx, &paramExp->header, "Parameter type mismatch in '%s' function call. Passed argument %d, of type '%s', "
                           "cannot be assigned to a parameter of type '%s'.",
                           call->funcName, 
                           i + 1,
@@ -650,6 +650,11 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp) {
             exp->semantic.type = exp->exp.callExpr->semantic.callee->semantic.returnType;
             return true;
 
+        case MON_EXP_NULL:
+            exp->semantic.type = FindType(&s_BuiltinScope, "<null-type>", false);
+            MON_ASSERT(exp->semantic.type != NULL, "<null-type> must be in builtin scope.");
+            return true;
+
         case MON_EXP_NEW: {
             Mon_AstTypeDef* type = FindType(ctx->currentScope, exp->exp.newExpr.typeName, true);
             if (type == NULL) {
@@ -671,6 +676,11 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp) {
                 // since FindOrCreateArrayType throws on allocation errors.
                 exp->semantic.type = FindOrCreateArrayType(ctx, type); 
                 return true;
+            } else if (!IsRefType(type)) {
+                // New expression does not refer to an array instantiation, it must
+                // then only refer to an instatiation of a ref-type object.    
+                LogError(ctx, &exp->header, "'new' can only be used to instantiate values of a record or array type.");
+                return false;
             }
             // Since this is a simple object instantiation, the resulting
             // type is the user-specified type in instantiation.

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+gdb ./bin/builds/monga/debug/monga "$@"

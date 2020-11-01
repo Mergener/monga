@@ -25,6 +25,10 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 
 %%
 
+"#".* {
+    // Ignore (comment)
+}
+
 \n {
     Mon_TkColumn = 1;
     Mon_TkLine++;
@@ -78,7 +82,6 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
     Mon_TkColumn += yyleng;
     return MON_TK_WHILE;
 }
-
 "==" {
     Mon_TkColumn += yyleng;
     return MON_TK_OP_EQ;
@@ -102,6 +105,12 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 "||" {
     Mon_TkColumn += yyleng;
     return MON_TK_OP_OR;
+}
+
+"null" {
+    Mon_TkColumn += yyleng;
+    
+    return MON_TK_NULL;
 }
 
 [a-zA-Z_][a-zA-Z_0-9]* {

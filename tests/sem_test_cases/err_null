@@ -1,0 +1,8 @@
+type intarray = [int];
+
+function main() {
+    var i : int;
+    var is : intarray;
+    is = null;
+    i = null;
+}

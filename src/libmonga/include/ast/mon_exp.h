@@ -47,7 +47,8 @@ typedef enum {
     MON_EXP_VAR,         /** A variable value access. */
     MON_EXP_LITERAL,     /** A literal constant (e.g 20) */
     MON_EXP_CALL,        /** func() */
-    MON_EXP_NEW          /** new type[opt_array_exp] */
+    MON_EXP_NEW,         /** new type[opt_array_exp] */    
+    MON_EXP_NULL    
 
 } Mon_AstExpKind;
 
@@ -230,6 +231,15 @@ MON_PUBLIC Mon_AstExp* MON_CALL Mon_AstExpNewLiteral(Mon_Literal literal);
  *  @remarks Semantic data is initialized to NULL.
  */
 MON_PUBLIC Mon_AstExp* MON_CALL Mon_AstExpNewNew(const char* typeName, Mon_AstExp* arraySize);
+
+/**
+ *  Creates a new explicit null reference expression node.
+ * 
+ *  @return The expression node or NULL if allocation fails.
+ * 
+ *  @remarks Semantic data is initialized to NULL.
+ */
+Mon_AstExp* Mon_AstExpNewNull();
 
 /**
  *  Destroys an expression node, releasing its memory.

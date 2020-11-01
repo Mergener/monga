@@ -173,6 +173,19 @@ Mon_AstExp* Mon_AstExpNewLiteral(Mon_Literal literal) {
     return ret;
 }
 
+Mon_AstExp* Mon_AstExpNewNull() {
+    Mon_AstExp* ret = Mon_Alloc(sizeof(Mon_AstExp));
+    if (ret == NULL) {
+        return NULL;
+    }
+
+    ret->expKind = MON_EXP_NULL;
+
+    InitializeExpSemantics(ret);
+
+    return ret;
+}
+
 void Mon_AstExpDestroy(Mon_AstExp* node, bool rec) {
     if (node == NULL) {
         return;
@@ -233,6 +246,9 @@ void Mon_AstExpDestroy(Mon_AstExp* node, bool rec) {
                 Mon_AstExpDestroy(exp.exp.newExpr.arraySizeExp, true);
             }
             Mon_Free(exp.exp.newExpr.typeName);
+            break;
+        
+        case MON_EXP_NULL:
             break;
         
         default:

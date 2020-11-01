@@ -10,7 +10,13 @@ AST_DUMP_CASES_PATH = 'ast_dump_cases'
 REDUCE_DUMP_CASES_PATH = 'reduce_dump_cases'
 SEM_CASES_PATH = 'sem_test_cases'
 
+passed = 0
+done = 0
+
 def test_file(program_args, input_file_path):
+	global passed
+	global done
+
 	# Get Monga output for input file
 	process = Popen(program_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True)
 	(output, _) = process.communicate()
@@ -34,8 +40,11 @@ def test_file(program_args, input_file_path):
 
 	testCaseCmd = ' '.join(program_args)
 
+	done += 1
+
 	if equal:
 		print(f"[Test] {testCaseCmd} (SUCCESS)")
+		passed += 1
 	else:
 		print(f"[Test] {testCaseCmd} (FAILED)\n-> Expected:\n[{expected_out}]\n-> Got:\n[{output}]")
 
@@ -52,6 +61,11 @@ def test_reducedump(monga_path, input_file_path):
 	test_file([monga_path, '-r', input_file_path], input_file_path)
 
 def test_all_lex(monga_path, lex_cases_path):
+	global passed
+	global done
+
+	done = 0
+	passed = 0
 	print('Testing Lex Dump...')
 
 	for file in os.listdir(lex_cases_path):
@@ -59,9 +73,14 @@ def test_all_lex(monga_path, lex_cases_path):
 			input_file_path = os.path.join(lex_cases_path, file)
 			test_lex(monga_path, input_file_path)
 
-	print('Lex tests finished.')
+	print(f'Lex tests finished. {passed}/{done} passed.')
 
 def test_all_astdump(monga_path, astdump_cases_path):
+	global passed
+	global done
+	
+	done = 0
+	passed = 0
 	print('Testing Ast Dumping...')
 
 	for file in os.listdir(astdump_cases_path):
@@ -69,9 +88,14 @@ def test_all_astdump(monga_path, astdump_cases_path):
 			input_file_path = os.path.join(astdump_cases_path, file)
 			test_astdump(monga_path, input_file_path)
 
-	print('Ast Dumping tests finished.')
+	print(f'Ast Dumping tests finished. {passed}/{done} passed.')
 
 def test_all_semtest(monga_path, cases_path):
+	global passed
+	global done
+	
+	done = 0
+	passed = 0
 	print('Testing Semantics...')
 
 	for file in os.listdir(cases_path):
@@ -79,9 +103,14 @@ def test_all_semtest(monga_path, cases_path):
 			input_file_path = os.path.join(cases_path, file)
 			test_sem(monga_path, input_file_path)
 
-	print('Semantics tests finished.')
+	print(f'Semantics tests finished. {passed}/{done} passed.')
 
 def test_all_reducedump(monga_path, astdump_cases_path):
+	global passed
+	global done
+	
+	done = 0
+	passed = 0
 	print('Testing Parser Reduction Dumping...')
 
 	for file in os.listdir(astdump_cases_path):
@@ -89,7 +118,7 @@ def test_all_reducedump(monga_path, astdump_cases_path):
 			input_file_path = os.path.join(astdump_cases_path, file)
 			test_reducedump(monga_path, input_file_path)
 
-	print('Reduction Dumping tests finished.')
+	print(f'Reduction Dumping tests finished. {passed}/{done} passed.')
 
 def test_all(monga_path):
 	test_all_lex(monga_path, LEX_CASES_PATH)

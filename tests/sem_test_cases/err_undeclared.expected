@@ -1,0 +1,2 @@
+[Error] At line 9, column 8: Variable 'x' was not declared in this scope.
+Semantic errors were caught during analysis.

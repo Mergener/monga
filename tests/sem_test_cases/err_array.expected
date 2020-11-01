@@ -1,0 +1,2 @@
+[Error] At line 4, column 24: Cannot return value of type '@array_int' in function declared with return type 'floatarray'.
+Semantic errors were caught during analysis.

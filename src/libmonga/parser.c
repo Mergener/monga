@@ -52,14 +52,17 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
     switch (yyparse()) {
         case 0:
             retCode = MON_SUCCESS;
+            outAst->astState = MON_ASTSTATE_SYNTAX_OK;
             break;
 
         case 1:
             retCode = MON_ERR_SYNTAX;
+            outAst->astState = MON_ASTSTATE_NONE;
             break;
 
         case 2:
             retCode = MON_ERR_NOMEM;
+            outAst->astState = MON_ASTSTATE_NONE;
             break;
     }
 

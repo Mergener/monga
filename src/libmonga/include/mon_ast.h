@@ -40,6 +40,15 @@ typedef enum {
 
 } Mon_AstDumpFlags;
 
+typedef enum {
+
+    MON_ASTSTATE_NONE,
+    MON_ASTSTATE_SYNTAX_OK,
+    MON_ASTSTATE_SEM_ERR,
+    MON_ASTSTATE_SEM_OK
+
+} Mon_AstState;
+
 /**
  *  Abstract syntax tree for a Monga language module.
  */
@@ -47,6 +56,8 @@ typedef struct {
 
     /** Vector containing all program definitions. Stored elements are of type Mon_AstDef*. */
     Mon_Vector defsVector;
+
+    Mon_AstState astState;
 
 } Mon_Ast;
 
