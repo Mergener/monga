@@ -93,6 +93,9 @@ const char* Mon_GetTokenName(Mon_TkType tkType) {
         case MON_TK_TYPE:
             return "type";
 
+        case MON_TK_NULL:
+            return "null";
+
         case MON_TK_IDENTIFIER:
             return "identifier";
 
