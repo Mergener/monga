@@ -59,6 +59,8 @@ typedef struct {
 
     Mon_AstState astState;
 
+    char* moduleName;
+
 } Mon_Ast;
 
 /**

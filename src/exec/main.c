@@ -31,7 +31,8 @@ struct ReduceDumpArgs {
 };
 
 struct SemTestArgs {
-    const char* inputFilePath;
+    char** inputFilePaths;
+    int fileCount;
 };
 
 /** Structured arguments provided to the program. */
@@ -148,8 +149,14 @@ static struct ProgramArgs ParseArgs(int argc, char** argv) {
                 exit(EXIT_FAILURE);
             }
 
-            ret.args.semTest.inputFilePath = argv[i];
-
+            ret.args.semTest.inputFilePaths = &argv[i];
+            ret.args.semTest.fileCount = 0;
+            for (; i < argc; ++i) {
+                if (argv[i][0] == '-') {
+                    break;
+                }
+                ret.args.semTest.fileCount++;
+            }
         }
     }
 
@@ -188,7 +195,7 @@ static void RunAstDump(const struct AstDumpArgs* args) {
     }
 
     Mon_Ast ast;
-    Mon_RetCode ret = Mon_Parse(inputStream, &ast, MON_PARSEFLAGS_NONE);
+    Mon_RetCode ret = Mon_Parse(inputStream, &ast, args->inputFilePath, MON_PARSEFLAGS_NONE);
 
     if (ret == MON_SUCCESS) {
         Mon_DumpAst(&ast, stdout, MON_ASTDUMP_XML, MON_ASTDUMP_FLAGS_PRETTYPRINT);
@@ -198,32 +205,32 @@ static void RunAstDump(const struct AstDumpArgs* args) {
 }
 
 static void RunSemTest(const struct SemTestArgs* args) {
-    FILE* inputStream;
+    Mon_Ast* asts = Mon_Alloc(sizeof(Mon_Ast) * args->fileCount);
+    if (asts == NULL) {
+        perror("Out of memory.\n");
+        exit(EXIT_FAILURE);
+    }
 
-    if (args->inputFilePath == NULL) {
-        inputStream = stdin;
-    } else {
-        inputStream = fopen(args->inputFilePath, "r");
-
-        if (inputStream == NULL) {
-            fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
-            exit(MON_ERR_FILENOTFOUND);
+    for (int i = 0; i < args->fileCount; ++i) {        
+        FILE* f = fopen(args->inputFilePaths[i], "r");
+        if (f == NULL) {
+            fprintf(stderr, "Error: Couldn't open file %s.", args->inputFilePaths[i]);
+            exit(EXIT_FAILURE);
         }
+        
+        if (Mon_Parse(f, &asts[i], args->inputFilePaths[i], MON_PARSEFLAGS_NONE) != MON_SUCCESS) {
+            fprintf(stderr, "Errors during syntax analysis.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        fclose(f);
     }
 
-    Mon_Ast ast;
-    Mon_RetCode ret = Mon_Parse(inputStream, &ast, MON_PARSEFLAGS_NONE);
-    if (ret != MON_SUCCESS) {
-        fprintf(stderr, "Errors during syntax analysis.\n");
-        return;
-    }
-
-    ret = Mon_SemAnalyse(&ast, stderr);
-    if (ret != MON_SUCCESS) {
+    if (Mon_SemAnalyseMultiple(&asts[0], args->fileCount, stderr) != MON_SUCCESS) {
         fprintf(stderr, "Semantic errors were caught during analysis.\n");
-        return;
+    } else {
+        printf("Semantic analysis completed with success.\n");
     }
-    printf("Semantic analysis completed with success.\n");
 }
 
 static void RunReduceDump(const struct ReduceDumpArgs* args) {
@@ -241,7 +248,7 @@ static void RunReduceDump(const struct ReduceDumpArgs* args) {
     }
 
     Mon_Ast ast;
-    Mon_Parse(inputStream, &ast, MON_PARSEFLAGS_DUMPREDUCES);
+    Mon_Parse(inputStream, &ast, args->inputFilePath, MON_PARSEFLAGS_DUMPREDUCES);
 }
 
 static void Run(const struct ProgramArgs* args) {

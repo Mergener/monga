@@ -41,8 +41,14 @@ static atomic_bool s_BuiltinScopeInitialized = false;
  */
 struct SemAnalysisCtx_ {
 
+    /** The ASTs to be analysed. */
+    Mon_Ast* targetAsts;
+
+    /** The number of ASTs to be analysed. */
+    int targetAstCount;
+
     /** The AST being targeted for this semantic analysis. */
-    Mon_Ast* targetAst;
+    Mon_Ast* currentAst;
 
     /** The scope at the top of the scope stack. */
     Scope* currentScope;
@@ -198,10 +204,12 @@ static void LogError(const SemAnalysisCtx* ctx, const Mon_AstNodeHeader* errNode
     va_list args;
     va_start(args, fmt);
 
-    fprintf(ctx->errStream, "[Error] At line %d, column %d: ",
-        errNodeHeader->line, errNodeHeader->column);
-    vfprintf(ctx->errStream, fmt, args);
-    fprintf(ctx->errStream, "\n");
+    if (ctx->errStream != NULL) {
+        fprintf(ctx->errStream, "[Error] Module %s, line %d, column %d: ",
+            ctx->currentAst->moduleName, errNodeHeader->line, errNodeHeader->column);
+        vfprintf(ctx->errStream, fmt, args);
+        fprintf(ctx->errStream, "\n");
+    }
 
     va_end(args);
 }
@@ -497,7 +505,7 @@ static Mon_AstTypeDef* FindOrCreateArrayType(SemAnalysisCtx* ctx, Mon_AstTypeDef
     // Conveniently, we won't need to handle the deletion of created anonymous
     // nodes because they will be discarded altogether with other AST nodes when
     // the tree is destroyed.
-    if (Mon_VectorPush(&ctx->targetAst->defsVector, anonTypeDef) != MON_SUCCESS) {
+    if (Mon_VectorPush(&ctx->currentAst->defsVector, anonTypeDef) != MON_SUCCESS) {
         DestroySymbol(anonSym);
         Mon_AstTypeDefDestroy(anonTypeDef, true);
         Mon_Free(buf);
@@ -814,11 +822,20 @@ static bool ResolveBlock(SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDe
     return ret;
 }
 
-static bool ResolveFunctionDefinition(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcDef) {
+static bool ResolveFunctionDeclaration(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcDef) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(funcDef);
+    MON_CANT_BE_NULL(funcDef->body);
 
     bool ret = true;
+
+    // Try to register function in scope.
+    if (!TryRegisterSymbol(ctx, &funcDef->header, NewFuncSymbol(funcDef))) {
+        return false;
+    }
+
+    // Keep index of function symbol.
+    int index = Mon_VectorCount(&ctx->currentScope->symbols) - 1;
 
     // Resolve function return type
     Mon_AstTypeDef* type = FindType(ctx->currentScope, funcDef->funcRetTypeName, true);
@@ -831,15 +848,6 @@ static bool ResolveFunctionDefinition(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcD
 
     // Return type validated.
     funcDef->semantic.returnType = type;
-    
-    // We already need to add the function to the current scope in order
-    // to allow recursive functions. If its resolution fails, we simply
-    // remove it from the symbol list.
-    if (!TryRegisterSymbol(ctx, &funcDef->header, NewFuncSymbol(funcDef))) {
-        return false;
-    }
-
-    int index = Mon_VectorCount(&ctx->currentScope->symbols) - 1;
 
     PushScope(ctx);
 
@@ -869,15 +877,45 @@ static bool ResolveFunctionDefinition(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcD
         }
     }
 
-    if (!ResolveBlock(ctx, funcDef->body, funcDef)) {
-        // Failed block resolution, remove function from the scope.
-        PopScope(ctx);
-        Mon_VectorRemove(&ctx->currentScope->symbols, index);
-        return false;
+    PopScope(ctx);
+    return ret;
+}
+
+static bool ResolveFunctionImpl(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcDef) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(funcDef);
+
+    if (funcDef->body == NULL) {
+        // No implementation to resolve.
+        return true;
     }
 
-    // Function resolved succesfully 
+    PushScope(ctx);
+
+    MON_VECTOR_FOREACH(&funcDef->parameters, Mon_AstParam*, param,
+        // Parameter name clashes have already been validated in function
+        // declaration. It is still a good idea to check if this hasn't
+        // happened properly in debug mode.
+#ifdef MON_DEBUG
+        bool ok = TryRegisterSymbol(ctx, &param->header, NewParamSymbol(param));
+        MON_ASSERT(ok, "Cannot have parameter name clashes in resolution of function implementation.");
+#else
+        Symbol* s = NewParamSymbol(param);
+        if (s == NULL) {
+            THROW(ctx);
+        }
+
+        if (Mon_VectorPush(&ctx->currentScope->symbols, s) != MON_SUCCESS) {
+            DestroySymbol(s);
+            THROW(ctx);
+        }
+#endif
+    );
+
+    bool ret = ResolveBlock(ctx, funcDef->body, funcDef);
+
     PopScope(ctx);
+
     return ret;
 }
 
@@ -954,68 +992,139 @@ static bool ResolveTypeDescription(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDes
     return false;
 }
 
+static bool ResolveTypeDeclaration(SemAnalysisCtx* ctx, Mon_AstTypeDef* typeDef) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(typeDef);
+
+    return TryRegisterSymbol(ctx, &typeDef->header, NewTypeSymbol(typeDef));
+}
+
 static bool ResolveTypeDefinition(SemAnalysisCtx* ctx, Mon_AstTypeDef* typeDef) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(typeDef);
 
-    // We need to add the type to the scope even if it hasn't been
-    // succesfully resolved. This is necessary to allow type descriptions
-    // to have recursive type fields.
-    if (!TryRegisterSymbol(ctx, &typeDef->header, NewTypeSymbol(typeDef))) {
-        return false;
-    }
-
-    int index = Mon_VectorCount(&ctx->currentScope->symbols) - 1;
-    bool ret = ResolveTypeDescription(ctx, typeDef->typeDesc);
-    if (!ret) {
-        // Type description couldn't be resolved,
-        // remove from symbols vector.
-        Mon_VectorRemove(&ctx->currentScope->symbols, index);
-        return false;
-    }
-    return true;
+    return ResolveTypeDescription(ctx, typeDef->typeDesc);
 }
 
-Mon_RetCode Mon_SemAnalyse(Mon_Ast* ast, FILE* semErrOutStream) {
-    MON_CANT_BE_NULL(ast);
+static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
+    MON_CANT_BE_NULL(ctx);
 
-    SemAnalysisCtx ctx;
-    ctx.currentScope = NULL;
-    ctx.targetAst = ast;
-    ctx.errStream = semErrOutStream;
-
-    if (setjmp(((struct SemAnalysisCtx_)ctx).jmpBuf) != SETJMP_OK) {
+    // Set checkpoint for memory errors
+    if (setjmp(((struct SemAnalysisCtx_*)ctx)->jmpBuf) != SETJMP_OK) {
         // Allocation errors occurred, cleanup and return accordingly.
-        Cleanup(&ctx);
+        Cleanup(ctx);
         return MON_ERR_NOMEM;
     }
     PrepareBuiltinScope();
 
     // No errors occurred, proceed with normal execution.
-    PushScope(&ctx);
+    PushScope(ctx);
 
-    bool allResolved = true;
-    MON_VECTOR_FOREACH(&ast->defsVector, Mon_AstDef*, def,
-        switch (def->defKind) {
-            case MON_AST_DEF_VAR:
-                allResolved = ResolveVarDefinition(&ctx, def->definition.variable) && allResolved;
-                break;
+    bool ret = true;
 
-            case MON_AST_DEF_FUNC:
-                allResolved = ResolveFunctionDefinition(&ctx, def->definition.function) && allResolved;
-                break;
+    // Considering symbol dependencies, symbols must be analysed in the following
+    // order:
+    //  Type declarations
+    //  Function declarations
+    //  Global variable declarations
+    //  Type descriptions
+    //  Function implementations
+    //
+    
+    // Analyse type declarations:
+    for (int i = 0; i < ctx->targetAstCount; ++i) {
+        ctx->currentAst = &ctx->targetAsts[i];
+        ctx->currentAst->astState = MON_ASTSTATE_SEM_OK;
 
-            case MON_AST_DEF_TYPE:
-                allResolved = ResolveTypeDefinition(&ctx, def->definition.type) && allResolved;
-                break;
+        MON_VECTOR_FOREACH(&ctx->currentAst->defsVector, Mon_AstDef*, def,
+            if (def->defKind != MON_AST_DEF_TYPE) {
+                continue;
+            }
 
-            default:
-                MON_ASSERT(false, "Unimplemented definition kind. (got %d)", (int)def->defKind);
-                break;
+            if (!ResolveTypeDeclaration(ctx, def->definition.type)) {
+                ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
+                ret = false;
+            }
+        );
+    }
+
+    // Analyse function declarations:
+    for (int i = 0; i < ctx->targetAstCount; ++i) {
+        ctx->currentAst = &ctx->targetAsts[i];
+
+        MON_VECTOR_FOREACH(&ctx->currentAst->defsVector, Mon_AstDef*, def,
+            if (def->defKind != MON_AST_DEF_FUNC) {
+                continue;
+            }
+
+            if (!ResolveFunctionDeclaration(ctx, def->definition.function)) {
+                ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
+                ret = false;
+            }
+        );
+    }
+
+    // Analyse global variables:
+    for (int i = 0; i < ctx->targetAstCount; ++i) {
+        ctx->currentAst = &ctx->targetAsts[i];
+
+        MON_VECTOR_FOREACH(&ctx->currentAst->defsVector, Mon_AstDef*, def,
+            if (def->defKind != MON_AST_DEF_VAR) {
+                continue;
+            }
+
+            if (!ResolveVarDefinition(ctx, def->definition.variable)) {
+                ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
+                ret = false;
+            }
+        );
+    }
+
+    // Analyse type definitions:
+    MON_VECTOR_FOREACH(&ctx->currentScope->symbols, Symbol*, s,
+        if (s->kind != SYM_TYPE) {
+            continue;
+        }
+
+        if (!ResolveTypeDefinition(ctx, s->definition.type)) {
+            ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
+            ret = false;
         }
     );
 
-    Cleanup(&ctx);
+    // Analyse function implementations:
+    MON_VECTOR_FOREACH(&ctx->currentScope->symbols, Symbol*, s,
+        if (s->kind != SYM_FUNC) {
+            continue;
+        }
 
-    return allResolved ? MON_SUCCESS : MON_ERR_SEMANTIC;
+        if (!ResolveFunctionImpl(ctx, s->definition.func)) {
+            ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
+            ret = false;
+        }
+    );
+
+    Cleanup(ctx);
+
+    return ret ? MON_SUCCESS : MON_ERR_SEMANTIC;
+}
+
+Mon_RetCode Mon_SemAnalyse(Mon_Ast* ast, FILE* semErrOutStream) {
+    MON_CANT_BE_NULL(ast);
+
+    return Mon_SemAnalyseMultiple(ast, 1, semErrOutStream);
+}
+
+Mon_RetCode Mon_SemAnalyseMultiple(Mon_Ast* asts, int astCount, FILE* semErrOutStream) {
+    MON_CANT_BE_NULL(asts);
+
+    SemAnalysisCtx ctx;
+    ctx.currentScope = NULL;
+    ctx.currentAst = &asts[0];
+    ctx.errStream = semErrOutStream;
+
+    ctx.targetAstCount = astCount;
+    ctx.targetAsts = asts;
+
+    return Analyse(&ctx);
 }

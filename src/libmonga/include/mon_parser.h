@@ -30,6 +30,7 @@ typedef uint32_t Mon_ParseFlags;
  *  input.
  *  @param outAst A pointer to an AST object that will have the AST data written upon.
  *  @param flags Option flags for the parsing proccess.
+ *  @param moduleName A name for the generated AST module.
  *  @return One of the following return codes:
  *   MON_SUCCESS       :: Parsing finished gracefully.
  *   MON_ERR_NOMEM     :: Parsing failed due to lack of available memory.
@@ -42,6 +43,6 @@ typedef uint32_t Mon_ParseFlags;
  *  thread to wait until the ongoing parsing finishes.
  *
  */
-MON_PUBLIC Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst, const char* moduleName, Mon_ParseFlags flags);
 
 #endif // PARSER_H

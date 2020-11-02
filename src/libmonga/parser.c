@@ -2,11 +2,13 @@
 
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "grammar.tab.h"
 
 #include "mon_error.h"
 #include "lex_private.h"
+#include "strutils.h"
 
 extern FILE* yyin;
 
@@ -26,9 +28,16 @@ Mon_Vector* mon_ParseStack = NULL;
 
 static atomic_bool s_Busy = false;
 
-Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
+Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, const char* moduleName, Mon_ParseFlags flags) {
     if (f == NULL || outAst == NULL) {
         return MON_ERR_BAD_ARG;
+    }
+
+    if (moduleName != NULL) {
+        outAst->moduleName = DuplicateString(moduleName, strlen(moduleName));
+        if (outAst->moduleName == NULL) {
+            return MON_ERR_NOMEM;
+        }
     }
 
     // Wait until an ongoing parsing is finished.
@@ -36,11 +45,6 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
     s_Busy = true;
 
     PrepareLex();
-
-    Mon_Vector stack;
-    if (Mon_VectorInit(&stack) != MON_SUCCESS) {
-        return MON_ERR_NOMEM;
-    }
 
     mon_TargetAst = outAst;
     mon_DumpReduces = (flags & MON_PARSEFLAGS_DUMPREDUCES) != 0;
@@ -67,8 +71,6 @@ Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
     }
 
     s_Busy = false;
-
-    Mon_VectorFinalize(&stack);
 
     return retCode;
 }
