@@ -12,8 +12,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "grammar.tab.h"
+#include "mon_alloc.h"
+#include "sem/types.h"
+#include "strutils.h"
 
 #define THROW_IF_ALLOC_FAIL(var)
 #define INIT_VECTOR(vec) \
@@ -77,7 +81,7 @@ static void DumpReduce(const char* fmt, ...);
     Mon_Literal literal;
 
     struct {
-        const char* name;
+        char* name;
         size_t length;
     } identifier;
 
@@ -188,6 +192,9 @@ def_variable:
 
         $$ = Mon_AstVarDefNew($2.name, $2.length, $4.name, $4.length);
 
+        Mon_Free($2.name);
+        Mon_Free($4.name);
+
         THROW_IF_ALLOC_FAIL($$);
         
         FILL_NODE_HEADER($$->header);
@@ -207,7 +214,9 @@ def_type:
         DumpReduce("def_type r1");
 
         $$ = Mon_AstTypeDefNew($2.name, $2.length, $4);
-
+        
+        Mon_Free($2.name);
+        
         THROW_IF_ALLOC_FAIL($$);
         
         FILL_NODE_HEADER($$->header);
@@ -219,6 +228,8 @@ typedesc:
         DumpReduce("typedesc r1");
 
         $$ = Mon_AstTypeDescNewAlias($1.name);
+        
+        Mon_Free($1.name);
 
         THROW_IF_ALLOC_FAIL($$);
         
@@ -251,6 +262,9 @@ def_field:
         DumpReduce("def_field r1");
 
         $$ = Mon_AstFieldNew($3.name, $1.name);
+        
+        Mon_Free($1.name);        
+        Mon_Free($3.name);
 
         THROW_IF_ALLOC_FAIL($$);
         
@@ -285,6 +299,9 @@ def_function:
             $6.length,
             $4, $7
         );
+        
+        Mon_Free($2.name);        
+        Mon_Free($6.name);
 
         THROW_IF_ALLOC_FAIL($$);
         
@@ -296,8 +313,9 @@ opt_ret_type:
     /* nothing */ {
         DumpReduce("opt_ret_type r1");
 
-        $$.name = "void";
-        $$.length = 4;
+        int len = strlen(TYPENAME_VOID);
+        $$.name = DuplicateString(TYPENAME_VOID, len);
+        $$.length = len;
     }
 
     | ':' type {
@@ -331,7 +349,7 @@ opt_parameters:
     }
 
     | parameters {
-        DumpReduce("opt_parameters r1");
+        DumpReduce("opt_parameters r2");
 
         $$ = $1;
     }
@@ -342,6 +360,9 @@ parameter:
         DumpReduce("parameter r1");
 
         $$ = Mon_AstParamNew($1.name, $1.length, $3.name, $3.length);
+
+        Mon_Free($1.name);
+        Mon_Free($3.name);
 
         THROW_IF_ALLOC_FAIL($$);
         
@@ -493,6 +514,8 @@ var:
 
         $$ = Mon_AstVarNewDirect($1.name);
 
+        Mon_Free($1.name);
+
         THROW_IF_ALLOC_FAIL($$);
         
         FILL_NODE_HEADER($$->header);
@@ -502,6 +525,8 @@ var:
         DumpReduce("var r2");
 
         $$ = Mon_AstVarNewField($1, $3.name);
+
+        Mon_Free($3.name);
 
         THROW_IF_ALLOC_FAIL($$);
         
@@ -713,6 +738,8 @@ exp_conditional:
 
         $$ = Mon_AstExpNewNew($2.name, $3);
 
+        Mon_Free($2.name);
+
         THROW_IF_ALLOC_FAIL($$);
         
         FILL_NODE_HEADER($$->header);
@@ -874,6 +901,8 @@ call:
 
         $$ = Mon_AstCallNew($1.name, $1.length, $3);
 
+        Mon_Free($1.name);
+
         THROW_IF_ALLOC_FAIL($$);
         
         FILL_NODE_HEADER($$->header);
@@ -899,10 +928,14 @@ exps:
 opt_exps: 
     /* nothing */  {
         DumpReduce("opt_exps r1");
+
+        INIT_VECTOR($$);
     }
 
     | exps  {
         DumpReduce("opt_exps r2");
+
+        $$ = $1;
     }
 ;
 

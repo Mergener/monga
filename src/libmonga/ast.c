@@ -5,6 +5,7 @@
 
 #include "ast_dump.h"
 #include "ast_xml.h"
+#include "mon_alloc.h"
 #include "mon_error.h"
 #include "mon_debug.h"
 
@@ -47,6 +48,9 @@ void Mon_AstFinalize(Mon_Ast* ast) {
         MON_VECTOR_FOREACH(&ast->defsVector, Mon_AstDef*, def,
             Mon_AstDefDestroy(def, true);
         );
+    }
+    if (ast->moduleName != NULL) {
+        Mon_Free(ast->moduleName);
     }
     Mon_VectorFinalize(&ast->defsVector);
 }

@@ -55,7 +55,15 @@ def test_astdump(monga_path, input_file_path):
 	test_file([monga_path, '-p', input_file_path], input_file_path)
 
 def test_sem(monga_path, input_file_path):
-	test_file([monga_path, '-s', input_file_path], input_file_path)
+	target = []
+	if os.path.isdir(input_file_path):
+		for file in os.listdir(input_file_path):
+			if not os.path.isdir(file):
+				target.append(os.path.join(input_file_path, file))
+	else:
+		target.append(input_file_path)
+
+	test_file([monga_path, '-s'] + target, input_file_path)
 	
 def test_reducedump(monga_path, input_file_path):
 	test_file([monga_path, '-r', input_file_path], input_file_path)

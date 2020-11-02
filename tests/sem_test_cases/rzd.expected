@@ -1,0 +1,2 @@
+[Error] Module sem_test_cases/rzd, line 5, column 11: Cannot assign value of type 'char' to lvalue of type 'float'.
+Semantic errors were caught during analysis.

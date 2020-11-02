@@ -1,2 +1,2 @@
-[Error] At line 3, column 19: Unknown type 'someType' for variable 'f'.
+[Error] Module sem_test_cases/err_decltype, line 3, column 19: Unknown type 'someType' for variable 'f'.
 Semantic errors were caught during analysis.

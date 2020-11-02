@@ -1,2 +1,2 @@
-[Error] At line 2, column 14: Cannot return value of type 'float' in function declared with return type 'int'.
+[Error] Module sem_test_cases/err_type, line 2, column 14: Cannot return value of type 'float' in function declared with return type 'int'.
 Semantic errors were caught during analysis.

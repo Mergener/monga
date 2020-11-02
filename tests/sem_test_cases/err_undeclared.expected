@@ -1,2 +1,2 @@
-[Error] At line 9, column 8: Variable 'x' was not declared in this scope.
+[Error] Module sem_test_cases/err_undeclared, line 9, column 8: Variable 'x' was not declared in this scope.
 Semantic errors were caught during analysis.

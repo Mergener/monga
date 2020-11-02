@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd tests
+
 function gen_cases {
 	for f in $2/*; do
 		[ -e "$f" ] || continue
@@ -14,11 +16,16 @@ function gen_cases {
 			continue
 		fi
 
-		./bin/builds/monga/debug/monga $1 $f > $f.expected 2>&1
+		if [ -d $f ]; then
+			../bin/builds/monga/debug/monga $1 $f/* > $f.expected 2>&1
+		else
+			../bin/builds/monga/debug/monga $1 $f > $f.expected 2>&1
+		fi
+		
 	done
 }
 
-gen_cases -s tests/sem_test_cases
-gen_cases -r tests/reduce_dump_cases
-gen_cases -p tests/ast_dump_cases
-gen_cases -l tests/lex_cases
+gen_cases -s sem_test_cases
+gen_cases -r reduce_dump_cases
+gen_cases -p ast_dump_cases
+gen_cases -l lex_cases

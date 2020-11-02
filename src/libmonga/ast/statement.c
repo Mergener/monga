@@ -137,7 +137,7 @@ void Mon_AstStatementDestroy(Mon_AstStatement* node, bool rec) {
 
             case MON_STMT_WHILE:
                 Mon_AstCondDestroy(node->statement.whileStmt.condition, true);
-                Mon_AstBlockDestroy(node->statement.block, true);
+                Mon_AstBlockDestroy(node->statement.whileStmt.block, true);
                 break;
 
             case MON_STMT_ASSIGNMENT:

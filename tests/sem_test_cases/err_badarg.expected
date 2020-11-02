@@ -1,2 +1,2 @@
-[Error] At line 10, column 19: Parameter type mismatch in 'foo' function call. Passed argument 2, of type 'T', cannot be assigned to a parameter of type 'int'.
+[Error] Module sem_test_cases/err_badarg, line 10, column 19: Parameter type mismatch in 'foo' function call. Passed argument 2, of type 'T', cannot be assigned to a parameter of type 'int'.
 Semantic errors were caught during analysis.

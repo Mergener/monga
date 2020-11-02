@@ -1,0 +1,5 @@
+var c : int;
+
+function foo(): int {
+    return bar();
+}

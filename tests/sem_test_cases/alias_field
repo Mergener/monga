@@ -1,0 +1,15 @@
+type T = {
+    f : float;
+};
+
+type A1 = T;
+type A2 = A1;
+
+function foo(a1 : A1): T {
+    a1.f = 4.09;
+    var a2 : A2;
+    a2 = a1;
+    a2.f = 3.0;
+
+    return a2 as A1;
+}

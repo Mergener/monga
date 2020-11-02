@@ -334,15 +334,15 @@ bool ConstructBuiltinTypes(Mon_Vector* vec) {
         const char* name;
         Mon_AstTypeDesc* typeDesc;
     } builtins[] = {
-        { TYPENAME_CHAR,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_CHAR) },
-        { TYPENAME_INT8,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT8) },
+        { TYPENAME_CHAR,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_CHAR)  },
+        { TYPENAME_INT8,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT8)  },
         { TYPENAME_INT16,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT16) },
         { TYPENAME_INT32,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
         { TYPENAME_INT64,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
         { TYPENAME_FLOAT32, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
         { TYPENAME_FLOAT64, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
-        { TYPENAME_VOID,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_VOID) },
-        { TYPENAME_NULL,    nullTypeDesc },
+        { TYPENAME_VOID,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_VOID)  },
+        { TYPENAME_NULL,    nullTypeDesc  },
         { TYPENAME_ERROR,   errorTypeDesc }
     };
 

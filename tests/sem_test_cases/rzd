@@ -1,0 +1,6 @@
+function f() {
+    var f : float;
+    var c : char;
+
+    f = c;
+}
