@@ -545,6 +545,10 @@ static void XmlDumpStatementNode(AstDumpContext* ctx, const Mon_AstStatement* st
             ctx->indentLevel--;
             DUMPF_OR_STOP(ctx, "</Block>");
             break;
+
+        case MON_STMT_VARDEF:
+            XmlDumpVarDefNode(ctx, stmt->statement.varDef);
+            break;
     }
 }
 
@@ -552,10 +556,6 @@ static void XmlDumpBlockInline(AstDumpContext* ctx, const Mon_AstBlock* block) {
     if (block == NULL) {
         return;
     }
-
-    MON_VECTOR_FOREACH(&block->varDefs, Mon_AstVarDef*, varDef,
-        XmlDumpVarDefNode(ctx, varDef);
-    );
 
     MON_VECTOR_FOREACH(&block->statements, Mon_AstStatement*, stmt,
         XmlDumpStatementNode(ctx, stmt);

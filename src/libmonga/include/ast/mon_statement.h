@@ -8,8 +8,9 @@
 
 C_LINKAGE_BEGIN
 
-typedef struct Mon_AstVar_ Mon_AstVar;
-typedef struct Mon_AstBlock_ Mon_AstBlock;
+typedef struct Mon_AstVar_    Mon_AstVar;
+typedef struct Mon_AstBlock_  Mon_AstBlock;
+typedef struct Mon_AstVarDef_ Mon_AstVarDef;
 
 typedef enum {
 
@@ -19,7 +20,8 @@ typedef enum {
     MON_STMT_RETURN,     /* return; OR return exp; */
     MON_STMT_CALL,       /* func() */   
     MON_STMT_BLOCK,      /* { statements } */   
-    MON_STMT_ECHO        /* @exp */   
+    MON_STMT_ECHO,       /* @exp */   
+    MON_STMT_VARDEF      /* var varName : typeName */
 
 } Mon_StmtKind;
 
@@ -129,6 +131,9 @@ typedef struct Mon_AstStatement_ {
         /** Available if statementKind == MON_STMT_BLOCK */
         Mon_AstBlock* block;
 
+        /** Available if statementKind == MON_STMT_VARDEF */
+        Mon_AstVarDef* varDef;
+
     } statement;
 
 } Mon_AstStatement;
@@ -190,6 +195,15 @@ MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewIf(Mon_AstCond* conditi
  *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewReturn(Mon_AstExp* returnedExp);
+
+/**
+ *  Creates a new var def statement.
+ *
+ *  @param varDef The variable definition node.
+ * 
+ *  @return The statement node or NULL if allocation fails.
+ */
+MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewVarDef(Mon_AstVarDef* varDef);
 
 /**
  *  Creates a new assignment statement.

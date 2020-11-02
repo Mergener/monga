@@ -13,9 +13,6 @@ typedef struct Mon_AstBlock_ {
 
     Mon_AstNodeHeader header;
 
-    /** Stores pointers to all variables (Mon_AstVarDef*) declared within this block. */
-    Mon_Vector    varDefs;
-
     /** Stores pointers to all statements (Mon_AstVarStatement*) within this block. */
     Mon_Vector    statements;
 
@@ -29,7 +26,7 @@ typedef struct Mon_AstBlock_ {
  * 
  *  @return The created block node or NULL if allocation failed.
  */
-MON_PUBLIC Mon_AstBlock* MON_CALL Mon_AstBlockNew(Mon_Vector varDefs, Mon_Vector statements);
+MON_PUBLIC Mon_AstBlock* MON_CALL Mon_AstBlockNew(Mon_Vector statements);
 
 /**
  *  Destroys a block node, releasing its memory.

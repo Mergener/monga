@@ -6,25 +6,24 @@
 static void ConstructSampleAst(Mon_Ast* ast) {
 	Logf("Generating sample AST...\n");
 
+	// Create a variable:
 	Mon_AstVarDef* varDef = Mon_AstVarDefNew("xyz", 3, "int", 3);
+	Mon_AstStatement* varDefStmt = Mon_AstStatementNewVarDef(varDef);
 
-	Mon_Vector varDefs;
-	Mon_VectorInit(&varDefs);
-	Mon_VectorPush(&varDefs, varDef);
-
+	// Create an assignment statement:
 	Mon_AstVar* lvalue = Mon_AstVarNewDirect("xyz");
 	Mon_Literal literal;
 	literal.integer = 5;
 	literal.literalKind = MON_LIT_INT;
 	Mon_AstExp* rvalue = Mon_AstExpNewLiteral(literal);
-
 	Mon_AstStatement* assignment = Mon_AstStatementNewAssignment(lvalue, rvalue);
 
 	Mon_Vector statements;
 	Mon_VectorInit(&statements);
+	Mon_VectorPush(&statements, varDefStmt);
 	Mon_VectorPush(&statements, assignment);
 
-	Mon_AstBlock* block = Mon_AstBlockNew(varDefs, statements);
+	Mon_AstBlock* block = Mon_AstBlockNew(statements);
 
 	Mon_Vector funcParams;
 	Mon_VectorInit(&funcParams);

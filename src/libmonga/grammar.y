@@ -114,7 +114,7 @@ static void DumpReduce(const char* fmt, ...);
 %type <condNode>      cond cond_primary cond_not cond_and cond_or
 %type <callNode>      call
 %type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT
-%type <vector>        definitions variable_defs opt_variable_defs parameters opt_parameters statements opt_statements exps opt_exps field_defs
+%type <vector>        definitions parameters opt_parameters statements opt_statements exps opt_exps field_defs
 %type <typeDescNode>  typedesc
 %type <fieldNode>     def_field
 
@@ -191,36 +191,6 @@ def_variable:
         THROW_IF_ALLOC_FAIL($$);
         
         FILL_NODE_HEADER($$->header);
-    }
-;
-
-variable_defs: 
-    def_variable {
-        DumpReduce("variable_defs r1");
-
-        INIT_VECTOR($$);
-        ADD_TO_VECTOR($$, $1);
-    }
-
-    | variable_defs def_variable {
-        DumpReduce("variable_defs r2");
-
-        $$ = $1;
-        ADD_TO_VECTOR($$, $2);
-    }
-;
-
-opt_variable_defs: 
-    /* nothing */ {
-        DumpReduce("opt_variable_defs r1");
-
-        INIT_VECTOR($$);
-    }
-
-    | variable_defs {
-        DumpReduce("opt_variable_defs r2");
-
-        $$ = $1;
     }
 ;
 
@@ -380,10 +350,10 @@ parameter:
 ;
 
 block: 
-    '{' opt_variable_defs opt_statements '}' {
+    '{' opt_statements '}' {
         DumpReduce("block r1");
 
-        $$ = Mon_AstBlockNew($2, $3);
+        $$ = Mon_AstBlockNew($2);
 
         THROW_IF_ALLOC_FAIL($$);
         
@@ -461,6 +431,16 @@ statement:
         
         FILL_NODE_HEADER($$->header);
     }
+
+    | def_variable {
+        DumpReduce("block r8");
+
+        $$ = Mon_AstStatementNewVarDef($1);
+
+        THROW_IF_ALLOC_FAIL($$);
+
+        FILL_NODE_HEADER($$->header);
+    }
 ;
 
 opt_else: 
@@ -484,7 +464,7 @@ statements:
         INIT_VECTOR($$);
         ADD_TO_VECTOR($$, $1);
     }
-    
+
     | statements statement {
         DumpReduce("statements r2");
 

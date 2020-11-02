@@ -105,14 +105,6 @@ static AllocNode** PrevNodeNext(void* mem) {
     return NULL;
 }
 
-static AllocNode* FindAllocNode(void* mem) {
-    AllocNode** prevNext = PrevNodeNext(mem);
-    if (prevNext == NULL) {
-        return NULL;
-    }
-    return *prevNext;
-}
-
 int GetAllocCount() {
     return s_AllocCount;
 }

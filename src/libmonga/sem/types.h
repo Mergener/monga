@@ -8,6 +8,17 @@
 #include "symbol.h"
 #include "mon_vector.h"
 
+#define TYPENAME_ERROR   "<error-type>"
+#define TYPENAME_NULL    "<null-type>"
+#define TYPENAME_CHAR    "char"
+#define TYPENAME_INT8    "byte"
+#define TYPENAME_INT16   "short"
+#define TYPENAME_INT32   "int"
+#define TYPENAME_INT64   "long"
+#define TYPENAME_FLOAT32 "float"
+#define TYPENAME_FLOAT64 "double"
+#define TYPENAME_VOID    "void"
+
 /**
  * 	Returns the underlying type of a given type definition. If the type definition
  * 	is a record, primitive or array, the returned type is the type itself. If the

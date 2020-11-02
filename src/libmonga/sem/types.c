@@ -20,6 +20,11 @@ bool IsIntegerType(Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+        return true;
+    }
+
     if (type->typeDesc->typeDescKind != MON_TYPEDESC_PRIMITIVE) {
         return false;
     }
@@ -39,10 +44,14 @@ bool IsFloatingPointType(Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+        return true;
+    }
+
     if (type->typeDesc->typeDescKind != MON_TYPEDESC_PRIMITIVE) {
         return false;
     }
-
 
     switch (type->typeDesc->typeDesc.primitive.typeCode) {
         case MON_PRIMITIVE_FLOAT32:
@@ -65,6 +74,11 @@ bool IsTypeAssignableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
 
     a = GetUnderlyingType(a);
     b = GetUnderlyingType(b);
+
+    if (a->typeDesc->typeDescKind == MON_TYPEDESC_ERROR ||
+        b->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+        return true;
+    }    
 
     // 'null' is assignable to any reference type.
     if (b->typeDesc->typeDescKind == MON_TYPEDESC_NULL) {
@@ -110,8 +124,7 @@ bool IsTypeCastableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
     b = GetUnderlyingType(b);
 
     if (a->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE &&
-        b->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE)
-    {
+        b->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE) {
         return true;
     }
 
@@ -122,6 +135,11 @@ Mon_AstTypeDef* GetUnopResultType(Mon_AstTypeDef* type, Mon_UnopKind unop) {
     MON_CANT_BE_NULL(type);
 
     Mon_AstTypeDef* underlying = GetUnderlyingType(type);
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+        return type;
+    }
+
     if (!IsNumericType(underlying)) {
         return NULL;
     }
@@ -144,6 +162,11 @@ Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype,
 
     ltype = GetUnderlyingType(ltype);
     rtype = GetUnderlyingType(rtype);
+
+    if (ltype->typeDesc->typeDescKind == MON_TYPEDESC_ERROR ||
+        rtype->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+        return ltype;
+    }    
 
     switch (binop) {
         case MON_BINOP_ADD:            
@@ -199,6 +222,8 @@ Mon_AstField* GetTypeField(Mon_AstTypeDef* type, char* fieldName) {
     MON_CANT_BE_NULL(type);
     MON_CANT_BE_NULL(fieldName);
 
+    type = GetUnderlyingType(type);
+
     if (type->typeDesc->typeDescKind != MON_TYPEDESC_RECORD) {
         return NULL;
     }
@@ -215,6 +240,12 @@ Mon_AstField* GetTypeField(Mon_AstTypeDef* type, char* fieldName) {
 bool IsStructuredType(Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
+    type = GetUnderlyingType(type);
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+        return true;
+    }    
+
     if (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
         return IsStructuredType(type->typeDesc->typeDesc.alias.semantic.aliasedType);
     }
@@ -224,6 +255,12 @@ bool IsStructuredType(Mon_AstTypeDef* type) {
 
 bool IsIndexableType(Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
+
+    type = GetUnderlyingType(type);
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+        return true;
+    }    
 
     if (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
         return IsIndexableType(type->typeDesc->typeDesc.alias.semantic.aliasedType);
@@ -236,6 +273,10 @@ bool IsRefType(Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+        return true;
+    }    
 
     return type->typeDesc->typeDescKind != MON_TYPEDESC_PRIMITIVE;
 }
@@ -293,16 +334,16 @@ bool ConstructBuiltinTypes(Mon_Vector* vec) {
         const char* name;
         Mon_AstTypeDesc* typeDesc;
     } builtins[] = {
-        { "char", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_CHAR) },
-        { "byte", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT8) },
-        { "short", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT16) },
-        { "int", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
-        { "long", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
-        { "float", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
-        { "double", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
-        { "void", Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_VOID) },
-        { "<null-type>", nullTypeDesc },
-        { "<error-type>", errorTypeDesc }
+        { TYPENAME_CHAR,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_CHAR) },
+        { TYPENAME_INT8,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT8) },
+        { TYPENAME_INT16,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT16) },
+        { TYPENAME_INT32,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
+        { TYPENAME_INT64,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
+        { TYPENAME_FLOAT32, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
+        { TYPENAME_FLOAT64, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
+        { TYPENAME_VOID,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_VOID) },
+        { TYPENAME_NULL,    nullTypeDesc },
+        { TYPENAME_ERROR,   errorTypeDesc }
     };
 
     const int count = sizeof(builtins)/sizeof(*builtins);

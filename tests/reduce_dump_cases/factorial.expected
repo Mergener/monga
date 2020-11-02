@@ -6,8 +6,8 @@ type r1
 opt_ret_type r2
 type r1
 def_variable r1
-variable_defs r1
-opt_variable_defs r2
+block r8
+statements r1
 var r1
 numeral r2
 exp_primary r2
@@ -18,7 +18,7 @@ exp_additive r1
 exp_conditional r1
 exp r1
 block r3
-statements r1
+statements r2
 var r1
 exp_primary r3
 exp_postfix r1
@@ -41,7 +41,6 @@ cond_not r1
 cond_and r1
 cond_or r1
 cond_or r1
-opt_variable_defs r1
 var r1
 var r1
 exp_primary r3
@@ -99,8 +98,8 @@ opt_parameters r1
 opt_ret_type r1
 type r1
 def_variable r1
-variable_defs r1
-opt_variable_defs r2
+block r8
+statements r1
 var r1
 opt_exps r1
 call r1
@@ -112,7 +111,7 @@ exp_additive r1
 exp_conditional r1
 exp r1
 block r3
-statements r1
+statements r2
 var r1
 exp_primary r3
 exp_postfix r1

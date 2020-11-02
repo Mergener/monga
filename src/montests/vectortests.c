@@ -139,6 +139,7 @@ static void ForeachEmpty() {
     bool changed = false;
     MON_VECTOR_FOREACH(&vector, uintptr_t, val, 
         changed = true;
+        val = val; // suppress unused variable warning
     );
     MON_ASSERT(!changed, "foreach on empty vector should do nothing.");
 
@@ -165,12 +166,12 @@ static void RemoveMiddle() {
     Mon_VectorPush(&vector, d);
 
     int count = Mon_VectorCount(&vector);
-    MON_ASSERT(count != 4, "Wrong vector count. (expected %d, got %d)", 4, count);
+    MON_ASSERT(count == 4, "Wrong vector count. (expected %d, got %d)", 4, count);
 
     Mon_VectorRemove(&vector, 1);
 
     count = Mon_VectorCount(&vector);
-    MON_ASSERT(count != 3, "Wrong vector count. (expected %d, got %d)", 3, count);
+    MON_ASSERT(count == 3, "Wrong vector count. (expected %d, got %d)", 3, count);
 
     void* got = Mon_VectorGet(&vector, 0);
     MON_ASSERT(got == a, "element at index 0 must be %p. (got %p)", a, got);
@@ -193,7 +194,7 @@ static Test s_VectorTests[] = {
     { "Null vector must be empty", NullVectorEmpty },
     { "Foreach Sum", ForeachSum },
     { "Foreach Empty", ForeachEmpty },
-    { "Remove Middle", ForeachEmpty },
+    { "Remove Middle", RemoveMiddle },
     { "Clear", VectorClear }
 };
 

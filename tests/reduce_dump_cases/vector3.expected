@@ -22,7 +22,6 @@ parameters r1
 opt_parameters r1
 type r1
 opt_ret_type r2
-opt_variable_defs r1
 var r1
 exp_primary r3
 var r2

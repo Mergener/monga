@@ -6,7 +6,6 @@ parameter r1
 parameters r2
 opt_parameters r1
 opt_ret_type r1
-opt_variable_defs r1
 numeral r2
 exp_primary r2
 exp_postfix r1
