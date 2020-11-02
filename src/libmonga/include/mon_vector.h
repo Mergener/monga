@@ -101,6 +101,27 @@ MON_PUBLIC bool MON_CALL Mon_VectorEmpty(const Mon_Vector* vector);
 MON_PUBLIC void MON_CALL Mon_VectorClear(Mon_Vector* vector);
 
 /**
+ *  Transfers the ownership of a vector's internal buffer and resets it.
+ *  After claiming the ownership of the vector's buffer, the vector will
+ *  be reset, containing no more elements.
+ * 
+ *  @param vector The vector.
+ *  @param outPtr A pointer to the variable that will receive the address
+ *  of the vector's internal buffer.
+ *  @param count A pointer to the variable that will receive the number
+ *  of elements contained in the buffer. Ignored if NULL.
+ *  @param capacity A pointer to the variable that will receive the
+ *  storage capacity of elements in the buffer. Ignored if NULL.
+ * 
+ *  @remarks Since the internal buffer ownership is transferred, it is the
+ *  caller's responsibility to release its memory when necessary.
+ *  The internal buffer can be freed with Mon_Free. Be aware of issues that
+ *  could happen if custom allocators are being used. For that, it is suggested
+ *  to read the custom allocators documentation in 'mon_alloc.h'.
+ */
+MON_PUBLIC void MON_CALL Mon_VectorClaim(Mon_Vector* vector, void** outPtr, int* count, int* capacity);
+
+/**
  *  Finalizes a vector, cleaning up any resources used by it.
  *
  *  @param vector The vector to be finalized.

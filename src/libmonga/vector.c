@@ -41,7 +41,13 @@ Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
 
     if (vector->_count == vector->_cap) {
         int newCap = vector->_cap * 2;
-        const void** newMem = Mon_Realloc(vector->_arr, newCap * sizeof(void*));
+
+        const void** newMem;        
+        if (vector->_arr != NULL) {
+            newMem = Mon_Realloc(vector->_arr, newCap * sizeof(void*));
+        } else {
+            newMem = Mon_Alloc(newCap * sizeof(void*));
+        }
 
         if (newMem == NULL) {
             return MON_ERR_NOMEM;
@@ -72,7 +78,13 @@ void Mon_VectorRemove(Mon_Vector* vector, int index) {
         // So, if reallocation fails, we just keep the original one.
         int halfCap = vector->_cap/2;
         int newCap = halfCap > MIN_SIZE ? halfCap : MIN_SIZE;
-        const void** newMem = Mon_Realloc(vector->_arr, newCap);
+        
+        const void** newMem;
+        if (vector->_arr != NULL) {
+            newMem = Mon_Realloc(vector->_arr, newCap * sizeof(void*));
+        } else {
+            newMem = Mon_Alloc(newCap * sizeof(void*));
+        }
 
         if (newMem != NULL) {
             vector->_arr = newMem;
@@ -95,12 +107,32 @@ void Mon_VectorClear(Mon_Vector* vector) {
     vector->_count = 0;
 }
 
+void Mon_VectorClaim(Mon_Vector* vector, void** outPtr, int* count, int* capacity) {
+    MON_CANT_BE_NULL(vector);
+    MON_CANT_BE_NULL(outPtr);
+
+    if (count != NULL) {
+        *count = vector->_count;
+    }
+    if (capacity != NULL) {
+        *capacity = vector->_cap;
+    }
+
+    *outPtr = vector->_arr;
+
+    vector->_arr = NULL;
+    vector->_cap = 0;
+    vector->_count = 0;
+}
+
 void Mon_VectorFinalize(Mon_Vector* vector) {
     if (vector == NULL) {
         return;
     }
 
-    Mon_Free(vector->_arr);
+    if (vector->_arr != NULL) {
+        Mon_Free(vector->_arr);
+    }
     
     vector->_cap = 0;
     vector->_count = 0;
