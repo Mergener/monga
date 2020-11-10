@@ -122,6 +122,28 @@ Mon_AstStatement* Mon_AstStatementNewAssignment(Mon_AstVar* lvalue, Mon_AstExp* 
     return ret;
 }
 
+Mon_AstStatement* Mon_AstStatementNewBreak() {
+    Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
+    if (ret == NULL) {
+        return NULL;
+    }
+
+    ret->statementKind = MON_STMT_BREAK;
+
+    return ret;
+}
+
+Mon_AstStatement* Mon_AstStatementNewContinue() {
+    Mon_AstStatement* ret = Mon_Alloc(sizeof(Mon_AstStatement));
+    if (ret == NULL) {
+        return NULL;
+    }
+
+    ret->statementKind = MON_STMT_CONTINUE;
+
+    return ret;
+}
+
 void Mon_AstStatementDestroy(Mon_AstStatement* node, bool rec) {
     if (node == NULL) {
         return;
@@ -163,6 +185,11 @@ void Mon_AstStatementDestroy(Mon_AstStatement* node, bool rec) {
 
             case MON_STMT_VARDEF:
                 Mon_AstVarDefDestroy(node->statement.varDef);
+                break;
+
+            case MON_STMT_BREAK:
+            case MON_STMT_CONTINUE:
+                // Do nothing
                 break;
 
             default:

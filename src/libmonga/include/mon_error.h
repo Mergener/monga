@@ -14,7 +14,9 @@ enum {
     MON_ERR_SEMANTIC,
     MON_ERR_BAD_ARG,
     MON_ERR_EMPTY_COLLECTION,
-    MON_ERR_IO
+    MON_ERR_IO,
+    MON_ERR_DUPLICATE,
+    MON_ERR_BUILTIN
 
 };
 typedef int Mon_RetCode;

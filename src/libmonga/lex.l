@@ -29,6 +29,16 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
     // Ignore (comment)
 }
 
+\"([^\\\"]|\\.)*\" {
+    Mon_TkColumn += yyleng;
+
+    yylval.literal.string.arr = DuplicateString(yytext + sizeof(char), yyleng - 2*sizeof(char));
+    yylval.literal.string.len = yyleng - 2;
+    yylval.literal.literalKind = MON_LIT_STR;
+
+    return MON_TK_LIT_STRING;
+}
+
 \n {
     Mon_TkColumn = 1;
     Mon_TkLine++;
@@ -36,6 +46,21 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 
 [\t ]+ {
     Mon_TkColumn += yyleng;
+}
+
+"break" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_BREAK;
+}
+
+"continue" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_CONTINUE;
+}
+
+"len" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_LEN;
 }
 
 "as" {

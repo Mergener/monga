@@ -1,0 +1,18 @@
+<Module>
+	<FunctionDefinition>
+		<Name>main</Name>
+		<ReturnType>void</ReturnType>
+		<Block>
+			<Echo>
+				<Len>
+					<New>
+						<Type>int</Type>
+						<ArraySize>
+							<IntConstant>5</IntConstant>
+						</ArraySize>
+					</New>
+				</Len>
+			</Echo>
+		</Block>
+	</FunctionDefinition>
+</Module>

@@ -32,11 +32,13 @@ typedef enum {
     MON_TYPEDESC_PRIMITIVE,
 
     //  
-    //  The following type descriptions are reserved to monga:
+    //  The following type description is reserved to monga:
     //
 
-    MON_TYPEDESC_NULL,
-    MON_TYPEDESC_ERROR
+    /**
+     *  A reference type with hardcoded special rules.
+     */
+    MON_TYPEDESC_SPECIAL
 
 } Mon_AstTypeDescKind;
 

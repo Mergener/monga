@@ -36,7 +36,9 @@ typedef struct {
  *  might (and most likely will) be made to objects allocated with the previous allocator.
  */ 
 MON_PUBLIC bool  MON_CALL Mon_SetAllocator(Mon_Allocator allocator);
+
 MON_PUBLIC void* MON_CALL Mon_Alloc(size_t s);
+MON_PUBLIC void* MON_CALL Mon_AllocZero(size_t n, size_t s);
 MON_PUBLIC void* MON_CALL Mon_Realloc(void* oldMem, size_t s);
 MON_PUBLIC void  MON_CALL Mon_Free(void* mem);
 

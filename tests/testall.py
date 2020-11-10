@@ -74,14 +74,14 @@ def test_all_lex(monga_path, lex_cases_path):
 
 	done = 0
 	passed = 0
-	print('Testing Lex Dump...')
+	print('*** Testing Lex Dump. ***\n')
 
 	for file in os.listdir(lex_cases_path):
 		if not file.endswith(".expected"):
 			input_file_path = os.path.join(lex_cases_path, file)
 			test_lex(monga_path, input_file_path)
 
-	print(f'Lex tests finished. {passed}/{done} passed.')
+	print(f'*** Lex tests finished. ({passed} of {done} passed) ***')
 
 def test_all_astdump(monga_path, astdump_cases_path):
 	global passed
@@ -89,14 +89,14 @@ def test_all_astdump(monga_path, astdump_cases_path):
 	
 	done = 0
 	passed = 0
-	print('Testing Ast Dumping...')
+	print('*** Testing Ast Dump. ***\n')
 
 	for file in os.listdir(astdump_cases_path):
 		if not file.endswith(".expected"):
 			input_file_path = os.path.join(astdump_cases_path, file)
 			test_astdump(monga_path, input_file_path)
 
-	print(f'Ast Dumping tests finished. {passed}/{done} passed.')
+	print(f'*** Ast Dump tests finished. ({passed} of {done} passed) ***')
 
 def test_all_semtest(monga_path, cases_path):
 	global passed
@@ -104,14 +104,14 @@ def test_all_semtest(monga_path, cases_path):
 	
 	done = 0
 	passed = 0
-	print('Testing Semantics...')
+	print('*** Testing Semantics. ***\n')
 
 	for file in os.listdir(cases_path):
 		if not file.endswith(".expected"):
 			input_file_path = os.path.join(cases_path, file)
 			test_sem(monga_path, input_file_path)
 
-	print(f'Semantics tests finished. {passed}/{done} passed.')
+	print(f'*** Semantic tests finished. ({passed} of {done} passed) ***')
 
 def test_all_reducedump(monga_path, astdump_cases_path):
 	global passed
@@ -119,14 +119,14 @@ def test_all_reducedump(monga_path, astdump_cases_path):
 	
 	done = 0
 	passed = 0
-	print('Testing Parser Reduction Dumping...')
+	print('*** Testing Parser Reduction. ***\n')
 
 	for file in os.listdir(astdump_cases_path):
 		if not file.endswith(".expected"):
 			input_file_path = os.path.join(astdump_cases_path, file)
 			test_reducedump(monga_path, input_file_path)
 
-	print(f'Reduction Dumping tests finished. {passed}/{done} passed.')
+	print(f'*** Reduce Dump tests finished. ({passed} of {done} passed) ***')
 
 def test_all(monga_path):
 	test_all_lex(monga_path, LEX_CASES_PATH)

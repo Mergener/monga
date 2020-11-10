@@ -1,0 +1,3 @@
+function main() {
+    @len(new int[5]);
+}

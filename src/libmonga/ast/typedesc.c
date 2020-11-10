@@ -92,8 +92,7 @@ void Mon_AstTypeDescDestroy(Mon_AstTypeDesc* typeDesc, bool rec) {
             }
             break;
 
-        case MON_TYPEDESC_NULL:
-        case MON_TYPEDESC_ERROR:
+        case MON_TYPEDESC_SPECIAL:
             // Nothing else to do.
             break;
         

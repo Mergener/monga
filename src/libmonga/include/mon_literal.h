@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+typedef char Mon_Char;
+
 typedef enum {
 
     MON_LIT_STR,
@@ -21,6 +23,7 @@ typedef struct {
             size_t len;
         } string;
 
+        Mon_Char character;
         double real;
         long integer;
     };

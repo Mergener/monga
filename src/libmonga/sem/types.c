@@ -21,7 +21,7 @@ bool IsIntegerType(Mon_AstTypeDef* type) {
 
     type = GetUnderlyingType(type);
 
-    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+    if (type == BUILTIN_TABLE->types.tError) {
         return true;
     }
 
@@ -45,7 +45,7 @@ bool IsFloatingPointType(Mon_AstTypeDef* type) {
 
     type = GetUnderlyingType(type);
 
-    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+    if (type == BUILTIN_TABLE->types.tError) {
         return true;
     }
 
@@ -74,14 +74,14 @@ bool IsTypeAssignableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
 
     a = GetUnderlyingType(a);
     b = GetUnderlyingType(b);
-
-    if (a->typeDesc->typeDescKind == MON_TYPEDESC_ERROR ||
-        b->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+    
+    if (a == BUILTIN_TABLE->types.tError ||
+        b == BUILTIN_TABLE->types.tError) {
         return true;
     }    
 
     // 'null' is assignable to any reference type.
-    if (b->typeDesc->typeDescKind == MON_TYPEDESC_NULL) {
+    if (b == BUILTIN_TABLE->types.tNull) {
         return IsRefType(a);
     }
 
@@ -134,13 +134,17 @@ bool IsTypeCastableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
 Mon_AstTypeDef* GetUnopResultType(Mon_AstTypeDef* type, Mon_UnopKind unop) {
     MON_CANT_BE_NULL(type);
 
-    Mon_AstTypeDef* underlying = GetUnderlyingType(type);
+    type = GetUnderlyingType(type);
 
-    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+    if (type == BUILTIN_TABLE->types.tError) {
         return type;
     }
 
-    if (!IsNumericType(underlying)) {
+    if (unop == MON_UNOP_LEN) {
+        return IsIndexableType(type) ? BUILTIN_TABLE->types.tInt : NULL;
+    }
+
+    if (!IsNumericType(type)) {
         return NULL;
     }
 
@@ -163,17 +167,23 @@ Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype,
     ltype = GetUnderlyingType(ltype);
     rtype = GetUnderlyingType(rtype);
 
-    if (ltype->typeDesc->typeDescKind == MON_TYPEDESC_ERROR ||
-        rtype->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+    if (ltype == BUILTIN_TABLE->types.tError ||
+        rtype == BUILTIN_TABLE->types.tError) {
         return ltype;
     }    
 
     switch (binop) {
-        case MON_BINOP_ADD:            
+        case MON_BINOP_ADD: 
         case MON_BINOP_SUB:            
         case MON_BINOP_MUL:            
         case MON_BINOP_DIV:            
         case MON_BINOP_MODULO:
+            if (ltype == BUILTIN_TABLE->types.tString &&
+                rtype == BUILTIN_TABLE->types.tString &&
+                binop == MON_BINOP_ADD) {
+                return ltype;
+            }
+
             if (IsTypeAssignableFrom(ltype, rtype) &&
                 IsNumericType(ltype) &&
                 IsNumericType(rtype)) {
@@ -229,7 +239,7 @@ Mon_AstField* GetTypeField(Mon_AstTypeDef* type, char* fieldName) {
     }
 
     MON_VECTOR_FOREACH(&type->typeDesc->typeDesc.record.fields, Mon_AstField*, field,
-        if (!strcmp(field->fieldName, fieldName)) {
+        if (strcmp(field->fieldName, fieldName) == 0) {
             return field;
         }
     );
@@ -242,7 +252,7 @@ bool IsStructuredType(Mon_AstTypeDef* type) {
 
     type = GetUnderlyingType(type);
 
-    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+    if (type == BUILTIN_TABLE->types.tError) {
         return true;
     }    
 
@@ -253,20 +263,28 @@ bool IsStructuredType(Mon_AstTypeDef* type) {
     return type->typeDesc->typeDescKind == MON_TYPEDESC_RECORD;
 }
 
-bool IsIndexableType(Mon_AstTypeDef* type) {
+Mon_AstTypeDef* GetIndexedType(Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
 
-    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
-        return true;
+    if (type == BUILTIN_TABLE->types.tError) {
+        return BUILTIN_TABLE->types.tError;
     }    
 
-    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
-        return IsIndexableType(type->typeDesc->typeDesc.alias.semantic.aliasedType);
+    if (type == BUILTIN_TABLE->types.tString) {
+        return BUILTIN_TABLE->types.tChar;
     }
 
-    return type->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY;
+    return type->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY
+        ? type->typeDesc->typeDesc.array.semantic.innerTypeDef
+        : NULL;
+}
+
+bool IsIndexableType(Mon_AstTypeDef* type) {
+    MON_CANT_BE_NULL(type);
+
+    return GetIndexedType(type) != NULL;
 }
 
 bool IsRefType(Mon_AstTypeDef* type) {
@@ -274,7 +292,7 @@ bool IsRefType(Mon_AstTypeDef* type) {
 
     type = GetUnderlyingType(type);
 
-    if (type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+    if (type == BUILTIN_TABLE->types.tError) {
         return true;
     }    
 
@@ -307,63 +325,4 @@ bool TypeCanCompare(Mon_AstTypeDef* a,
     }
 
     return false;
-}
-
-bool ConstructBuiltinTypes(Mon_Vector* vec) {
-    MON_CANT_BE_NULL(vec);
-
-    // Create special typedescs:
-    // <null-type>:
-    Mon_AstTypeDesc* nullTypeDesc = Mon_Alloc(sizeof(Mon_AstTypeDesc));
-    if (nullTypeDesc == NULL) {
-        return false;
-    }
-    nullTypeDesc->typeDescKind = MON_TYPEDESC_NULL;
-    nullTypeDesc->header.line = nullTypeDesc->header.column = -1;
-
-    // <error-type>:
-    Mon_AstTypeDesc* errorTypeDesc = Mon_Alloc(sizeof(Mon_AstTypeDesc));
-    if (errorTypeDesc == NULL) {
-        Mon_Free(errorTypeDesc);
-        return false;
-    }
-    errorTypeDesc->typeDescKind = MON_TYPEDESC_ERROR;
-    errorTypeDesc->header.line = errorTypeDesc->header.column = -1;
-
-    struct {
-        const char* name;
-        Mon_AstTypeDesc* typeDesc;
-    } builtins[] = {
-        { TYPENAME_CHAR,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_CHAR)  },
-        { TYPENAME_INT8,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT8)  },
-        { TYPENAME_INT16,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT16) },
-        { TYPENAME_INT32,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
-        { TYPENAME_INT64,   Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
-        { TYPENAME_FLOAT32, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT32) },
-        { TYPENAME_FLOAT64, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INT64) },
-        { TYPENAME_VOID,    Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_VOID)  },
-        { TYPENAME_NULL,    nullTypeDesc  },
-        { TYPENAME_ERROR,   errorTypeDesc }
-    };
-
-    const int count = sizeof(builtins)/sizeof(*builtins);
-
-    int firstIndex = Mon_VectorCount(vec);
-    for (int i = 0; i < count; ++i) {
-        Symbol* s = NewTypeSymbol(Mon_AstTypeDefNew(builtins[i].name, strlen(builtins[i].name), builtins[i].typeDesc));
-        
-        if (s == NULL || Mon_VectorPush(vec, s) != MON_SUCCESS) {
-            // Delete all previously created symbols.
-            for (int j = i - 1; j >= firstIndex; --j) {
-                s = Mon_VectorGet(vec, j);
-                Mon_AstTypeDefDestroy(s->definition.type, true);
-                DestroySymbol(s);
-                Mon_VectorRemove(vec, j);
-            }
-            DestroySymbol(s);
-            return false;
-        }
-    }
-
-    return true;
 }

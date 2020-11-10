@@ -57,9 +57,12 @@ static void DumpReduce(const char* fmt, ...);
 %token MON_TK_ELSE
 %token MON_TK_WHILE
 %token MON_TK_RETURN
+%token MON_TK_BREAK
+%token MON_TK_CONTINUE
 %token MON_TK_NEW
 %token MON_TK_AS
 %token MON_TK_NULL
+%token MON_TK_LEN
 %token MON_TK_LIT_INT
 %token MON_TK_LIT_FLOAT
 %token MON_TK_LIT_STRING
@@ -117,7 +120,7 @@ static void DumpReduce(const char* fmt, ...);
 %type <expNode>       opt_exp exp exp_primary exp_postfix exp_unary exp_multiplicative exp_additive exp_conditional opt_bracket_exp bracket_exp
 %type <condNode>      cond cond_primary cond_not cond_and cond_or
 %type <callNode>      call
-%type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT
+%type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT MON_TK_LIT_STRING
 %type <vector>        definitions parameters opt_parameters statements opt_statements exps opt_exps field_defs
 %type <typeDescNode>  typedesc
 %type <fieldNode>     def_field
@@ -462,6 +465,26 @@ statement:
 
         FILL_NODE_HEADER($$->header);
     }
+
+    | MON_TK_BREAK ';' {
+        DumpReduce("block r9");
+
+        $$ = Mon_AstStatementNewBreak();
+
+        THROW_IF_ALLOC_FAIL($$);
+
+        FILL_NODE_HEADER($$->header);
+    }
+
+    | MON_TK_CONTINUE ';' {
+        DumpReduce("block r10");
+
+        $$ = Mon_AstStatementNewContinue();
+
+        THROW_IF_ALLOC_FAIL($$);
+
+        FILL_NODE_HEADER($$->header);
+    }
 ;
 
 opt_else: 
@@ -621,6 +644,30 @@ exp_primary:
         DumpReduce("exp_primary r5");
 
         $$ = Mon_AstExpNewNull();
+
+        THROW_IF_ALLOC_FAIL($$);
+
+        FILL_NODE_HEADER($$->header);
+    }
+
+    | MON_TK_LEN '(' exp ')' {
+        DumpReduce("exp_primary r6");
+
+        $$ = Mon_AstExpNewUn($3, MON_UNOP_LEN);
+
+        THROW_IF_ALLOC_FAIL($$);
+
+        FILL_NODE_HEADER($$->header);
+    }
+
+    | MON_TK_LIT_STRING {
+        DumpReduce("exp_primary r7");
+
+        $$ = Mon_AstExpNewLiteral($1);
+
+        THROW_IF_ALLOC_FAIL($$);
+
+        FILL_NODE_HEADER($$->header);
     }
 ;
 

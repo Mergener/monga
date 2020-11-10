@@ -23,7 +23,7 @@ typedef enum {
  * 	names exist regardless of declaration, since they are specified by the
  * 	language itself.
  */
-typedef struct {
+typedef struct Symbol_ {
 
     /** This symbol kind. Specifies the active field in the 'definition' union. */
     SymbolKind kind;

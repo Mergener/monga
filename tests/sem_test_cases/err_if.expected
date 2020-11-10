@@ -1,0 +1,2 @@
+[Error] Module sem_test_cases/err_if, line 2, column 17: Invalid comparison between values of types 'int' and 'float'.
+Semantic errors were caught during analysis.

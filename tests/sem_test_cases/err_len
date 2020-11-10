@@ -1,0 +1,12 @@
+type T = {
+    i : int;
+};
+
+function main() {
+    var t : T;
+
+    @len(5); # not ok, 5 is not indexable
+    @len(t); # not ok, t is not indexable
+    @len(new T[24]); # ok
+    @len(new T); # not ok, t is not indexable
+}

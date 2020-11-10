@@ -7,6 +7,8 @@
 
 #include "sem/symbol.h"
 #include "sem/types.h"
+#include "sem/scope.h"
+#include "sem/builtins.h"
 
 #include "mon_ast.h"
 #include "mon_vector.h"
@@ -20,21 +22,6 @@
 
 /** Performs a longjmp to the context's jump buffer, passing SETJMP_ERR as 'val'. */
 #define THROW(ctx) longjmp(((struct SemAnalysisCtx_*)ctx)->jmpBuf, SETJMP_ERR)
-
-/**
- * 	A scope contains symbols. Semantically, a scope constrains the group
- * 	of symbols acessible from a certain portion of the code. Scopes can be
- * 	nested, and thus, enclosed by a greater scope.
- */
-typedef struct Scope_ {
-
-    struct Scope_* parentScope;
-    Mon_Vector     symbols;
-
-} Scope;
-
-static Scope s_BuiltinScope;
-static atomic_bool s_BuiltinScopeInitialized = false;
 
 /**
  * 	Contains the state of a semantic analysis.
@@ -59,13 +46,17 @@ struct SemAnalysisCtx_ {
     /** Stores data used by longjmp that allows error handling. */
     jmp_buf jmpBuf;
 
+    /** The total number of anonymous types created.  */
+    int anonRecCount;
+
+    int loopLevel;
+
 };
 typedef volatile struct SemAnalysisCtx_ SemAnalysisCtx;
 
 // Foward declarations
 static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp);
 static bool ResolveBlock(SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDef* enclosingFunction);
-static Symbol* FindSymbol(const Scope* scope, const char* symName, bool rec);
 static void LogError(const SemAnalysisCtx* ctx, const Mon_AstNodeHeader* errNodeHeader, const char* fmt, ...);
 //
 
@@ -87,19 +78,6 @@ static void PushScope(SemAnalysisCtx* ctx) {
 
     scope->parentScope = ctx->currentScope;
     ctx->currentScope = scope;
-}
-
-/**
- * 	Destroys a scope, releasing its memory.
- */
-static void DestroyScope(Scope* s) {
-    MON_CANT_BE_NULL(s);
-    MON_VECTOR_FOREACH(&s->symbols, Symbol*, sym, 
-        MON_CANT_BE_NULL(sym);
-        DestroySymbol(sym);
-    );
-    Mon_VectorFinalize(&s->symbols);
-    Mon_Free(s);
 }
 
 /**
@@ -141,30 +119,33 @@ static bool TryRegisterSymbol(SemAnalysisCtx* ctx, Mon_AstNodeHeader* symNodeHea
     }
 
     // Find clash in current scope.
-    Symbol* existing = FindSymbol(ctx->currentScope, s->symName, false);
-    if (existing != NULL) {
-        LogError(ctx, symNodeHeader, "Redeclaration of '%s' '%s' (previously declared as a '%s').",
-                 GetSymbolKindName(s->kind), s->symName, GetSymbolKindName(existing->kind));
-        DestroySymbol(s);
-        return false;
-    }
+    Mon_RetCode ret = TryAddSymbolToScope(ctx->currentScope, s);
+    
+    switch (ret)
+    {
+        case MON_SUCCESS:
+            return true;
 
-    // Find clash in builtin scope.
-    existing = FindSymbol(&s_BuiltinScope, s->symName, false);
-    if (existing != NULL) {
-        LogError(ctx, symNodeHeader, "Invalid symbol name '%s' - name is a reserved Monga '%s'.",
-                 s->symName, GetSymbolKindName(existing->kind));
-        DestroySymbol(s);
-        return false;
-    }
+        case MON_ERR_DUPLICATE:
+            LogError(ctx, symNodeHeader, "Redeclaration of %s '%s'.",
+                    GetSymbolKindName(s->kind), s->symName);
+            DestroySymbol(s);
+            return false;
 
-    // Symbol is ok to be added, push it to the current scope.
-    if (Mon_VectorPush(&ctx->currentScope->symbols, s) != MON_SUCCESS) {
-        DestroySymbol(s);
-        THROW(ctx);
-    }
+        case MON_ERR_BUILTIN:
+            LogError(ctx, symNodeHeader, "Invalid symbol name '%s' - name is a reserved Monga identifier.",
+                    s->symName);
+            DestroySymbol(s);
+            return false;
 
-    return true;
+        case MON_ERR_NOMEM:
+            DestroySymbol(s);
+            THROW(ctx);
+            return false;
+
+        default:
+            return false;
+    }
 }
 
 /**
@@ -180,18 +161,6 @@ static void Cleanup(SemAnalysisCtx* ctx) {
         DestroyScope(curr);
         curr = parent;
     }
-}
-
-static void PrepareBuiltinScope() {
-    if (s_BuiltinScopeInitialized) {
-        return;
-    }
-    s_BuiltinScopeInitialized = true;
-
-    s_BuiltinScope.parentScope = NULL;
-    Mon_VectorInit(&s_BuiltinScope.symbols);
-
-    ConstructBuiltinTypes(&s_BuiltinScope.symbols);
 }
 
 /**
@@ -215,29 +184,6 @@ static void LogError(const SemAnalysisCtx* ctx, const Mon_AstNodeHeader* errNode
 }
 
 /**
- * 	Searches for a symbol with the specified name. If none is found,
- * 	NULL is returned. If rec is set to true, this will search the symbol
- *  recursively in the specified scope ascendants. If the specified scope
- *  is NULL, searches in the builtin scope.
- */
-static Symbol* FindSymbol(const Scope* scope, const char* symName, bool rec) {
-    MON_CANT_BE_NULL(symName);
-
-    if (scope != NULL) {
-        // Search in the specified scope
-        MON_VECTOR_FOREACH(&scope->symbols, Symbol*, sym, 
-            if (!strcmp(symName, GetSymbolName(sym))) {
-                return sym;
-            }
-        );
-        // Type was not found in the specified scope
-        return rec ? FindSymbol(scope->parentScope, symName, true) : NULL;
-    }
-
-    return FindSymbol(&s_BuiltinScope, symName, false);
-}
-
-/**
  * 	Searches for a type within the scope. If none is found,
  * 	NULL is returned. If rec is true, searches for ascendant scopes as
  *  well.
@@ -246,12 +192,12 @@ static Mon_AstTypeDef* FindType(const Scope* scope, const char* name, bool rec) 
     MON_CANT_BE_NULL(scope);
     MON_CANT_BE_NULL(name);
 
-    Symbol* sym = FindSymbol(scope, name, rec);
+    Symbol* sym = FindSymbolInScope(scope, name, rec);
     if (sym == NULL) {
         return NULL;
     }
-    
-    return sym->kind == SYM_TYPE 
+
+    return (sym->kind == SYM_TYPE)
         ? sym->definition.type 
         : NULL;
 }
@@ -268,7 +214,7 @@ static bool ResolveVar(SemAnalysisCtx* ctx, Mon_AstVar* var) {
 
     switch (var->varKind) {
         case MON_VAR_DIRECT: {
-            Symbol* sym = FindSymbol(s, var->var.direct.name, true);
+            Symbol* sym = FindSymbolInScope(s, var->var.direct.name, true);
             if (sym == NULL) {
                 LogError(ctx, &var->header, "Variable '%s' was not declared in this scope.", 
                          var->var.direct.name);
@@ -302,7 +248,7 @@ static bool ResolveVar(SemAnalysisCtx* ctx, Mon_AstVar* var) {
 
             // If we are accessing an error-type expression field,
             // simply bypass the error message.
-            if (var->var.field.expr->semantic.type->typeDesc->typeDescKind == MON_TYPEDESC_ERROR) {
+            if (var->var.field.expr->semantic.type == BUILTIN_TABLE->types.tError) {
                 return false;
             }
 
@@ -335,13 +281,6 @@ static bool ResolveVar(SemAnalysisCtx* ctx, Mon_AstVar* var) {
                 return false;
             }
 
-            // Indexed expression must be indexable.
-            if (!IsIndexableType(var->var.indexed.indexedExpr->semantic.type)) {
-                LogError(ctx, &var->var.indexed.indexedExpr->header, "Cannot index expression of type '%s'.", 
-                         var->var.indexed.indexedExpr->semantic.type->typeName);
-                return false;
-            }
-
             // Index expression must be integer type.
             if (!IsIntegerType(var->var.indexed.indexExpr->semantic.type)) {
                 LogError(ctx, &var->var.indexed.indexExpr->header, 
@@ -349,9 +288,14 @@ static bool ResolveVar(SemAnalysisCtx* ctx, Mon_AstVar* var) {
                         var->var.indexed.indexExpr->semantic.type);
                 return false;
             }
-            var->semantic.type = var->var.indexed.indexedExpr->semantic.type
-                                 ->typeDesc->typeDesc.array.innerTypeDesc
-                                 ->typeDesc.alias.semantic.aliasedType;
+
+            // Indexed expression must be indexable.
+            var->semantic.type = GetIndexedType(var->var.indexed.indexedExpr->semantic.type);
+            if (var->semantic.type == NULL) {
+                LogError(ctx, &var->var.indexed.indexedExpr->header, "Cannot index expression of type '%s'.", 
+                         var->var.indexed.indexedExpr->semantic.type->typeName);
+                return false;
+            }
             return true;
     }
 
@@ -369,7 +313,7 @@ static bool ResolveCall(SemAnalysisCtx* ctx, Mon_AstCall* call) {
     bool ret = true;
 
     // Find function definition
-    Symbol* sym = FindSymbol(ctx->currentScope, call->funcName, true);
+    Symbol* sym = FindSymbolInScope(ctx->currentScope, call->funcName, true);
     if (sym == NULL) {
         LogError(ctx, &call->header, "Function '%s' was not defined in this scope.", call->funcName);
         return false;
@@ -455,7 +399,7 @@ static Mon_AstTypeDef* FindOrCreateArrayType(SemAnalysisCtx* ctx, Mon_AstTypeDef
     strcpy(buf, prefix);
     strcat(buf, innerType->typeName);
 
-    Symbol* s = FindSymbol(ctx->currentScope, buf, true);
+    Symbol* s = FindSymbolInScope(ctx->currentScope, buf, true);
     if (s != NULL) {
         // Anonymous type was already found, re-use it.
         MON_ASSERT(s->kind == SYM_TYPE, "symbol returned from resolved inner type name must be of 'type' kind.");
@@ -486,6 +430,8 @@ static Mon_AstTypeDef* FindOrCreateArrayType(SemAnalysisCtx* ctx, Mon_AstTypeDef
         THROW(ctx);
     }
 
+    anonTypeDef->typeDesc->typeDesc.array.semantic.innerTypeDef = innerType;
+
     Symbol* anonSym = NewTypeSymbol(anonTypeDef);
     if (anonSym == NULL) {
         Mon_AstTypeDefDestroy(anonTypeDef, true);
@@ -493,7 +439,7 @@ static Mon_AstTypeDef* FindOrCreateArrayType(SemAnalysisCtx* ctx, Mon_AstTypeDef
         THROW(ctx);            
     }
 
-    if (Mon_VectorPush(&ctx->currentScope->symbols, anonSym) != MON_SUCCESS) {
+    if (!ForceAddSymbolToScope(ctx->currentScope, anonSym)) {
         DestroySymbol(anonSym);
         Mon_AstTypeDefDestroy(anonTypeDef, true);
         Mon_Free(buf);
@@ -515,6 +461,59 @@ static Mon_AstTypeDef* FindOrCreateArrayType(SemAnalysisCtx* ctx, Mon_AstTypeDef
     return anonTypeDef;    
 }
 
+static Mon_AstTypeDef* CreateAnonymousRecord(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDesc) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(typeDesc);
+    MON_ASSERT(typeDesc->typeDescKind == MON_TYPEDESC_RECORD,
+        "Can only create anonymous record types for resolved anonymous record typedescs.");
+
+    static const char format[] = "@record_%x";
+
+    Mon_AstTypeDef* ret;
+
+    // The extra (sizeof(int)*2) is the necessary amount of bytes
+    // to fit any unsigned integer into the string, since every byte
+    // in HEX representation will fit in two characters.
+#define COUNT ((sizeof(format)/sizeof(char) + (sizeof(unsigned int) * 2)))
+    char name[COUNT];
+    sprintf(name, format, ctx->anonRecCount);
+    name[COUNT - 1] = 0;
+    
+    // Create typedef
+    ret = Mon_AstTypeDefNew(name, COUNT, typeDesc);
+    if (ret == NULL) {
+        THROW(ctx);
+    }
+
+#undef COUNT
+    // Create symbol
+    Symbol* sym = NewTypeSymbol(ret);
+    if (sym == NULL) {
+        Mon_AstTypeDefDestroy(ret, false);
+        THROW(ctx);
+    }
+
+    // Add symbol to scope
+    if (!ForceAddSymbolToScope(ctx->currentScope, sym)) {
+        DestroySymbol(sym);
+        Mon_AstTypeDefDestroy(ret, false);
+        THROW(ctx);
+    }
+
+    // Add to AST
+    if (Mon_VectorPush(&ctx->currentAst->defsVector, ret) != MON_SUCCESS) {
+        DestroySymbol(sym);
+        Mon_AstTypeDefDestroy(ret, false);
+        THROW(ctx);        
+    }
+
+    // All ok
+    ctx->anonRecCount++;
+
+    return ret;
+}
+
+
 static bool ResolveCondition(SemAnalysisCtx* ctx, Mon_AstCond* cond) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(cond);
@@ -533,8 +532,8 @@ static bool ResolveCondition(SemAnalysisCtx* ctx, Mon_AstCond* cond) {
                                 cond->condition.compar.right->semantic.type,
                                 cond->condition.compar.comparKind)) {
                 LogError(ctx, &cond->header, "Invalid comparison between values of types '%s' and '%s'.",
-                         cond->condition.compar.left->semantic.type,
-                         cond->condition.compar.right->semantic.type);
+                         cond->condition.compar.left->semantic.type->typeName,
+                         cond->condition.compar.right->semantic.type->typeName);
                 return false;
             }
             return true;
@@ -642,19 +641,20 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp) {
 
         case MON_EXP_LITERAL:
             if (exp->exp.literalExpr.literalKind == MON_LIT_INT) {
-                type = FindType(&s_BuiltinScope, TYPENAME_INT32, false);
-                MON_ASSERT(type != NULL, "'int' type must be in builtin scope.");
+                type = BUILTIN_TABLE->types.tInt;
                 exp->semantic.type = type;
                 return true;
             } else if (exp->exp.literalExpr.literalKind == MON_LIT_FLOAT) {
-                type = FindType(&s_BuiltinScope, TYPENAME_FLOAT32, false);
-                MON_ASSERT(type != NULL, "'float' type must be in builtin scope.");
+                type = BUILTIN_TABLE->types.tFloat;                
+                exp->semantic.type = type;
+                return true;
+            } else if (exp->exp.literalExpr.literalKind == MON_LIT_STR) {
+                type = BUILTIN_TABLE->types.tString;
                 exp->semantic.type = type;
                 return true;
             } else {
                 MON_ASSERT(false, "Unimplemented literalKind. (got %d)", (int)exp->exp.literalExpr.literalKind);
             }
-
             break;
 
         case MON_EXP_CALL:
@@ -665,7 +665,7 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp) {
             return true;
 
         case MON_EXP_NULL:
-            exp->semantic.type = FindType(&s_BuiltinScope, TYPENAME_NULL, false);
+            exp->semantic.type = FindType(BUILTIN_SCOPE, TYPENAME_NULL, false);
             MON_ASSERT(exp->semantic.type != NULL, TYPENAME_NULL " must be in builtin scope.");
             return true;
 
@@ -720,8 +720,7 @@ static bool ResolveVarDefinition(SemAnalysisCtx* ctx, Mon_AstVarDef* varDef) {
     Mon_AstTypeDef* type = FindType(ctx->currentScope, varDef->typeName, true);
     if (type == NULL) {
         LogError(ctx, &varDef->header, "Unknown type '%s' for variable '%s'.", varDef->typeName, varDef->varName);
-        type = FindType(&s_BuiltinScope, TYPENAME_ERROR, false);
-        MON_ASSERT(type != NULL, TYPENAME_ERROR " must be in builtin scope.");
+        type = BUILTIN_TABLE->types.tError;
         ret = false;
     }
 
@@ -746,8 +745,11 @@ static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_As
                     ResolveBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction));
 
         case MON_STMT_WHILE:
-            return ResolveCondition(ctx, stmt->statement.whileStmt.condition) &&
+            ctx->loopLevel++;
+            bool ret = ResolveCondition(ctx, stmt->statement.whileStmt.condition) &&
                 ResolveBlock(ctx, stmt->statement.whileStmt.block, enclosingFunction);
+            ctx->loopLevel--;
+            return ret;
 
         case MON_STMT_ASSIGNMENT:
             if (!ResolveExpression(ctx, stmt->statement.assignment.rvalue) ||
@@ -768,7 +770,7 @@ static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_As
         case MON_STMT_RETURN:
             if (stmt->statement.returnStmt.returnedExpression == NULL) {
                 // Empty return case
-                if (enclosingFunction->semantic.returnType != FindType(&s_BuiltinScope, "void", false)) {
+                if (enclosingFunction->semantic.returnType != FindType(BUILTIN_SCOPE, "void", false)) {
                     LogError(ctx, &stmt->header, "Function %s cannot have an empty return statement (must return value of type %s).",
                              enclosingFunction->funcName, enclosingFunction->semantic.returnType->typeName);
                     return false;
@@ -785,6 +787,14 @@ static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_As
                 LogError(ctx, &stmt->header, "Cannot return value of type '%s' in function declared with return type '%s'.",
                     stmt->statement.returnStmt.returnedExpression->semantic.type->typeName,
                     enclosingFunction->semantic.returnType->typeName);
+                return false;
+            }
+            return true;
+
+        case MON_STMT_BREAK:
+        case MON_STMT_CONTINUE:
+            if (ctx->loopLevel <= 0) {
+                LogError(ctx, &stmt->header, "Statement can only be used within loops.");
                 return false;
             }
             return true;
@@ -841,8 +851,7 @@ static bool ResolveFunctionDeclaration(SemAnalysisCtx* ctx, Mon_AstFuncDef* func
     Mon_AstTypeDef* type = FindType(ctx->currentScope, funcDef->funcRetTypeName, true);
     if (type == NULL) {
         LogError(ctx, &funcDef->header, "Type not found: '%s'.", funcDef->funcRetTypeName);
-        type = FindType(&s_BuiltinScope, TYPENAME_ERROR, false);
-        MON_ASSERT(type != NULL, TYPENAME_ERROR " must be in builtin scope.");
+        type = BUILTIN_TABLE->types.tError;
         ret = false;
     }
 
@@ -862,8 +871,7 @@ static bool ResolveFunctionDeclaration(SemAnalysisCtx* ctx, Mon_AstFuncDef* func
         if (type == NULL) {
             LogError(ctx, &funcDef->header, "Cannot resolve '%s' (declared type of parameter '%s') into a type.",
                      param->typeName, param->name);
-            type = FindType(&s_BuiltinScope, TYPENAME_ERROR, false);
-            MON_ASSERT(type != NULL, TYPENAME_ERROR " must be in builtin scope.");
+            type = BUILTIN_TABLE->types.tError;
             ret = false;
         }
 
@@ -905,7 +913,7 @@ static bool ResolveFunctionImpl(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcDef) {
             THROW(ctx);
         }
 
-        if (Mon_VectorPush(&ctx->currentScope->symbols, s) != MON_SUCCESS) {
+        if (!ForceAddSymbolToScope(ctx->currentScope, s)) {
             DestroySymbol(s);
             THROW(ctx);
         }
@@ -933,8 +941,7 @@ static bool ResolveTypeDescription(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDes
             if (typeDef == NULL) {
                 LogError(ctx, &typeDesc->header, "Could not resolve '%s' into a type.", 
                          typeDesc->typeDesc.alias.aliasedTypeName);
-                typeDef = FindType(&s_BuiltinScope, TYPENAME_ERROR, false);
-                MON_ASSERT(typeDef != NULL, TYPENAME_ERROR " must be in builtin scope.");
+                typeDef = BUILTIN_TABLE->types.tError;
                 ret = false;
             }
             typeDesc->typeDesc.alias.semantic.aliasedType = typeDef;
@@ -956,8 +963,7 @@ static bool ResolveTypeDescription(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDes
                     LogError(ctx, &typeDesc->header, "Cannot resolve '%s' (in declaration of field '%s') into a type.",
                              field->typeName, field->fieldName);
                     PopScope(ctx);
-                    fieldType = FindType(&s_BuiltinScope, TYPENAME_ERROR, false);
-                    MON_ASSERT(fieldType != NULL, TYPENAME_ERROR " must be in builtin scope.");
+                    fieldType = BUILTIN_TABLE->types.tError;
                     ret = false;
                 }
 
@@ -977,6 +983,16 @@ static bool ResolveTypeDescription(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDes
         case MON_TYPEDESC_ARRAY:
             if (!ResolveTypeDescription(ctx, typeDesc->typeDesc.array.innerTypeDesc)) {
                 return false;
+            }
+
+            if (typeDesc->typeDesc.array.innerTypeDesc->typeDescKind == MON_TYPEDESC_ARRAY) {
+                typeDesc->typeDesc.array.semantic.innerTypeDef = FindOrCreateArrayType(ctx, typeDesc->typeDesc.array.innerTypeDesc->typeDesc.array.semantic.innerTypeDef);
+            } else if (typeDesc->typeDesc.array.innerTypeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
+                typeDesc->typeDesc.array.semantic.innerTypeDef = typeDesc->typeDesc.array.innerTypeDesc->typeDesc.alias.semantic.aliasedType;
+            } else if (typeDesc->typeDesc.array.innerTypeDesc->typeDescKind == MON_TYPEDESC_RECORD) {
+                typeDesc->typeDesc.array.semantic.innerTypeDef = CreateAnonymousRecord(ctx, typeDesc->typeDesc.array.innerTypeDesc);
+            } else {
+                MON_ASSERT(false, "Unimplemented type desc. (got %d)", (int)typeDesc->typeDesc.array.innerTypeDesc->typeDescKind);
             }
 
             return true;
@@ -1015,7 +1031,10 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
         Cleanup(ctx);
         return MON_ERR_NOMEM;
     }
-    PrepareBuiltinScope();
+    // Make sure builtin scope is succesfully created:
+    if (BUILTIN_SCOPE == NULL) {
+        return MON_ERR_NOMEM;
+    }
 
     // No errors occurred, proceed with normal execution.
     PushScope(ctx);
@@ -1125,6 +1144,9 @@ Mon_RetCode Mon_SemAnalyseMultiple(Mon_Ast* asts, int astCount, FILE* semErrOutS
 
     ctx.targetAstCount = astCount;
     ctx.targetAsts = asts;
+
+    ctx.loopLevel = 0;
+    ctx.anonRecCount = 0;
 
     return Analyse(&ctx);
 }

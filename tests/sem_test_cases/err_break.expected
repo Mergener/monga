@@ -1,0 +1,2 @@
+[Error] Module sem_test_cases/err_break, line 2, column 11: Statement can only be used within loops.
+Semantic errors were caught during analysis.

@@ -1,0 +1,2 @@
+[Error] Module sem_test_cases/err_str, line 4, column 25: Cannot assign value of type 'string' to lvalue of type 'int'.
+Semantic errors were caught during analysis.

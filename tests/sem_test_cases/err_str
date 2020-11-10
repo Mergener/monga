@@ -1,0 +1,5 @@
+function foo() {
+    var s : int;
+
+    s = "Hello, world!";
+}

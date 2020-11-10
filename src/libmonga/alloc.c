@@ -42,6 +42,14 @@ void* Mon_Alloc(size_t s) {
     return s_Allocator.alloc(s);
 }
 
+void* Mon_AllocZero(size_t n, size_t s) {
+    if (!s_AllocatorSet) {
+        UseDefaultAllocator();
+    }
+
+    return s_Allocator.allocZero(n, s);
+}
+
 void* Mon_Realloc(void* oldMem, size_t s) {
     if (!s_AllocatorSet) {
         UseDefaultAllocator();

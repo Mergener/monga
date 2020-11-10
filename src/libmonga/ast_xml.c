@@ -129,6 +129,16 @@ static void XmlDumpExpUnopNode(AstDumpContext* ctx, const Mon_AstExp* exp) {
             ctx->indentLevel--;
             DUMPF_OR_STOP(ctx, "</BitwiseNot>");
             break;
+
+        case MON_UNOP_LEN:
+            DUMPF_OR_STOP(ctx, "<Len>");
+            ctx->indentLevel++;
+
+            XmlDumpExpNode(ctx, exp->exp.unaryOperation.operand);
+
+            ctx->indentLevel--;
+            DUMPF_OR_STOP(ctx, "</Len>");
+            break;
     }
 }
 
@@ -449,6 +459,14 @@ static void XmlDumpStatementNode(AstDumpContext* ctx, const Mon_AstStatement* st
     MON_CANT_BE_NULL(stmt);
 
     switch (stmt->statementKind) {
+        case MON_STMT_BREAK:
+            DUMPF_OR_STOP(ctx, "<Break></Break>");
+            break;
+
+        case MON_STMT_CONTINUE:
+            DUMPF_OR_STOP(ctx, "<Continue></Continue>");
+            break;
+
         case MON_STMT_IF:
             DUMPF_OR_STOP(ctx, "<If>");
             ctx->indentLevel++;

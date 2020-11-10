@@ -21,7 +21,9 @@ typedef enum {
     MON_STMT_CALL,       /* func() */   
     MON_STMT_BLOCK,      /* { statements } */   
     MON_STMT_ECHO,       /* @exp */   
-    MON_STMT_VARDEF      /* var varName : typeName */
+    MON_STMT_VARDEF,     /* var varName : typeName */
+    MON_STMT_BREAK,
+    MON_STMT_CONTINUE
 
 } Mon_StmtKind;
 
@@ -174,6 +176,10 @@ MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewBlock(Mon_AstBlock* blo
  *  @return The statement node or NULL if allocation fails.
  */
 MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewWhile(Mon_AstCond* condition, Mon_AstBlock* block);
+
+MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewBreak();
+
+MON_PUBLIC Mon_AstStatement* MON_CALL Mon_AstStatementNewContinue();
 
 /**
  *  Creates a new if statement.

@@ -19,7 +19,8 @@ typedef struct Mon_AstTypeDef_ Mon_AstTypeDef;
 typedef enum {
 
     MON_UNOP_NEGATIVE,  /** !operand */
-    MON_UNOP_BITNOT     /** ~operand */
+    MON_UNOP_BITNOT,    /** ~operand */
+    MON_UNOP_LEN
 
 } Mon_UnopKind;
 
@@ -48,7 +49,7 @@ typedef enum {
     MON_EXP_LITERAL,     /** A literal constant (e.g 20) */
     MON_EXP_CALL,        /** func() */
     MON_EXP_NEW,         /** new type[opt_array_exp] */    
-    MON_EXP_NULL    
+    MON_EXP_NULL
 
 } Mon_AstExpKind;
 
@@ -207,7 +208,6 @@ MON_PUBLIC Mon_AstExp* MON_CALL Mon_AstExpNewVar(Mon_AstVar* var);
  *  @remarks Semantic data is initialized to NULL.
  */
 MON_PUBLIC Mon_AstExp* MON_CALL Mon_AstExpNewCall(Mon_AstCall* call);
-
 /**
  *  Creates a new literal constant expression node.
  *

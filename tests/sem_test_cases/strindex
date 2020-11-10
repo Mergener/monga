@@ -1,0 +1,10 @@
+function main() {
+    @"aasd"[1];
+
+    var s : string;
+
+    s = "Hello";
+
+    @s;
+    @s[0];
+}

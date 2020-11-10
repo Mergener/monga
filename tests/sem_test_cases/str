@@ -1,0 +1,4 @@
+function foo() {
+    var s : string;
+    s = "Hello, world!";
+}

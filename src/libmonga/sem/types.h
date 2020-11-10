@@ -7,17 +7,7 @@
 
 #include "symbol.h"
 #include "mon_vector.h"
-
-#define TYPENAME_ERROR   "<error-type>"
-#define TYPENAME_NULL    "<null-type>"
-#define TYPENAME_CHAR    "char"
-#define TYPENAME_INT8    "byte"
-#define TYPENAME_INT16   "short"
-#define TYPENAME_INT32   "int"
-#define TYPENAME_INT64   "long"
-#define TYPENAME_FLOAT32 "float"
-#define TYPENAME_FLOAT64 "double"
-#define TYPENAME_VOID    "void"
+#include "builtins.h"
 
 /**
  * 	Returns the underlying type of a given type definition. If the type definition
@@ -31,17 +21,6 @@
  * 	Returns NULL if type == NULL.
  */
 MON_PRIVATE Mon_AstTypeDef* GetUnderlyingType(Mon_AstTypeDef* type);
-
-/**
- * 	Constructs builtin type symbols and fills 'vec' with pointers to them.
- * 
- *  The ownership is transferred to the caller of this function.
- *  All added elements are of type 'Symbol' and kind 'SYM_TYPE'.
- * 
- * 	Returns true if the function functioned succesfully or false if 
- * 	an allocation failed.
- */
-MON_PRIVATE bool ConstructBuiltinTypes(Mon_Vector* vec);
 
 /**
  * 	Returns true if type 'a' is trivially assignable from type 'b'.
@@ -112,6 +91,14 @@ MON_PRIVATE bool IsStructuredType(Mon_AstTypeDef* type);
  * 	True if the type can be indexed. (e.g myTypeExp[someIndex])
  */
 MON_PRIVATE bool IsIndexableType(Mon_AstTypeDef* type);
+
+/**
+ *  For a given type 'type', returns the type that a var of format
+ *  exp[idxExp] would have, considering 'exp' is of type 'type' and
+ *  idxExp is of an integer type.
+ *  Returns NULL if that expression would be an error.
+ */
+MON_PRIVATE Mon_AstTypeDef* GetIndexedType(Mon_AstTypeDef* type);
 
 MON_PRIVATE bool IsRefType(Mon_AstTypeDef* typeDef);
 

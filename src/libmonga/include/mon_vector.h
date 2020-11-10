@@ -7,26 +7,9 @@
 
 #include "mon_error.h"
 
-#define MON_VECTOR_FOREACH(vector, type, el, block) \
-    {\
-        const Mon_Vector* const target_vector_ = (vector); \
-        const void** vector_begin_it_ = (target_vector_)->_arr;\
-        const void** vector_end_it_ = (target_vector_)->_arr + (target_vector_)->_count;\
-        for (const void** it_ = vector_begin_it_; it_ != vector_end_it_; ++it_) { \
-            type el = (type)*it_;\
-            block \
-        }\
-    }
-
 C_LINKAGE_BEGIN
 
-typedef struct {
-
-    const void** _arr;
-    int          _count;
-    int          _cap;
-
-} Mon_Vector;
+typedef struct Mon_Vector_ Mon_Vector;
 
 /**
  *  Initializes a vector. Must be finalized with Mon_VectorFinalize once its use
@@ -127,6 +110,39 @@ MON_PUBLIC void MON_CALL Mon_VectorClaim(Mon_Vector* vector, void** outPtr, int*
  *  @param vector The vector to be finalized.
  */ 
 MON_PUBLIC void MON_CALL Mon_VectorFinalize(Mon_Vector* vector);
+
+/**
+ *  Utility macro to iterate over vectors.
+ * 
+ *  @param vector A pointer to the vector to iterate on.
+ *  @param type A type to cast each element of the vector to (like const int*).
+ *  @param el A name to refer to each element of the vector.
+ *  @param block A block of code to execute upon each element of the vector.
+ * 
+ *  @remarks Usage example: Print all strings in a vector.
+ *  
+ *  void foo(Mon_Vector* vecOfStrings) {
+ *      MON_VECTOR_FOREACH(vecOfStrings, const char*, s, 
+ *          printf("%s\n", s);
+ *      );
+ *  }
+ */
+#define MON_VECTOR_FOREACH(vector, type, el, block) \
+    do {\
+        const Mon_Vector* const target_vector_ = (vector); \
+        const void** vector_begin_it_ = (target_vector_)->_arr;\
+        const void** vector_end_it_ = (target_vector_)->_arr + (target_vector_)->_count;\
+        for (const void** it_ = vector_begin_it_; it_ != vector_end_it_; ++it_) { \
+            type el = (type)*it_;\
+            block \
+        }\
+    } while(false)
+
+struct Mon_Vector_ {
+    const void** _arr;
+    int          _count;
+    int          _cap;
+};
 
 C_LINKAGE_END
 
