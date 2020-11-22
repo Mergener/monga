@@ -36,3 +36,5 @@ include/divisible/*
 .idea/*.xml
 build/**/*
 scraps
+Testing
+Testing/*
