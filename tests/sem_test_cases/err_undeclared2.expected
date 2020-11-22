@@ -1,3 +1,3 @@
-[Error] Module sem_test_cases/err_undeclared2, line 2, column 8: Variable 'i' was not declared in this scope.
-[Error] Module sem_test_cases/err_undeclared2, line 4, column 14: Cannot return value of type 'int' in function declared with return type 'void'.
+[Error] Module tests/sem_test_cases/err_undeclared2, line 2, column 8: Variable 'i' was not declared in this scope.
+[Error] Module tests/sem_test_cases/err_undeclared2, line 4, column 14: Cannot return value of type 'int' in function declared with return type 'void'.
 Semantic errors were caught during analysis.

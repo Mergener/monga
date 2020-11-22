@@ -1,4 +1,4 @@
-[Error] Module sem_test_cases/err_len, line 8, column 12: Invalid unary operation for type 'int'.
-[Error] Module sem_test_cases/err_len, line 9, column 12: Invalid unary operation for type 'T'.
-[Error] Module sem_test_cases/err_len, line 11, column 16: Invalid unary operation for type 'T'.
+[Error] Module tests/sem_test_cases/err_len, line 8, column 12: Invalid unary operation for type 'int'.
+[Error] Module tests/sem_test_cases/err_len, line 9, column 12: Invalid unary operation for type 'T'.
+[Error] Module tests/sem_test_cases/err_len, line 11, column 16: Invalid unary operation for type 'T'.
 Semantic errors were caught during analysis.

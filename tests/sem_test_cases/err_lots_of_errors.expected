@@ -1,5 +1,5 @@
-[Error] Module sem_test_cases/err_lots_of_errors, line 7, column 15: Unknown type 'R' for variable 'c'.
-[Error] Module sem_test_cases/err_lots_of_errors, line 9, column 13: Cannot assign value of type 'double' to lvalue of type 'int'.
-[Error] Module sem_test_cases/err_lots_of_errors, line 15, column 13: Cannot assign value of type 'int' to lvalue of type 'float'.
-[Error] Module sem_test_cases/err_lots_of_errors, line 17, column 14: Cannot return value of type 'int' in function declared with return type 'void'.
+[Error] Module tests/sem_test_cases/err_lots_of_errors, line 7, column 15: Unknown type 'R' for variable 'c'.
+[Error] Module tests/sem_test_cases/err_lots_of_errors, line 9, column 13: Cannot assign value of type 'double' to lvalue of type 'int'.
+[Error] Module tests/sem_test_cases/err_lots_of_errors, line 15, column 13: Cannot assign value of type 'int' to lvalue of type 'float'.
+[Error] Module tests/sem_test_cases/err_lots_of_errors, line 17, column 14: Cannot return value of type 'int' in function declared with return type 'void'.
 Semantic errors were caught during analysis.

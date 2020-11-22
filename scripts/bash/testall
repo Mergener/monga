@@ -1,5 +1,8 @@
 #!/bin/bash
 
-./bin/src/montests/montests logs/tests/last_test
-cd tests
-python3 testall.py
+# Runs Monga's unit tests.
+# Usage:
+#	testall <PATH_TO_MONGA_EXECUTABLE> <PATH_TO_MONTESTS_EXECUTABLE>
+
+$2 logs/tests/last_test
+python3 tests/testall.py $1

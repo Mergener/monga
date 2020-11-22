@@ -1,2 +1,2 @@
-[Error] Module sem_test_cases/err_condexp1, line 2, column 30: Ambiguous result type for conditional expression. The 'then' type (preceded by the ?) must be assignable from a value of 'else' type (preceded by the ':').
+[Error] Module tests/sem_test_cases/err_condexp1, line 2, column 30: Ambiguous result type for conditional expression. The 'then' type (preceded by the ?) must be assignable from a value of 'else' type (preceded by the ':').
 Semantic errors were caught during analysis.

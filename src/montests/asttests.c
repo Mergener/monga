@@ -2,6 +2,7 @@
 
 #include "mon_parser.h"
 #include "mon_ast.h"
+#include "mon_sem.h"
 
 static const char* s_TestableFiles[] = {
 	"tests/ast_dump_cases/factorial",
@@ -89,6 +90,37 @@ static void ParseLeakTest() {
 		int finalAlloc = GetAllocCount();
 		MON_ASSERT(finalAlloc == initial,
 			"in parse test for file %s, final number of allocations must be equal to the intial count. (expected %d, got %d)",
+			s_TestableFiles[i], initial, finalAlloc);
+		
+		fclose(f);
+	}
+}
+
+static void SemanticLeakTest() {
+	int count = sizeof(s_TestableFiles)/sizeof(*s_TestableFiles);
+
+	for (int i = 0; i < count; ++i) {
+		Mon_Ast ast;
+
+		FILE* f = fopen(s_TestableFiles[i], "r");
+		if (f == NULL) {
+			continue;
+		}
+		Logf("Parsing file %s\n", s_TestableFiles[i]);
+
+		int initial = GetAllocCount();
+
+		// We are not testing the outputs of a parsing here, but merely 
+		// checking the existence of memory leaks.
+		Mon_Parse(f, &ast, s_TestableFiles[i], MON_PARSEFLAGS_NONE);	
+
+		Mon_SemAnalyse(&ast, g_LogFileStream);
+
+		Mon_AstFinalize(&ast);
+
+		int finalAlloc = GetAllocCount();
+		MON_ASSERT(finalAlloc == initial,
+			"in semantic test for file %s, final number of allocations must be equal to the intial count. (expected %d, got %d)",
 			s_TestableFiles[i], initial, finalAlloc);
 		
 		fclose(f);

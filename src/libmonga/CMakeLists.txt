@@ -32,10 +32,3 @@ target_include_directories(libmonga PRIVATE ${gensrc_path})
 target_include_directories(libmonga PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libmonga PRIVATE ${CMAKE_SOURCE_DIR}/src/monrt/c)
 target_include_directories(libmonga PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# Allow warnings
-target_compile_options(libmonga PRIVATE
-     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
-          -Wall>
-     $<$<CXX_COMPILER_ID:MSVC>:
-          /W4>)

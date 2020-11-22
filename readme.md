@@ -16,6 +16,7 @@ This is a project for the Compilers course (INF1715) at PUC-Rio.
 
 ### Prerequisites
 
+* C11 compliant compiler
 * GNU Flex + Bison (scanner and parser generation);
 * CMake 3.18 or higher (build system generator);
 * Python (unit testing);

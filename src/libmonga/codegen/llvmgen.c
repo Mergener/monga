@@ -50,14 +50,14 @@ static void CompileBinCond(LlvmGenContext* ctx, Mon_BinCondKind kind, Mon_AstCon
     MON_UNREACHABLE();
 }
 
-static void CompileComparison(LlvmGenContext* ctx, Mon_AstCond* cond) {
+static void CompileComparison(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmLocation trueLabel, LlvmLocation falseLabel) {
     MON_CANT_BE_NULL(cond);
     MON_CANT_BE_NULL(ctx);
     MON_ASSERT(cond->condKind == MON_COND_COMPARISON,
         "Specified condition node must be a comparison. (got %d)", 
         (int)cond->condKind);
     
-
+    
 }
 
 static void CompileCondition(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmLocation trueLabel, LlvmLocation falseLabel) {
@@ -393,6 +393,7 @@ static void CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_As
 
     switch (stmt->statementKind) {
         case MON_STMT_IF:
+
             break;
 
         case MON_STMT_WHILE:

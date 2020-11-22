@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Compiles monga source code into an executable.
+# Usage:
+#   domonga <PATH_TO_MONGA_EXECUTABLE> <outputFile> <sourceFile1> [<sourceFileN>...]
+
+MONGA_PATH=$1
+shift
+
+OUT_FILE=$1
+shift
+
 if [ "$#" -lt 1 ]; then
     echo "Expected an input file."
     exit -1
@@ -46,7 +56,7 @@ done
 
 # monga > llvm
 
-bin/src/exec/monga -o $files $MONRT ||
+$MONGA_PATH -o $files $MONRT ||
 do_error
 
 # monga > asm
@@ -64,7 +74,7 @@ asm_files=""
 for f in $files; do
     asm_files="$asm_files $f.s"
 done
-gcc -o a.out $asm_files src/monrt/c/*.c -no-pie
+clang -o a.out $asm_files src/monrt/c/*.c -no-pie
 
 clean
 exit 0

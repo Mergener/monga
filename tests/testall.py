@@ -4,21 +4,25 @@ from subprocess import Popen, PIPE, STDOUT
 import os
 import sys
 
-MONGA_PATH = '../bin/src/exec/monga'
-LEX_CASES_PATH = 'lex_cases'
-AST_DUMP_CASES_PATH = 'ast_dump_cases'
-REDUCE_DUMP_CASES_PATH = 'reduce_dump_cases'
-SEM_CASES_PATH = 'sem_test_cases'
+if (len(sys.argv) != 2):
+	print(f"Usage: {sys.argv[0]} <pathToMongaExecutable>")
+	exit(-1)
 
+MONGA_PATH = sys.argv[1]
+CASES_PATH = os.path.dirname(os.path.realpath(__file__))
+os.chdir(os.path.join(CASES_PATH, ".."))
+
+# Number of passed tests
 passed = 0
+# Number of finished tests
 done = 0
 
-def test_file(program_args, input_file_path):
+def test_cmd(cmd, expected_out_path):
 	global passed
 	global done
 
 	# Get Monga output for input file
-	process = Popen(program_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True)
+	process = Popen(cmd, stdout=PIPE, stderr=STDOUT, universal_newlines=True)
 	(output, _) = process.communicate()
 	process.wait()
 
@@ -27,10 +31,10 @@ def test_file(program_args, input_file_path):
 	# Read expected output file
 	expected_out = ""
 	try:
-		with open(input_file_path + ".expected", "r") as expected_file_handle:
+		with open(expected_out_path, "r") as expected_file_handle:
 			expected_out = expected_file_handle.read()
 	except:
-		print(f"Couldn't find '.expected' file for '{input_file_path}'")
+		print(f"Couldn't find expected output file '{expected_out_path}'.")
 		return
 
 	expected_out = expected_out.rstrip()
@@ -38,7 +42,7 @@ def test_file(program_args, input_file_path):
 	# Compare two outputs:
 	equal = expected_out == output
 
-	testCaseCmd = ' '.join(program_args)
+	testCaseCmd = ' '.join(cmd)
 
 	done += 1
 
@@ -47,13 +51,16 @@ def test_file(program_args, input_file_path):
 	else:
 		print(f"[Test] {testCaseCmd} (FAILED)\n-> Expected:\n[{expected_out}]\n-> Got:\n[{output}]")
 
-def test_lex(monga_path, input_file_path):
-	test_file([monga_path, '-l', input_file_path], input_file_path)
+def test_lex(input_file_path, expected_out_path):
+	global MONGA_PATH
+	test_cmd([MONGA_PATH, '-l', input_file_path], expected_out_path)
 
-def test_astdump(monga_path, input_file_path):
-	test_file([monga_path, '-p', input_file_path], input_file_path)
+def test_astdump(input_file_path, expected_out_path):
+	global MONGA_PATH
+	test_cmd([MONGA_PATH, '-p', input_file_path], expected_out_path)
 
-def test_sem(monga_path, input_file_path):
+def test_sem(input_file_path, expected_out_path):
+	global MONGA_PATH
 	target = []
 	if os.path.isdir(input_file_path):
 		for file in os.listdir(input_file_path):
@@ -62,75 +69,38 @@ def test_sem(monga_path, input_file_path):
 	else:
 		target.append(input_file_path)
 
-	test_file([monga_path, '-s'] + target, input_file_path)
+	test_cmd([MONGA_PATH, '-s'] + target, expected_out_path)
 	
-def test_reducedump(monga_path, input_file_path):
-	test_file([monga_path, '-r', input_file_path], input_file_path)
+def test_reducedump(input_file_path, expected_out_path):
+	global MONGA_PATH
+	test_cmd([MONGA_PATH, '-r', input_file_path], expected_out_path)
 
-def test_all_lex(monga_path, lex_cases_path):
-	global passed
+def test_each(path, test_name, test_func):
 	global done
+	global passed
+
+	print(f"\n*** Starting '{test_name}' tests ***")
 
 	done = 0
 	passed = 0
-	print('\n*** Testing Lex Dump. ***')
 
-	for file in os.listdir(lex_cases_path):
+	for file in os.listdir(path):
 		if not file.endswith(".expected"):
-			input_file_path = os.path.join(lex_cases_path, file)
-			test_lex(monga_path, input_file_path)
-
-	print(f'*** Lex tests finished. ({passed} of {done} passed) ***')
-
-def test_all_astdump(monga_path, astdump_cases_path):
-	global passed
-	global done
+			input_file_path = os.path.join(path, file)
+			test_func(input_file_path, input_file_path + ".expected")
 	
-	done = 0
-	passed = 0
-	print('\n*** Testing Ast Dump. ***')
+	print(f"\n*** '{test_name}' tests finished. ({passed} of {done} passed) ***")
 
-	for file in os.listdir(astdump_cases_path):
-		if not file.endswith(".expected"):
-			input_file_path = os.path.join(astdump_cases_path, file)
-			test_astdump(monga_path, input_file_path)
+def test_all():
+	global MONGA_PATH
 
-	print(f'*** Ast Dump tests finished. ({passed} of {done} passed) ***')
+	test_each(os.path.join("tests", "lex_cases"), "Lex Dump", test_lex)
+	test_each(os.path.join("tests", "reduce_dump_cases"), "Rule Reduce Dump", test_reducedump)
+	test_each(os.path.join("tests", "ast_dump_cases"), "AST Dump", test_astdump)
+	test_each(os.path.join("tests", "sem_test_cases"), "Semantic", test_sem)
 
-def test_all_semtest(monga_path, cases_path):
-	global passed
-	global done
-	
-	done = 0
-	passed = 0
-	print('\n*** Testing Semantics. ***')
+test_all()
 
-	for file in os.listdir(cases_path):
-		if not file.endswith(".expected"):
-			input_file_path = os.path.join(cases_path, file)
-			test_sem(monga_path, input_file_path)
-
-	print(f'*** Semantic tests finished. ({passed} of {done} passed) ***')
-
-def test_all_reducedump(monga_path, astdump_cases_path):
-	global passed
-	global done
-	
-	done = 0
-	passed = 0
-	print('\n*** Testing Parser Reduction. ***')
-
-	for file in os.listdir(astdump_cases_path):
-		if not file.endswith(".expected"):
-			input_file_path = os.path.join(astdump_cases_path, file)
-			test_reducedump(monga_path, input_file_path)
-
-	print(f'*** Reduce Dump tests finished. ({passed} of {done} passed) ***')
-
-def test_all(monga_path):
-	test_all_lex(monga_path, LEX_CASES_PATH)
-	test_all_reducedump(monga_path, REDUCE_DUMP_CASES_PATH)
-	test_all_astdump(monga_path, AST_DUMP_CASES_PATH)
-	test_all_semtest(monga_path, SEM_CASES_PATH)
-
-test_all(MONGA_PATH)
+if done == passed:
+	exit(0)
+exit(-1)

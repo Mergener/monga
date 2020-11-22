@@ -1,2 +1,2 @@
-[Error] Module sem_test_cases/err_field1, line 11, column 5: Specified field 'z' does not exist in value of type 'Vec2'.
+[Error] Module tests/sem_test_cases/err_field1, line 11, column 5: Specified field 'z' does not exist in value of type 'Vec2'.
 Semantic errors were caught during analysis.

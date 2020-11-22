@@ -10,10 +10,13 @@
 
 // Test files:
 
-#include "vectortests.c"
 #include "asttests.c"
+#include "dicttests.c"
+#include "vectortests.c"
 
 ///
+
+static void OutOfMemoryError();
 
 /** Total amount of tests performed by RunTest. */
 static int s_TestCount = 0;
@@ -31,9 +34,8 @@ void RunTest(const Test* test) {
 
     test->testFunc();
     if (s_LastFailed) {
-        printf("Test %s: %s\n", test->testName, "FAILED (view assertion data above)");
+        printf("[Test] %s (%s) \n", test->testName, "FAILED - view assertion data above");
     } else {
-        printf("Test %s: %s\n", test->testName, "PASSED");
         s_PassedCount++;
     }
 }
@@ -123,12 +125,7 @@ bool IsAllocated(void* mem) {
 }
 
 static void* Alloc(size_t s) {
-    AllocNode* node = malloc(s + sizeof(AllocNode));
-
-    if (node == NULL) {
-        fprintf(stderr, "Out of memory.\n");
-        exit(-1);
-    }
+    AllocNode* node = InternalAlloc(s + sizeof(AllocNode));
 
     node->next = s_AllocHead;
     node->size = s;
@@ -170,7 +167,7 @@ static void FreeAlloc(void* mem) {
 
     size_t size = memNode->size;
 
-    free(memNode);
+    InternalFree(memNode);
     s_AllocCount--;
 
     Logf("[Memory] %ld bytes freed at %p.\n", (long)size, mem);
@@ -209,6 +206,31 @@ void Logf(const char* fmt, ...) {
     vfprintf(g_LogFileStream, fmt, args);
 
     va_end(args);
+}
+
+void* InternalAlloc(size_t b) {
+    void* mem = malloc(b);
+    if (mem == NULL) {
+        OutOfMemoryError();
+    }
+    return mem;
+}
+
+void* InternalRealloc(void* mem, size_t newSize) {
+    void* newMem = realloc(mem, newSize);
+    if (newMem == NULL) {
+        OutOfMemoryError();
+    }
+    return newMem;
+}
+
+void InternalFree(void* mem) {
+    free(mem);
+}
+
+static void OutOfMemoryError() {
+    fprintf(stderr, "An allocation failure occurred during tests execution.\n");
+    exit(EXIT_FAILURE);
 }
 
 static void Setup(const char* logFilePath) {
@@ -264,6 +286,7 @@ int main(int argc, char* argv[]) {
 
     // Tests:
     RunVectorTests();
+    RunDictTests();
     RunASTTests();
     ///
 
