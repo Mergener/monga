@@ -1,0 +1,9 @@
+function foo(): float {
+    while (1 >= 1) {
+        return 4.0;
+    }
+
+    if (2 < 3) {
+        return 6.0;
+    }
+}

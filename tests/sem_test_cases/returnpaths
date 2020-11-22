@@ -1,0 +1,7 @@
+function foo(a : int): int {
+    if (a > 5) {
+        return 2;
+    } else {
+        return 3;
+    }
+}

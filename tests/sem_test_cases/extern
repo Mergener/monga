@@ -1,0 +1,5 @@
+extern function bar(i : int, s : string): int;
+
+function foo(): int {
+    return bar(2, "abc");
+}

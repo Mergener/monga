@@ -14,3 +14,4 @@ lit_float 1000.000
 identifier myOtherVar
 =
 lit_int 20
+

@@ -1,5 +1,0 @@
-#!/bin/bash
-
-./bin/unittests logs/tests/last_test
-cd tests
-python3 testall.py

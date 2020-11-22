@@ -3,13 +3,12 @@
 * [About](#about)
 * [Getting Started](#getting-started)
   * [Prerequisites](#prerequisites)
-  * [Setup](#setup)
   * [Building](#building)
 * [Usage](#usage)
 
 ## About
 
-The goal of this project is to implement a Lex/Yacc based compiler for the Monga programming language - a simple procedural language - that will generate LLVM code from Monga source files.
+The goal of this project is to implement a Lex/Yacc based compiler for the Monga programming language - a simple procedural language - that generates LLVM code from Monga source files.
 
 This is a project for the Compilers course (INF1715) at PUC-Rio.
 
@@ -17,72 +16,42 @@ This is a project for the Compilers course (INF1715) at PUC-Rio.
 
 ### Prerequisites
 
-* flex/lex (to generate the language scanner)
-```sh
-sudo apt-get install flex
+* GNU Flex + Bison (scanner and parser generation);
+* CMake 3.18 or higher (build system generator);
+* Python (unit testing);
+* LLVM + Clang (assembly of LLVM generated files);
+
+## Building
+
+Use the following command while in the root of the repository to setup the build system:
 ```
-
-* yacc/bison (to generate the language parser)
-```sh
-sudo apt-get install bison
+cmake -S . -B bin
 ```
-
-* gcc (to compile the compiler's source)
-
-Even though any C99 (or more recent) compliant compiler should be able to compile the code, the build scripts currently only support gcc.
-
-```sh
-sudo apt install gcc
-```
-
-* Python 3 (to run unit test scripts)
-```sh 
-sudo apt-get install python3
-```
-
-Make sure all dependencies are listed on the system's PATH.
-
-### Setup
-
-Before compiling any file for the first time, run ```./configure```.
-
-### Building
-
-The top-level scripts ```buildall```, ```buildexec```, ```buildlib```, ```buildlex``` and ```buildyacc``` are respectively responsible for building the entire monga compiler, the lexical analyser and the parser. Running them with all the pre-requisites being met should generate Lex/Yacc sources (and other outputs) on ```bin/```.
-
-To run them, simply use:
-
-```./buildlex ```
-
-```./buildyacc```
-
-```./buildlib```
-
-```./buildexec```
-
-```./buildall```
-
-The ```bin/monga``` file is the generated executable file for the Monga compiler.
+Then, ```cd``` onto ```bin``` and call ```make```.
+This will generate binaries for monrt (the Monga runtime library), libmonga (the Monga compiler library), monga (the Monga compiler executable) and montests (the Monga Unit test suite) inside their respective folders within ```bin/src```.
 
 ## Usage
 
-### Linking against the monga library
-Once you run ```./buildlib```
-
 ### Compiling a monga program:
-This mode will generate an executable file from a set of monga source files.
+This mode will generate an LLVM file for every specified Monga source file.
 ```sh
-./bin/monga -o <programOutputPath> <mongaSource1>[, <otherMongaSource>...] [Extra Args]
+monga -o <programOutputPath> <mongaSource1>[, <otherMongaSource>...]
 ```
 
 ### Token dumping mode:
 The token dumping mode will read an input file and dump all tokens scanned by the Lexical Analyser.
 ```sh
-./bin/monga -l <sourceFile> [Extra Args]
+monga -l <sourceFile>
 ```
 
 ### Tree dumping mode:
 This mode will dump the Abstract Syntax Tree of an input source file in XML format after parsing it.
 ```sh
-./bin/monga -p <sourceFile> [Extra Args]
+monga -p <sourceFile>
+```
+
+### Semantic test mode:
+This mode will perform semantic analysis on Monga source files, outputting errors if they occur.
+```sh
+monga -s <sourceFile1> [<sourceFilen>...]
 ```

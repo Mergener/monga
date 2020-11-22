@@ -1,0 +1,2 @@
+[Error] Module sem_test_cases/err_returnpaths2, line 9, column 2: Not all paths are returning a value.
+Semantic errors were caught during analysis.

@@ -1,3 +1,0 @@
-#!/bin/bash
-
-gcc -Wall -Wextra -Lbin/builds/libmonga/debug -Ibin/builds/libmonga/include -o bin/unittests src/montests/montests.c -lmonga -DMON_DEBUG

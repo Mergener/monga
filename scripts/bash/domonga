@@ -1,0 +1,70 @@
+#!/bin/bash
+
+if [ "$#" -lt 1 ]; then
+    echo "Expected an input file."
+    exit -1
+fi
+
+ARGS="$@"
+
+MONRT=""
+for f in "src/monrt/monga/*.mon"; do
+    MONRT="$MONRT $f"
+done
+
+function clean {
+    for arg in $ARGS; do
+        rm_if_exists "$arg.ll"
+        rm_if_exists "$arg.opt.ll"
+        rm_if_exists "$arg.s"
+        rm_if_exists "$arg.o"
+    done
+    for f in $MONRT; do
+        rm_if_exists "$f.ll"
+        rm_if_exists "$f.opt.ll"
+        rm_if_exists "$f.s"
+        rm_if_exists "$f.o"
+    done
+}
+
+# on error
+function do_error {
+    clean
+    exit -1
+}
+
+function rm_if_exists {
+    if test -f $1; then
+        rm $1
+    fi
+}
+
+files=""
+for arg in "$@"; do
+    files="$files $arg"
+done
+
+# monga > llvm
+
+bin/src/exec/monga -o $files $MONRT ||
+do_error
+
+# monga > asm
+for f in $files; do
+    opt $f.ll -mem2reg -S -O2 > temp
+    mv temp $f.opt.ll
+
+    llc $f.opt.ll ||
+    do_error
+    mv $f.opt.s $f.s
+done
+
+# asm > exe
+asm_files=""
+for f in $files; do
+    asm_files="$asm_files $f.s"
+done
+gcc -o a.out $asm_files src/monrt/c/*.c -no-pie
+
+clean
+exit 0

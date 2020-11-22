@@ -22,6 +22,7 @@ parameters r1
 opt_parameters r2
 type r1
 opt_ret_type r2
+func_signature r1
 var r1
 exp_primary r3
 var r2
@@ -30,6 +31,10 @@ exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
 exp_additive r1
+exp_shift r1
+exp_bitand r1
+exp_xor r1
+exp_bitor r1
 exp_conditional r1
 exp r1
 exps r1
@@ -41,6 +46,10 @@ exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
 exp_additive r1
+exp_shift r1
+exp_bitand r1
+exp_xor r1
+exp_bitor r1
 exp_conditional r1
 exp r1
 exps r2
@@ -52,6 +61,10 @@ exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
 exp_additive r1
+exp_shift r1
+exp_bitand r1
+exp_xor r1
+exp_bitor r1
 exp_conditional r1
 exp r1
 exps r2
@@ -62,6 +75,10 @@ exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
 exp_additive r1
+exp_shift r1
+exp_bitand r1
+exp_xor r1
+exp_bitor r1
 exp_conditional r1
 exp r1
 opt_exp r2

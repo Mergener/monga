@@ -1,9 +1,0 @@
-#!/bin/bash
-
-echo "Building lex..."
-
-lex src/libmonga/lex.l &&
-mv lex.yy.c bin/gensrc/lex.yy.c
-exit 0
-
-exit 1

@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE, STDOUT
 import os
 import sys
 
-MONGA_PATH = '../bin/builds/monga/release/monga'
+MONGA_PATH = '../bin/src/exec/monga'
 LEX_CASES_PATH = 'lex_cases'
 AST_DUMP_CASES_PATH = 'ast_dump_cases'
 REDUCE_DUMP_CASES_PATH = 'reduce_dump_cases'
@@ -43,7 +43,6 @@ def test_file(program_args, input_file_path):
 	done += 1
 
 	if equal:
-		print(f"[Test] {testCaseCmd} (SUCCESS)")
 		passed += 1
 	else:
 		print(f"[Test] {testCaseCmd} (FAILED)\n-> Expected:\n[{expected_out}]\n-> Got:\n[{output}]")
@@ -74,7 +73,7 @@ def test_all_lex(monga_path, lex_cases_path):
 
 	done = 0
 	passed = 0
-	print('*** Testing Lex Dump. ***\n')
+	print('\n*** Testing Lex Dump. ***')
 
 	for file in os.listdir(lex_cases_path):
 		if not file.endswith(".expected"):
@@ -89,7 +88,7 @@ def test_all_astdump(monga_path, astdump_cases_path):
 	
 	done = 0
 	passed = 0
-	print('*** Testing Ast Dump. ***\n')
+	print('\n*** Testing Ast Dump. ***')
 
 	for file in os.listdir(astdump_cases_path):
 		if not file.endswith(".expected"):
@@ -104,7 +103,7 @@ def test_all_semtest(monga_path, cases_path):
 	
 	done = 0
 	passed = 0
-	print('*** Testing Semantics. ***\n')
+	print('\n*** Testing Semantics. ***')
 
 	for file in os.listdir(cases_path):
 		if not file.endswith(".expected"):
@@ -119,7 +118,7 @@ def test_all_reducedump(monga_path, astdump_cases_path):
 	
 	done = 0
 	passed = 0
-	print('*** Testing Parser Reduction. ***\n')
+	print('\n*** Testing Parser Reduction. ***')
 
 	for file in os.listdir(astdump_cases_path):
 		if not file.endswith(".expected"):

@@ -6,12 +6,17 @@ parameter r1
 parameters r2
 opt_parameters r2
 opt_ret_type r1
+func_signature r1
 numeral r2
 exp_primary r2
 exp_postfix r1
 exp_unary r1
 exp_multiplicative r1
 exp_additive r1
+exp_shift r1
+exp_bitand r1
+exp_xor r1
+exp_bitor r1
 exp_conditional r1
 exp r1
 exps r1
