@@ -3,6 +3,7 @@
 
 #include "mon_defines.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 /**

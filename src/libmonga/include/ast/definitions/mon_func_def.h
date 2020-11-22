@@ -25,6 +25,7 @@ typedef struct Mon_AstFuncDef_ {
 
     Mon_Vector parameters;
 
+    /** The function's block of execution. NULL if the function is declared as extern. */
     Mon_AstBlock* body;
 
     struct {
@@ -41,7 +42,7 @@ typedef struct Mon_AstFuncDef_ {
  *  @param funcRetType The function's return type name. If NULL, the returned type will be set to 'void'.
  *  @param funcRetTypeLen The function's return type name length. Ignored if funcRetType is NULL.
  *  @param params Vector of parameter node pointers.
- *  @param body The function's execution block node.
+ *  @param body The function's execution block node. If NULL, only contains a function declaration.
  * 
  *  @return If succesful, the new function definition node. If allocation fails,
  *  returns NULL.

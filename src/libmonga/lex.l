@@ -48,6 +48,11 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
     Mon_TkColumn += yyleng;
 }
 
+"extern" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_EXTERN;
+}
+
 "break" {
     Mon_TkColumn += yyleng;
     return MON_TK_BREAK;
@@ -130,6 +135,16 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 "||" {
     Mon_TkColumn += yyleng;
     return MON_TK_OP_OR;
+}
+
+"<<" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_OP_SHL;
+}
+
+">>" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_OP_SHR;
 }
 
 "null" {

@@ -1,0 +1,10 @@
+extern function readInt(): int;
+
+# Prints a 32-bit integer to stdout.
+extern function printInteger(i: int);
+
+# Prints a 64-bit float to stdout.
+extern function printFloat(f: float);
+
+# Prints a string to stdout.
+#extern function printString(s: string);

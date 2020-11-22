@@ -16,6 +16,11 @@ typedef struct Mon_AstBlock_ {
     /** Stores pointers to all statements (Mon_AstVarStatement*) within this block. */
     Mon_Vector    statements;
 
+    struct {
+        /** True if all paths of this block have a return statement. */
+        bool allPathsReturn;
+    } semantic;
+
 } Mon_AstBlock;
 
 /**

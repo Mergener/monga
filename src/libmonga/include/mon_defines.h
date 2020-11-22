@@ -18,7 +18,12 @@
 #else
     #define MON_PUBLIC MON_IMPORT
 #endif
-#define MON_PRIVATE
+
+#if defined(__GNUC__)
+    #define MON_PRIVATE __attribute__((visibility ("hidden")))
+#else
+    #define MON_PRIVATE
+#endif
 
 #ifdef __cplusplus
     #define C_LINKAGE extern "C"

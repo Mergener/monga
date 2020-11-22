@@ -60,6 +60,7 @@ static void DumpReduce(const char* fmt, ...);
 %token MON_TK_BREAK
 %token MON_TK_CONTINUE
 %token MON_TK_NEW
+%token MON_TK_EXTERN
 %token MON_TK_AS
 %token MON_TK_NULL
 %token MON_TK_LEN
@@ -79,6 +80,8 @@ static void DumpReduce(const char* fmt, ...);
 %token MON_TK_OP_AND
 %token MON_TK_OP_OR
 %token MON_TK_OP_NOT
+%token MON_TK_OP_SHL
+%token MON_TK_OP_SHR
 
 %union {
     Mon_Literal literal;
@@ -113,11 +116,11 @@ static void DumpReduce(const char* fmt, ...);
 %type <defNode>       definition   
 %type <varDefNode>    def_variable
 %type <typeDefNode>   def_type
-%type <funcDefNode>   def_function
+%type <funcDefNode>   def_function func_signature
 %type <paramNode>     parameter
 %type <statementNode> statement
 %type <varNode>       var
-%type <expNode>       opt_exp exp exp_primary exp_postfix exp_unary exp_multiplicative exp_additive exp_conditional opt_bracket_exp bracket_exp
+%type <expNode>       exp_shift exp_bitand exp_xor exp_bitor opt_exp exp exp_primary exp_postfix exp_unary exp_multiplicative exp_additive exp_conditional opt_bracket_exp bracket_exp
 %type <condNode>      cond cond_primary cond_not cond_and cond_or
 %type <callNode>      call
 %type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT MON_TK_LIT_STRING
@@ -291,16 +294,16 @@ field_defs:
     }
 ;
 
-def_function: 
-    MON_TK_FUNCTION MON_TK_IDENTIFIER '(' opt_parameters ')' opt_ret_type block {
-        DumpReduce("def_function r1");
+func_signature:
+    MON_TK_FUNCTION MON_TK_IDENTIFIER '(' opt_parameters ')' opt_ret_type {
+        DumpReduce("func_signature r1");
 
         $$ = Mon_AstFuncDefNew(
             $2.name,
             $2.length,
             $6.name,
             $6.length,
-            $4, $7
+            $4, NULL
         );
         
         Mon_Free($2.name);        
@@ -309,6 +312,21 @@ def_function:
         THROW_IF_ALLOC_FAIL($$);
         
         FILL_NODE_HEADER($$->header);
+    }
+;
+
+def_function: 
+    func_signature block {
+        DumpReduce("def_function r1");
+
+        $$ = $1;
+        $$->body = $2;
+    }
+
+    | MON_TK_EXTERN func_signature ';' {
+        DumpReduce("def_function r2");
+
+        $$ = $2;
     }
 ;
 
@@ -705,6 +723,16 @@ exp_unary:
         
         FILL_NODE_HEADER($$->header);
     }
+
+    | '~' exp_primary {
+        DumpReduce("exp_unary r3");
+
+        $$ = Mon_AstExpNewUn($2, MON_UNOP_BITNOT);
+
+        THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
+    }
 ;
 
 exp_multiplicative: 
@@ -731,6 +759,16 @@ exp_multiplicative:
 
         THROW_IF_ALLOC_FAIL($$);
         
+        FILL_NODE_HEADER($$->header);
+    }
+
+    | exp_multiplicative '%' exp_unary {
+        DumpReduce("exp_multiplicative r4");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_MODULO);
+
+        THROW_IF_ALLOC_FAIL($$);
+
         FILL_NODE_HEADER($$->header);
     }
 ;
@@ -763,8 +801,90 @@ exp_additive:
     }
 ;
 
-exp_conditional: 
+exp_shift:
     exp_additive {
+        DumpReduce("exp_shift r1");
+
+        $$ = $1;
+    }
+
+    | exp_shift MON_TK_OP_SHL exp_additive {
+        DumpReduce("exp_shift r2");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_SHL);
+
+        THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
+    }
+
+    | exp_shift MON_TK_OP_SHR exp_additive {
+        DumpReduce("exp_shift r3");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_SHR);
+
+        THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
+    }
+;
+
+exp_bitand:
+    exp_shift {
+        DumpReduce("exp_bitand r1");
+
+        $$ = $1;
+    }
+
+    | exp_shift '&' exp_additive {
+        DumpReduce("exp_bitand r2");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_BITAND);
+
+        THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
+    }
+;
+
+exp_xor:
+    exp_bitand {
+        DumpReduce("exp_xor r1");
+
+        $$ = $1;
+    }
+
+    | exp_bitand '^' exp_additive {
+        DumpReduce("exp_xor r2");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_XOR);
+
+        THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
+    }
+;
+
+exp_bitor:
+    exp_xor {
+        DumpReduce("exp_bitor r1");
+
+        $$ = $1;
+    }
+
+    | exp_xor '|' exp_additive {
+        DumpReduce("exp_bitor r2");
+
+        $$ = Mon_AstExpNewBin($1, $3, MON_BINOP_BITOR);
+
+        THROW_IF_ALLOC_FAIL($$);
+        
+        FILL_NODE_HEADER($$->header);
+    }
+;
+
+exp_conditional: 
+    exp_bitor {
         DumpReduce("exp_conditional r1");
 
         $$ = $1;
@@ -989,6 +1109,11 @@ opt_exps:
 %%
 
 void yyerror(const char* s) {
+    if (strcmp(s, "syntax error") == 0) {
+        fprintf(stderr, "Syntax error at line %d, column %d.\n", Mon_TkLine, Mon_TkColumn);
+        return;
+    }
+
     fprintf(stderr, "%s\n", s);
 }
 

@@ -23,6 +23,26 @@ typedef struct Mon_Vector_ Mon_Vector;
 MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorInit(Mon_Vector* vector);
 
 /**
+ *  Finds the index of an element inside a vector.
+ * 
+ *  @param vector The vector to search the element for.
+ *  @param elem The element to get the index of.
+ * 
+ *  @returns The element index or -1 if the element is not found inside the vector.
+ */
+MON_PUBLIC int MON_CALL Mon_VectorGetIndex(const Mon_Vector* vector, void* elem);
+
+/**
+ *  Tells whether an element is inside a vector or not.
+ *  
+ *  @param vector The vector to search the element for.
+ *  @param elem The element to be checked.
+ * 
+ *  @returns True if the vector contains the element, false otherwise.
+ */
+MON_PUBLIC bool MON_CALL Mon_VectorContains(const Mon_Vector* vector, void* elem);
+
+/**
  *  Returns the element at an index of a vector.
  *  
  *  @param vector The vector to fetch the element from.
@@ -108,6 +128,10 @@ MON_PUBLIC void MON_CALL Mon_VectorClaim(Mon_Vector* vector, void** outPtr, int*
  *  Finalizes a vector, cleaning up any resources used by it.
  *
  *  @param vector The vector to be finalized.
+ * 
+ *  @remarks Calling this on a non-initialized may trigger undefined behavior.
+ *  However, this function can safely be called on a vector in which Mon_VectorInit was
+ *  called and failed or even on a vector that has already been finalized.
  */ 
 MON_PUBLIC void MON_CALL Mon_VectorFinalize(Mon_Vector* vector);
 

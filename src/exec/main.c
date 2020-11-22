@@ -8,6 +8,7 @@
 #include "mon_parser.h"
 #include "mon_error.h"
 #include "mon_sem.h"
+#include "mon_codegen.h"
 
 enum ExecutionMode {
     NONE,
@@ -15,7 +16,7 @@ enum ExecutionMode {
     REDUCE_DUMP,
     AST_DUMP,
     SEM_TEST,
-    COMPILER
+    LLVM_EMIT
 };
 
 struct LexDumpArgs {
@@ -35,6 +36,13 @@ struct SemTestArgs {
     int fileCount;
 };
 
+struct LlvmEmitArgs {
+    char** inputFilePaths;
+    int inputFileCount;
+    char* outputFilePath;
+    Mon_OptLevel optLevel;
+};
+
 /** Structured arguments provided to the program. */
 struct ProgramArgs {
     /** The selected execution mode. */
@@ -52,6 +60,9 @@ struct ProgramArgs {
 
         /** SemTest args. Available if execMode == SEM_TEST */
         struct SemTestArgs semTest;
+
+        /** Compiler args. Available if execM */
+        struct LlvmEmitArgs llvmEmit;
 
     } args;
 };
@@ -158,6 +169,31 @@ static struct ProgramArgs ParseArgs(int argc, char** argv) {
                 ret.args.semTest.fileCount++;
             }
         }
+        // Semtest mode
+        else if (!strcmp(argv[i], "-o")) {
+
+            if (ret.execMode != NONE) {
+                ErrorOneExecMode(argv[0]);
+            }
+
+            ret.execMode = LLVM_EMIT;
+
+            ++i;
+            if (i == argc || argv[i][0] == '-') {
+                // No file argument for semtest mode provided.
+                perror("Expected an input source file for LLVM emit mode.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            ret.args.llvmEmit.inputFilePaths = &argv[i];
+            ret.args.llvmEmit.inputFileCount = 0;
+            for (; i < argc; ++i) {
+                if (argv[i][0] == '-') {
+                    break;
+                }
+                ret.args.llvmEmit.inputFileCount++;
+            }
+        }
     }
 
     return ret;
@@ -228,8 +264,7 @@ static void RunSemTest(const struct SemTestArgs* args) {
 
     if (Mon_SemAnalyseMultiple(&asts[0], args->fileCount, stderr) != MON_SUCCESS) {
         fprintf(stderr, "Semantic errors were caught during analysis.\n");
-    } else {
-        printf("Semantic analysis completed with success.\n");
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -251,6 +286,78 @@ static void RunReduceDump(const struct ReduceDumpArgs* args) {
     Mon_Parse(inputStream, &ast, args->inputFilePath, MON_PARSEFLAGS_DUMPREDUCES);
 }
 
+static void RunLLVMEmit(const struct LlvmEmitArgs* args) {
+    // Open all files
+    struct {
+        char* filePath;
+        FILE* inFile;
+        Mon_Ast ast;
+    } *inputs = Mon_Alloc(sizeof(*inputs) * args->inputFileCount);
+
+    for (int i = 0; i < args->inputFileCount; ++i) {
+        if (strlen(args->inputFilePaths[i]) >= 255) {
+            fprintf(stderr, "Filename '%s' too big.", args->inputFilePaths[i]);
+            exit(-1);
+        }
+
+        inputs[i].filePath = args->inputFilePaths[i];
+        inputs[i].inFile = fopen(args->inputFilePaths[i], "r");
+        if (inputs[i].inFile == NULL) {
+            fprintf(stderr, "Couldn't open input file '%s'.\n", inputs[i].filePath);
+            exit(MON_ERR_FILENOTFOUND);
+        }
+    }
+
+    // Perform parses
+    for (int i = 0; i < args->inputFileCount; ++i) {
+        Mon_RetCode ret = Mon_Parse(inputs[i].inFile, &inputs[i].ast, inputs[i].filePath, MON_PARSEFLAGS_NONE);
+        if (ret != MON_SUCCESS) {
+            exit(MON_ERR_SYNTAX);
+        }
+        fclose(inputs[i].inFile);
+    }
+    
+    // Perform semantic analysis
+    Mon_Ast* asts = Mon_Alloc(sizeof(Mon_Ast) * args->inputFileCount);
+    for (int i = 0; i < args->inputFileCount; ++i) {
+        asts[i] = inputs[i].ast;
+    }
+
+    Mon_RetCode ret = Mon_SemAnalyseMultiple(asts, args->inputFileCount, stderr);
+    switch (ret) {
+        case MON_ERR_SEMANTIC:
+            fprintf(stderr, "Semantic errors found in compilation.\n");
+            exit(EXIT_FAILURE);
+            break;
+
+        case MON_SUCCESS:
+            break;
+
+        default:
+            fprintf(stderr, "\nAn unknown error occurred during semantic analysis.\n");
+            exit(EXIT_FAILURE);
+            break;
+    }
+
+    char buf[260];
+    for (int i = 0; i < args->inputFileCount; ++i) {
+        strcpy(buf, inputs[i].filePath);
+        strcat(buf, ".ll");
+
+        FILE* out = fopen(buf, "w");
+        if (!out) {
+            fprintf(stderr, "Couldn't open output file '%s'.\n", buf);
+            exit(MON_ERR_FILENOTFOUND);
+        }
+
+        ret = Mon_GenerateLLVM(&inputs[i].ast, out, stderr, MON_OPT_O0, MON_CGFLAGS_NONE);
+        if (ret != MON_SUCCESS) {
+            fprintf(stderr, "Error during code generation.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
 static void Run(const struct ProgramArgs* args) {
 
     switch (args->execMode) {
@@ -267,8 +374,8 @@ static void Run(const struct ProgramArgs* args) {
             RunAstDump(&args->args.astDump);
             break;
 
-        case COMPILER:
-            fprintf(stderr, "Cannot execute in compilation mode; compiler not yet implemented.\n");
+        case LLVM_EMIT:
+            RunLLVMEmit(&args->args.llvmEmit);
             break;
 
         case SEM_TEST:

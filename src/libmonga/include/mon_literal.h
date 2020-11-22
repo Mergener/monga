@@ -25,7 +25,7 @@ typedef struct {
 
         Mon_Char character;
         double real;
-        long integer;
+        long long integer;
     };
 
 } Mon_Literal;

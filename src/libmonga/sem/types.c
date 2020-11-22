@@ -6,17 +6,17 @@
 #include "mon_alloc.h"
 #include "../strutils.h"
 
-Mon_AstTypeDef* GetUnderlyingType(Mon_AstTypeDef* type) {
+Mon_AstTypeDef* GetUnderlyingType(const Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     while (type->typeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
         type = type->typeDesc->typeDesc.alias.semantic.aliasedType;
     }
 
-    return type;
+    return (Mon_AstTypeDef*)type;
 }
 
-bool IsIntegerType(Mon_AstTypeDef* type) {
+bool IsIntegerType(const Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
@@ -40,7 +40,7 @@ bool IsIntegerType(Mon_AstTypeDef* type) {
     }
 }
 
-bool IsFloatingPointType(Mon_AstTypeDef* type) {
+bool IsFloatingPointType(const Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
@@ -62,13 +62,13 @@ bool IsFloatingPointType(Mon_AstTypeDef* type) {
     }
 }
 
-bool IsNumericType(Mon_AstTypeDef* type) {
+bool IsNumericType(const Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
     
     return IsIntegerType(type) || IsFloatingPointType(type);
 }
 
-bool IsTypeAssignableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
+bool IsTypeAssignableFrom(const Mon_AstTypeDef* a, const Mon_AstTypeDef* b) {
     MON_CANT_BE_NULL(a);
     MON_CANT_BE_NULL(b);
 
@@ -113,10 +113,18 @@ bool IsTypeAssignableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
         }
     }
 
+    if (IsFloatingPointType(a)) {
+        return IsFloatingPointType(b);
+    }
+
+    if (IsIntegerType(a) && IsIntegerType(b)) {
+        return true;
+    }
+
     return a == b;
 }
 
-bool IsTypeCastableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
+bool IsTypeCastableFrom(const Mon_AstTypeDef* a, const Mon_AstTypeDef* b) {
     MON_CANT_BE_NULL(a);
     MON_CANT_BE_NULL(b);
 
@@ -125,19 +133,30 @@ bool IsTypeCastableFrom(Mon_AstTypeDef* a, Mon_AstTypeDef* b) {
 
     if (a->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE &&
         b->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE) {
+        
+        // Cannot convert char to float.
+        if (a->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_CHAR &&
+            IsFloatingPointType(b)) {
+            return false;
+        }
+        if (b->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_CHAR &&
+            IsFloatingPointType(a)) {
+            return false;
+        }
+
         return true;
     }
 
     return IsTypeAssignableFrom(a, b);
 }
 
-Mon_AstTypeDef* GetUnopResultType(Mon_AstTypeDef* type, Mon_UnopKind unop) {
+Mon_AstTypeDef* GetUnopResultType(const Mon_AstTypeDef* type, Mon_UnopKind unop) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
 
     if (type == BUILTIN_TABLE->types.tError) {
-        return type;
+        return (Mon_AstTypeDef*)type;
     }
 
     if (unop == MON_UNOP_LEN) {
@@ -149,17 +168,18 @@ Mon_AstTypeDef* GetUnopResultType(Mon_AstTypeDef* type, Mon_UnopKind unop) {
     }
 
     if (unop == MON_UNOP_BITNOT) {
-        return IsIntegerType(type) ? type : NULL;
-    } else if (unop == MON_UNOP_NEGATIVE) {
-        return type;
-    } else {
-        MON_ASSERT(false, "Unimplemented unop kind. (got %d)", (int)unop);
-        return NULL;
-    }
+        return IsIntegerType(type) ? (Mon_AstTypeDef*)type : NULL;
+    } 
+    if (unop == MON_UNOP_NEGATIVE) {
+        return (Mon_AstTypeDef*)type;
+    } 
+
+    MON_ASSERT(false, "Unimplemented unop kind. (got %d)", (int)unop);
+    return NULL;    
 }
 
-Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype, 
-                                   Mon_AstTypeDef* rtype, 
+Mon_AstTypeDef* GetBinopResultType(const Mon_AstTypeDef* ltype, 
+                                   const Mon_AstTypeDef* rtype, 
                                    Mon_BinopKind binop) {
     MON_CANT_BE_NULL(ltype);
     MON_CANT_BE_NULL(rtype);
@@ -169,7 +189,7 @@ Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype,
 
     if (ltype == BUILTIN_TABLE->types.tError ||
         rtype == BUILTIN_TABLE->types.tError) {
-        return ltype;
+        return (Mon_AstTypeDef*)ltype;
     }    
 
     switch (binop) {
@@ -181,13 +201,13 @@ Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype,
             if (ltype == BUILTIN_TABLE->types.tString &&
                 rtype == BUILTIN_TABLE->types.tString &&
                 binop == MON_BINOP_ADD) {
-                return ltype;
+                return (Mon_AstTypeDef*)ltype;
             }
 
             if (IsTypeAssignableFrom(ltype, rtype) &&
                 IsNumericType(ltype) &&
                 IsNumericType(rtype)) {
-                return ltype;
+                return (Mon_AstTypeDef*)ltype;
             }
             return NULL;
             
@@ -196,7 +216,7 @@ Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype,
             if (IsTypeAssignableFrom(ltype, rtype) &&
                 IsIntegerType(ltype) &&
                 IsIntegerType(rtype)) {
-                return ltype;
+                return (Mon_AstTypeDef*)ltype;
             }
             return NULL;
 
@@ -205,7 +225,7 @@ Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype,
         case MON_BINOP_XOR:
             if (ltype == rtype &&
                 IsIntegerType(ltype)) {
-                return ltype;
+                return (Mon_AstTypeDef*)ltype;
             }
             return NULL;
 
@@ -217,7 +237,7 @@ Mon_AstTypeDef* GetBinopResultType(Mon_AstTypeDef* ltype,
     return NULL;
 }
 
-Mon_AstTypeDef* GetCondExpResultType(Mon_AstTypeDef* thenType, Mon_AstTypeDef* elseType) {
+Mon_AstTypeDef* GetCondExpResultType(const Mon_AstTypeDef* thenType, const Mon_AstTypeDef* elseType) {
     MON_CANT_BE_NULL(thenType);
     MON_CANT_BE_NULL(elseType);
     
@@ -225,10 +245,10 @@ Mon_AstTypeDef* GetCondExpResultType(Mon_AstTypeDef* thenType, Mon_AstTypeDef* e
                               elseType)) {
         return NULL;
     }
-    return thenType;
+    return (Mon_AstTypeDef*)thenType;
 }
 
-Mon_AstField* GetTypeField(Mon_AstTypeDef* type, char* fieldName) {
+Mon_AstField* GetTypeField(const Mon_AstTypeDef* type, char* fieldName) {
     MON_CANT_BE_NULL(type);
     MON_CANT_BE_NULL(fieldName);
 
@@ -247,7 +267,7 @@ Mon_AstField* GetTypeField(Mon_AstTypeDef* type, char* fieldName) {
     return NULL;
 }
 
-bool IsStructuredType(Mon_AstTypeDef* type) {
+bool IsStructuredType(const Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
@@ -263,7 +283,7 @@ bool IsStructuredType(Mon_AstTypeDef* type) {
     return type->typeDesc->typeDescKind == MON_TYPEDESC_RECORD;
 }
 
-Mon_AstTypeDef* GetIndexedType(Mon_AstTypeDef* type) {
+Mon_AstTypeDef* GetIndexedType(const Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
@@ -281,13 +301,13 @@ Mon_AstTypeDef* GetIndexedType(Mon_AstTypeDef* type) {
         : NULL;
 }
 
-bool IsIndexableType(Mon_AstTypeDef* type) {
+bool IsIndexableType(const Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     return GetIndexedType(type) != NULL;
 }
 
-bool IsRefType(Mon_AstTypeDef* type) {
+bool IsRefType(const Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(type);
 
     type = GetUnderlyingType(type);
@@ -299,8 +319,8 @@ bool IsRefType(Mon_AstTypeDef* type) {
     return type->typeDesc->typeDescKind != MON_TYPEDESC_PRIMITIVE;
 }
 
-bool TypeCanCompare(Mon_AstTypeDef* a, 
-                    Mon_AstTypeDef* b, 
+bool TypeCanCompare(const Mon_AstTypeDef* a, 
+                    const Mon_AstTypeDef* b, 
                     Mon_ComparKind comparKind) {
     MON_CANT_BE_NULL(a);
     MON_CANT_BE_NULL(b);

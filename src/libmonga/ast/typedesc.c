@@ -103,3 +103,33 @@ void Mon_AstTypeDescDestroy(Mon_AstTypeDesc* typeDesc, bool rec) {
 
     Mon_Free(typeDesc);
 }
+
+int Mon_GetPrimitiveSize(Mon_PrimitiveTypeCode typeCode) {
+    switch (typeCode) {
+        case MON_PRIMITIVE_CHAR:
+            return 1;
+
+        case MON_PRIMITIVE_INT8:
+            return 1;
+
+        case MON_PRIMITIVE_INT16:
+            return 2;
+
+        case MON_PRIMITIVE_INT32:
+            return 4;
+
+        case MON_PRIMITIVE_INT64:
+            return 8;
+
+        case MON_PRIMITIVE_FLOAT32:
+            return 4;
+
+        case MON_PRIMITIVE_FLOAT64:
+            return 8;
+
+        case MON_PRIMITIVE_VOID:
+            return 0;
+    }
+    MON_UNREACHABLE();
+    return 0;
+}

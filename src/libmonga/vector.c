@@ -10,13 +10,15 @@
 Mon_RetCode Mon_VectorInit(Mon_Vector* vector) {
     MON_CANT_BE_NULL(vector);
 
-    vector->_cap = DEFAULT_CAP;
-    vector->_arr = Mon_Alloc(vector->_cap * sizeof(void*));
+    vector->_arr = Mon_Alloc(DEFAULT_CAP * sizeof(void*));
     vector->_count = 0;
 
     if (vector->_arr == NULL) {
+        vector->_cap = 0;
         return MON_ERR_NOMEM;
     }
+
+    vector->_cap = DEFAULT_CAP;
 
     return MON_SUCCESS;
 }
@@ -123,6 +125,23 @@ void Mon_VectorClaim(Mon_Vector* vector, void** outPtr, int* count, int* capacit
     vector->_arr = NULL;
     vector->_cap = 0;
     vector->_count = 0;
+}
+
+int Mon_VectorGetIndex(const Mon_Vector* vector, void* elem) {
+    MON_CANT_BE_NULL(vector);
+    
+    for (int i = 0; i < vector->_count; ++i) {
+        if (vector->_arr[i] == elem) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+bool Mon_VectorContains(const Mon_Vector* vector, void* elem) {
+    MON_CANT_BE_NULL(vector);
+    return Mon_VectorGetIndex(vector, elem) != -1;
 }
 
 void Mon_VectorFinalize(Mon_Vector* vector) {

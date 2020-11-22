@@ -175,6 +175,11 @@ MON_PUBLIC Mon_AstTypeDesc* MON_CALL Mon_AstTypeDescNewPrimitive(Mon_PrimitiveTy
  */
 MON_PUBLIC void MON_CALL Mon_AstTypeDescDestroy(Mon_AstTypeDesc* typeDesc, bool rec);
 
+/**
+ *  Returns the size of a primitive type.
+ */
+MON_PUBLIC int MON_CALL Mon_GetPrimitiveSize(Mon_PrimitiveTypeCode typeCode);
+
 C_LINKAGE_END
 
 #endif  // MON_TYPEDESC_H

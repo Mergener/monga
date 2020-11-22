@@ -43,7 +43,7 @@ void Mon_DumpLex(FILE* inputFile, FILE* outputFile) {
         if (tkType == MON_TK_LIT_FLOAT) {
             fprintf(outputFile, "%s %.3f\n", Mon_GetTokenName(tkType), yylval.literal.real);
         } else if (tkType == MON_TK_LIT_INT) {
-            fprintf(outputFile, "%s %ld\n", Mon_GetTokenName(tkType), yylval.literal.integer);
+            fprintf(outputFile, "%s %lld\n", Mon_GetTokenName(tkType), yylval.literal.integer);
         } else if (tkType == MON_TK_IDENTIFIER) {
             fprintf(outputFile, "%s %s\n", Mon_GetTokenName(tkType), yylval.identifier.name);
         } else if (tkType == MON_TK_LIT_STRING) {

@@ -27,6 +27,9 @@ C_LINKAGE_BEGIN
      */
     #define MON_CANT_BE_NULL(val) \
         MON_ASSERT((val) != NULL, #val " cannot be NULL.")
+
+    #define MON_UNREACHABLE() \
+        MON_ASSERT(false, "Unreachable code.")
 #else
     /**
      *  If MON_DEBUG is not defined, does nothing. Else, evaluates a condition
@@ -42,6 +45,8 @@ C_LINKAGE_BEGIN
      *  Shorthand for MON_ASSERT((val) != NULL, <aDescriptiveMessage>).
      */
     #define MON_CANT_BE_NULL(val)
+
+    #define MON_UNREACHABLE()
 #endif
 
 typedef void (MON_CALL *Mon_AssertErrProc)(const char* fileName,

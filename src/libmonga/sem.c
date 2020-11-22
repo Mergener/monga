@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdatomic.h>
+#include <stdint.h>
 
 #include "sem/symbol.h"
 #include "sem/types.h"
@@ -641,11 +642,16 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp) {
 
         case MON_EXP_LITERAL:
             if (exp->exp.literalExpr.literalKind == MON_LIT_INT) {
-                type = BUILTIN_TABLE->types.tInt;
+                int64_t val = exp->exp.literalExpr.integer;
+                if (val > INT32_MAX || val < INT32_MIN) {
+                    type = BUILTIN_TABLE->types.tLong;
+                } else {
+                    type = BUILTIN_TABLE->types.tInt;
+                }
                 exp->semantic.type = type;
                 return true;
             } else if (exp->exp.literalExpr.literalKind == MON_LIT_FLOAT) {
-                type = BUILTIN_TABLE->types.tFloat;                
+                type = BUILTIN_TABLE->types.tDouble;                
                 exp->semantic.type = type;
                 return true;
             } else if (exp->exp.literalExpr.literalKind == MON_LIT_STR) {
@@ -823,10 +829,41 @@ static bool ResolveBlock(SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDe
     MON_CANT_BE_NULL(enclosingFunction);
 
     bool ret = true;
+    Mon_AstStatement* st;
 
     // Resolve all statements in the block
     MON_VECTOR_FOREACH(&block->statements, Mon_AstStatement*, stmt,
         ret = ResolveStatement(ctx, stmt, enclosingFunction) && ret;
+
+        if (!block->semantic.allPathsReturn) {
+            // For each statement, we need to check if they are returning values.
+            switch (stmt->statementKind) {
+                case MON_STMT_BLOCK:
+                    block->semantic.allPathsReturn = stmt->statement.block->semantic.allPathsReturn;
+                    break;
+
+                case MON_STMT_IF:
+                    if (stmt->statement.ifStmt.elseBlock == NULL) {
+                        break;
+                    }
+                    block->semantic.allPathsReturn = stmt->statement.ifStmt.thenBlock->semantic.allPathsReturn && 
+                                                     stmt->statement.ifStmt.elseBlock->semantic.allPathsReturn;
+                    break;
+
+                case MON_STMT_RETURN:
+                    block->semantic.allPathsReturn = true;
+                    break;
+
+                case MON_STMT_WHILE:
+                case MON_STMT_BREAK:
+                case MON_STMT_CONTINUE:
+                case MON_STMT_CALL:
+                case MON_STMT_ECHO:
+                case MON_STMT_VARDEF:
+                case MON_STMT_ASSIGNMENT:
+                    break;
+            }
+        }
     );
 
     return ret;
@@ -835,7 +872,6 @@ static bool ResolveBlock(SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDe
 static bool ResolveFunctionDeclaration(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcDef) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(funcDef);
-    MON_CANT_BE_NULL(funcDef->body);
 
     bool ret = true;
 
@@ -920,11 +956,22 @@ static bool ResolveFunctionImpl(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcDef) {
 #endif
     );
 
-    bool ret = ResolveBlock(ctx, funcDef->body, funcDef);
+    bool blockResolved = ResolveBlock(ctx, funcDef->body, funcDef);
 
     PopScope(ctx);
 
-    return ret;
+    if (!blockResolved) {
+        return false;
+    }
+
+    // Block has been resolved, now check for necessary returns.
+    if (funcDef->semantic.returnType != BUILTIN_TABLE->types.tVoid &&
+        !funcDef->body->semantic.allPathsReturn) {
+        LogError(ctx, &funcDef->body->header, "Not all paths are returning a value.");
+        return false;
+    }
+
+    return true;
 }
 
 static bool ResolveTypeDescription(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDesc) {

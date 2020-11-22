@@ -623,13 +623,15 @@ static void XmlDumpFuncNode(AstDumpContext* ctx, const Mon_AstFuncDef* funcDef) 
         XmlDumpParams(ctx, &funcDef->parameters);
     }
 
-    DUMPF_OR_STOP(ctx, "<Block>");
-    ctx->indentLevel++;
+    if (funcDef->body != NULL) {
+        DUMPF_OR_STOP(ctx, "<Block>");
+        ctx->indentLevel++;
 
-    XmlDumpBlockInline(ctx, funcDef->body);
+        XmlDumpBlockInline(ctx, funcDef->body);
 
-    ctx->indentLevel--;
-    DUMPF_OR_STOP(ctx, "</Block>");
+        ctx->indentLevel--;
+        DUMPF_OR_STOP(ctx, "</Block>");
+    }
 
     ctx->indentLevel--;
     DUMPF_OR_STOP(ctx, "</FunctionDefinition>");
