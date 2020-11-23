@@ -31,13 +31,13 @@ typedef struct {
         LOC_SSA
     } kind;
 
-} LlvmLocation;
+} LlvmValue;
 
 typedef enum {
     
     LLVM_BINOP_ADD,
     LLVM_BINOP_SUB,
-    LLVM_BINOP_SMUL,
+    LLVM_BINOP_MUL,
     LLVM_BINOP_SDIV,
     LLVM_BINOP_FADD,
     LLVM_BINOP_FSUB,
@@ -55,76 +55,114 @@ typedef enum {
 
 } LlvmBinopKind;
 
+typedef enum {
+
+    // Signed integer comparison
+
+    LLVM_CMP_EQ,
+    LLVM_CMP_NEQ,
+
+    LLVM_CMP_SGT,
+    LLVM_CMP_SLT,
+    LLVM_CMP_SGE,
+    LLVM_CMP_SLE,
+
+    // Floating point comparison
+
+    LLVM_CMP_OEQ,
+    LLVM_CMP_UNEQ,
+    LLVM_CMP_OGT,
+    LLVM_CMP_OLT,
+    LLVM_CMP_OGE,
+    LLVM_CMP_OLE,
+
+} LlvmComparKind;
+
+MON_PRIVATE LlvmTypeRef MakeTypeRef(const char* name, int indirection);
+
 MON_PRIVATE LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int indirection);
 
 /** Creates a new LLVM global location (prefixed with @). */
-MON_PRIVATE LlvmLocation LocGlobal(const char* globalName);
+MON_PRIVATE LlvmValue ValGlobal(const char* globalName);
 
 /** Creates a new LLVM local variable location (prefixed with %T). */
-MON_PRIVATE LlvmLocation LocLocal(int locid);
+MON_PRIVATE LlvmValue ValLocal(int locid);
 
-MON_PRIVATE LlvmLocation LocLabel(int localLabelId);
+MON_PRIVATE LlvmValue ValLabel(int localLabelId);
 
-MON_PRIVATE LlvmLocation LocSsa(int ssaId);
+MON_PRIVATE LlvmValue ValSSA(int ssaId);
 
-MON_PRIVATE LlvmLocation LocLiteral(Mon_Literal lit);
+MON_PRIVATE LlvmValue ValLiteral(Mon_Literal lit);
 
 /** Writes an llvm location. */
-MON_PRIVATE void LlvmEmitLocation(LlvmGenContext* ctx, LlvmLocation loc);
+MON_PRIVATE void LlvmEmitValue(LlvmGenContext* ctx, LlvmValue loc);
 
 /** Compiles an alloca assignment. */
-MON_PRIVATE void LlvmEmitAlloca(LlvmGenContext* ctx, LlvmTypeRef type, LlvmLocation loc);
+MON_PRIVATE void LlvmEmitAlloca(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue loc);
 
 /** Compiles an LLVM store statement. */
-MON_PRIVATE void LlvmEmitStore(LlvmGenContext* ctx, LlvmTypeRef type, LlvmLocation destAddr, LlvmLocation src);
+MON_PRIVATE void LlvmEmitStore(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue destAddr, LlvmValue src);
 
 /** Compiles an LLVM load statement. */
-MON_PRIVATE void LlvmEmitLoad(LlvmGenContext* ctx, LlvmTypeRef type, LlvmLocation srcAddr, LlvmLocation dest);
+MON_PRIVATE void LlvmEmitLoad(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue srcAddr, LlvmValue dest);
 
 /** Writes a typename in LLVM. This automatically creates a dependency to the type. */
 MON_PRIVATE void LlvmEmitTyperef(LlvmGenContext* ctx, LlvmTypeRef typeRef);
 
-MON_PRIVATE LlvmLocation LlvmEmitFpext(LlvmGenContext* ctx, 
+MON_PRIVATE LlvmValue LlvmEmitFpext(LlvmGenContext* ctx, 
                                       LlvmTypeRef expType, 
-                                      LlvmLocation expLoc, 
+                                      LlvmValue expLoc, 
                                       LlvmTypeRef destType);
 
-MON_PRIVATE LlvmLocation LlvmEmitFptrunc(LlvmGenContext* ctx, 
+MON_PRIVATE LlvmValue LlvmEmitFptrunc(LlvmGenContext* ctx, 
                                         LlvmTypeRef expType, 
-                                        LlvmLocation expLoc, 
+                                        LlvmValue expLoc, 
                                         LlvmTypeRef destType);
 
-MON_PRIVATE LlvmLocation LlvmEmitFptosi(LlvmGenContext* ctx, 
+MON_PRIVATE LlvmValue LlvmEmitFptosi(LlvmGenContext* ctx, 
                                        LlvmTypeRef expType, 
-                                       LlvmLocation expLoc, 
+                                       LlvmValue expLoc, 
                                        LlvmTypeRef destType);
 
-MON_PRIVATE LlvmLocation LlvmEmitSitofp(LlvmGenContext* ctx, 
+MON_PRIVATE LlvmValue LlvmEmitSitofp(LlvmGenContext* ctx, 
                                         LlvmTypeRef expType, 
-                                        LlvmLocation expLoc, 
+                                        LlvmValue expLoc, 
                                         LlvmTypeRef destType);
 
-MON_PRIVATE LlvmLocation LlvmEmitSext(LlvmGenContext* ctx, 
+MON_PRIVATE LlvmValue LlvmEmitSext(LlvmGenContext* ctx, 
                                       LlvmTypeRef expType, 
-                                      LlvmLocation expLoc, 
+                                      LlvmValue expLoc, 
                                       LlvmTypeRef destType);
 
-MON_PRIVATE LlvmLocation LlvmEmitTrunc(LlvmGenContext* ctx, 
+MON_PRIVATE LlvmValue LlvmEmitTrunc(LlvmGenContext* ctx, 
                                         LlvmTypeRef expType, 
-                                        LlvmLocation expLoc, 
+                                        LlvmValue expLoc, 
                                         LlvmTypeRef destType);
 
 MON_PRIVATE void LlvmEmitRet(LlvmGenContext* ctx, 
                              LlvmTypeRef retType,
-                             LlvmLocation retExpLoc);
+                             LlvmValue retExpLoc);
 
 MON_PRIVATE void LlvmEmitBranch(LlvmGenContext* ctx,
-                                LlvmLocation targetLabelLoc);
+                                LlvmValue targetLabelLoc);
 
-MON_PRIVATE LlvmLocation LlvmEmitBinop(LlvmGenContext* ctx,
-                                       LlvmTypeRef type,
-                                       LlvmLocation aLoc,
-                                       LlvmLocation bLoc,
-                                       LlvmBinopKind binop);
+MON_PRIVATE void LlvmEmitCondBranch(LlvmGenContext* ctx,
+                                    LlvmValue boolexpr,
+                                    LlvmValue trueLabel,
+                                    LlvmValue falseLabel);
+
+MON_PRIVATE LlvmValue LlvmEmitBinop(LlvmGenContext* ctx,
+                                    LlvmTypeRef type,
+                                    LlvmValue aLoc,
+                                    LlvmValue bLoc,
+                                    LlvmBinopKind binop);
+
+MON_PRIVATE void LlvmEmitLabel(LlvmGenContext* ctx, LlvmValue label);
+
+MON_PRIVATE LlvmValue LlvmEmitComparison(LlvmGenContext* ctx,
+                                         LlvmTypeRef operandType,
+                                         LlvmValue l,
+                                         LlvmValue r,
+                                         LlvmComparKind kind);
 
 #endif // LLVMUTILS_H

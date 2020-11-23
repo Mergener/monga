@@ -8,7 +8,7 @@ find_package(FLEX REQUIRED)
 bison_target(parser 
     ${CMAKE_CURRENT_SOURCE_DIR}/grammar.y 
     ${gensrc_path}/grammar.tab.c
-    COMPILE_FLAGS "-d")
+    COMPILE_FLAGS "-d -v")
 flex_target(lexer ${CMAKE_CURRENT_SOURCE_DIR}/lex.l ${gensrc_path}/lex.yy.c)
 
 add_flex_bison_dependency(lexer parser)
@@ -32,3 +32,8 @@ target_include_directories(libmonga PRIVATE ${gensrc_path})
 target_include_directories(libmonga PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libmonga PRIVATE ${CMAKE_SOURCE_DIR}/src/monrt/c)
 target_include_directories(libmonga PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_compile_options(libmonga PUBLIC
+    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>
+)

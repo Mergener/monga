@@ -14,14 +14,15 @@
 #include "llvmctx.h"
 #include "llvmemit.h"
 
-static LlvmLocation CompileVar(LlvmGenContext* ctx, Mon_AstVar* var);
-static LlvmLocation CompileCall(LlvmGenContext* ctx, Mon_AstCall* call);
-static LlvmLocation CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef* targetType);
+static void CompileBlock(LlvmGenContext* ctx, Mon_AstBlock* block, Mon_AstFuncDef* enclosingFunction);
+static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var);
+static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call);
+static LlvmValue CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef* targetType);
 
 /** 
  *  Compiles a local variable. The local variable data is added to the block context.
  */
-static LlvmLocation CompileLocal(LlvmGenContext* ctx, const char* name, Mon_AstTypeDef* type) {
+static LlvmValue CompileLocal(LlvmGenContext* ctx, const char* name, Mon_AstTypeDef* type) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(name);
     MON_CANT_BE_NULL(type);
@@ -50,31 +51,121 @@ static void CompileBinCond(LlvmGenContext* ctx, Mon_BinCondKind kind, Mon_AstCon
     MON_UNREACHABLE();
 }
 
-static void CompileComparison(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmLocation trueLabel, LlvmLocation falseLabel) {
+static void CompileComparison(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue trueLabel, LlvmValue falseLabel) {
     MON_CANT_BE_NULL(cond);
     MON_CANT_BE_NULL(ctx);
     MON_ASSERT(cond->condKind == MON_COND_COMPARISON,
         "Specified condition node must be a comparison. (got %d)", 
         (int)cond->condKind);
+
+    // Decide comparison type
+    // When comparing two expressions, the expression to the right will
+    // first get converted to the same type as the expression to the left.
+    Mon_AstTypeDef* rType = cond->condition.compar.right->semantic.type;
+    Mon_AstTypeDef* lType = cond->condition.compar.left->semantic.type;
+
+    if (!TypeCanCompare(lType, rType,
+                        cond->condition.compar.comparKind)) {
+        THROW(ctx, JMP_ERRILL);
+    }
+
+    LlvmValue lExpLoc = CompileExp(ctx, cond->condition.compar.left, lType);
+    LlvmValue rExpLoc = CompileExp(ctx, cond->condition.compar.right, lType);
     
-    
+    // Now that the conversion has been made, we need to specify the correct
+    // LLVM comparison operator to use based on the expressions' types.
+    LlvmComparKind comparKind;
+    if (IsIntegerType(lType)) {
+        switch (cond->condition.compar.comparKind) {
+            case MON_COMPAR_GT:
+                comparKind = LLVM_CMP_SGT;
+                break;
+
+            case MON_COMPAR_GE:
+                comparKind = LLVM_CMP_SGE;
+                break;
+
+            case MON_COMPAR_EQ:
+                comparKind = LLVM_CMP_EQ;
+                break;
+
+            case MON_COMPAR_NE:
+                comparKind = LLVM_CMP_NEQ;
+                break;
+
+            case MON_COMPAR_LE:
+                comparKind = LLVM_CMP_SLE;
+                break;
+
+            case MON_COMPAR_LT:
+                comparKind = LLVM_CMP_SLT;
+                break;
+        }
+    } else if (IsFloatingPointType(lType)) {
+        switch (cond->condition.compar.comparKind) {
+            case MON_COMPAR_GT:
+                comparKind = LLVM_CMP_OGT;
+                break;
+
+            case MON_COMPAR_GE:
+                comparKind = LLVM_CMP_OGE;
+                break;
+
+            case MON_COMPAR_EQ:
+                comparKind = LLVM_CMP_OEQ;
+                break;
+
+            case MON_COMPAR_NE:
+                comparKind = LLVM_CMP_UNEQ;
+                break;
+
+            case MON_COMPAR_LE:
+                comparKind = LLVM_CMP_OLE;
+                break;
+
+            case MON_COMPAR_LT:
+                comparKind = LLVM_CMP_OLT;
+                break;
+        }
+    } else {
+        // Other types can only have equality or inequality comparisons.
+        if (cond->condition.compar.comparKind == MON_COMPAR_EQ) {
+            comparKind = LLVM_CMP_EQ;
+        } else if (cond->condition.compar.comparKind == MON_COMPAR_NE) {
+            comparKind = LLVM_CMP_NEQ;
+        } else {
+            THROW(ctx, JMP_ERRUNK);
+            MON_UNREACHABLE();
+        }
+    }
+
+    // Comparison kind selected, emit the comparison and branch instructions.
+    LlvmTypeRef lTypeRef = TypeToTypeRef(ctx, lType, 0);
+    LlvmValue boolexpr = LlvmEmitComparison(ctx, lTypeRef, lExpLoc, rExpLoc, comparKind);
+    LlvmEmitCondBranch(ctx, boolexpr, trueLabel, falseLabel);
 }
 
-static void CompileCondition(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmLocation trueLabel, LlvmLocation falseLabel) {
+static void CompileCondition(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue trueLabel, LlvmValue falseLabel) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(cond);
 
+    if (cond->negate) {
+        LlvmValue temp = trueLabel;
+        trueLabel = falseLabel;
+        falseLabel = temp;
+    }
+
     switch (cond->condKind) {
         case MON_COND_BIN:
-
             break;
 
         case MON_COND_COMPARISON:
+            CompileComparison(ctx, cond, trueLabel, falseLabel);
             break;
     }
 }
 
-static LlvmLocation CompileBinop(LlvmGenContext* ctx, 
+static LlvmValue CompileBinop(LlvmGenContext* ctx, 
                                  Mon_AstTypeDef* targetType, 
                                  Mon_AstExp* l, Mon_AstExp* r, 
                                  Mon_BinopKind binop) {
@@ -85,8 +176,8 @@ static LlvmLocation CompileBinop(LlvmGenContext* ctx,
 
     LlvmTypeRef targetTypeRef = TypeToTypeRef(ctx, targetType, 0);
 
-    LlvmLocation lLoc = CompileExp(ctx, l, targetType);
-    LlvmLocation rLoc = CompileExp(ctx, r, targetType);
+    LlvmValue lLoc = CompileExp(ctx, l, targetType);
+    LlvmValue rLoc = CompileExp(ctx, r, targetType);
     
     if (IsFloatingPointType(targetType)) {
         switch (binop) {   
@@ -122,7 +213,7 @@ static LlvmLocation CompileBinop(LlvmGenContext* ctx,
                 return LlvmEmitBinop(ctx, targetTypeRef, lLoc, rLoc, LLVM_BINOP_SUB);
 
             case MON_BINOP_MUL:
-                return LlvmEmitBinop(ctx, targetTypeRef, lLoc, rLoc, LLVM_BINOP_SMUL);
+                return LlvmEmitBinop(ctx, targetTypeRef, lLoc, rLoc, LLVM_BINOP_MUL);
 
             case MON_BINOP_DIV:
                 return LlvmEmitBinop(ctx, targetTypeRef, lLoc, rLoc, LLVM_BINOP_SDIV);
@@ -149,12 +240,12 @@ static LlvmLocation CompileBinop(LlvmGenContext* ctx,
 
     MON_UNREACHABLE();
     THROW(ctx, JMP_ERRUNK);
-    return LocLocal(-1);
+    return ValLocal(-1);
 }
 
-static LlvmLocation CompileFloatToFloat(LlvmGenContext* ctx,
+static LlvmValue CompileFloatToFloat(LlvmGenContext* ctx,
                                         Mon_AstTypeDef* expType,
-                                        LlvmLocation expLoc,
+                                        LlvmValue expLoc,
                                         Mon_AstTypeDef* destType) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(expType);
@@ -190,12 +281,12 @@ static LlvmLocation CompileFloatToFloat(LlvmGenContext* ctx,
 
     MON_UNREACHABLE();
     THROW(ctx, JMP_ERRILL);
-    return LocLocal(-1);
+    return ValLocal(-1);
 }
 
-static LlvmLocation CompileIntToInt(LlvmGenContext* ctx,
+static LlvmValue CompileIntToInt(LlvmGenContext* ctx,
                                     Mon_AstTypeDef* expType,
-                                    LlvmLocation expLoc,
+                                    LlvmValue expLoc,
                                     Mon_AstTypeDef* destType) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(expType);
@@ -225,9 +316,9 @@ static LlvmLocation CompileIntToInt(LlvmGenContext* ctx,
                          expLoc, TypeToTypeRef(ctx, destType, 0));
 }
 
-static LlvmLocation CompileConversion(LlvmGenContext* ctx, 
+static LlvmValue CompileConversion(LlvmGenContext* ctx, 
                                       Mon_AstTypeDef* expType, 
-                                      LlvmLocation expLoc, 
+                                      LlvmValue expLoc, 
                                       Mon_AstTypeDef* destType) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(expType);
@@ -298,17 +389,17 @@ static LlvmLocation CompileConversion(LlvmGenContext* ctx,
 
     MON_UNREACHABLE();
     THROW(ctx, JMP_ERRUNK);
-    return LocLocal(-1);
+    return ValLocal(-1);
 }
 
 /**
  *  Compiles an expression and returns its locid.
  */
-static LlvmLocation CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef* targetType) {
+static LlvmValue CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef* targetType) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(exp);
 
-    LlvmLocation expLoc;
+    LlvmValue expLoc;
 
     switch (exp->expKind) {
         case MON_EXP_CONDITIONAL:
@@ -329,15 +420,15 @@ static LlvmLocation CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstType
             break;
 
         case MON_EXP_VAR: {
-            LlvmLocation varLoc = CompileVar(ctx, exp->exp.varExpr);
-            LlvmLocation ret = LocLocal(ctx->blockCtx.nextLocalId++);
+            LlvmValue varLoc = CompileVar(ctx, exp->exp.varExpr);
+            LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
             LlvmEmitLoad(ctx, TypeToTypeRef(ctx, exp->semantic.type, 0), varLoc, ret);
             expLoc = ret;
             break;
         }
 
         case MON_EXP_LITERAL:
-            expLoc = LocLiteral(exp->exp.literalExpr);
+            expLoc = ValLiteral(exp->exp.literalExpr);
             break;
 
         case MON_EXP_CALL:
@@ -363,7 +454,7 @@ static LlvmLocation CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstType
 /**
  *  Computes the address of an lvalue and returns its locid.
  */
-static LlvmLocation CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
+static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(var);
 
@@ -376,7 +467,7 @@ static LlvmLocation CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
             }
 
             // Global variable, use its qualified name.
-            return LocGlobal(var->var.direct.name);
+            return ValGlobal(var->var.direct.name);
         }
 
         case MON_VAR_FIELD:
@@ -387,35 +478,91 @@ static LlvmLocation CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
     }
 }
 
-static void CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_AstFuncDef* enclosingFunction) {
+/**
+ *  Compiles a statement. Returns true if the statement always returns (and thus there is no point in compiling)
+ *  other statements in a block.
+ */
+static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_AstFuncDef* enclosingFunction) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(stmt);
 
     switch (stmt->statementKind) {
-        case MON_STMT_IF:
+        case MON_STMT_IF: {
+            LlvmValue thenLabel = ValLabel(ctx->blockCtx.nextLabel++);
+            LlvmValue elseLabel = ValLabel(ctx->blockCtx.nextLabel++);
 
-            break;
+            CompileCondition(ctx, stmt->statement.ifStmt.condition, thenLabel, elseLabel);
+
+            // Compile 'then' block, since it will always exist.
+            LlvmEmitLabel(ctx, thenLabel);
+            CompileBlock(ctx, stmt->statement.ifStmt.thenBlock, enclosingFunction);
+
+            if (stmt->statement.ifStmt.elseBlock != NULL) {
+                LlvmValue endLabel;
+
+                if (stmt->statement.ifStmt.thenBlock->semantic.allPathsReturn) {
+                    if (stmt->statement.ifStmt.elseBlock->semantic.allPathsReturn) {
+                        // Do not create an endLabel and compile else block.
+                        LlvmEmitLabel(ctx, elseLabel);
+                        CompileBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
+                        return true;
+                    }
+                    // Create end label, then does not branch, else does.
+                    endLabel = ValLabel(ctx->blockCtx.nextLabel++);
+                    LlvmEmitLabel(ctx, elseLabel);
+                    CompileBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
+                    LlvmEmitBranch(ctx, endLabel);
+                    return false;
+                }
+
+                if (stmt->statement.ifStmt.elseBlock->semantic.allPathsReturn) {
+                    // Create end label, then branches, else doesn't.
+                    endLabel = ValLabel(ctx->blockCtx.nextLabel++);
+                    LlvmEmitBranch(ctx, endLabel);
+                    LlvmEmitLabel(ctx, elseLabel);
+                    CompileBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
+                    return false;
+                }
+
+                // Create end label, then branches, else does too.
+                endLabel = ValLabel(ctx->blockCtx.nextLabel++);
+                LlvmEmitBranch(ctx, endLabel);
+                LlvmEmitLabel(ctx, elseLabel);
+                CompileBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
+                LlvmEmitBranch(ctx, endLabel);
+                LlvmEmitLabel(ctx, endLabel);
+                return false;
+            }
+
+            if (stmt->statement.ifStmt.thenBlock->semantic.allPathsReturn) {
+                LlvmEmitLabel(ctx, elseLabel);
+                return false;
+            }
+            LlvmEmitBranch(ctx, elseLabel);
+            LlvmEmitLabel(ctx, elseLabel);
+            return false;
+        }
 
         case MON_STMT_WHILE:
             break;
 
         case MON_STMT_ASSIGNMENT: {
-            LlvmLocation varLoc = CompileVar(ctx, stmt->statement.assignment.lvalue);
-            LlvmLocation expLoc = CompileExp(ctx, stmt->statement.assignment.rvalue,
+            LlvmValue varLoc = CompileVar(ctx, stmt->statement.assignment.lvalue);
+            LlvmValue expLoc = CompileExp(ctx, stmt->statement.assignment.rvalue,
                                              stmt->statement.assignment.lvalue->semantic.type);                                                
 
             LlvmEmitStore(ctx, TypeToTypeRef(ctx, stmt->statement.assignment.lvalue->semantic.type, 0), 
-                         varLoc, expLoc);
+                          varLoc, expLoc);
 
             LlvmEmit(ctx, "\n");
             break;
         }
 
         case MON_STMT_RETURN: {
-            LlvmLocation retExpLoc = CompileExp(ctx, stmt->statement.returnStmt.returnedExpression,
+            LlvmValue retExpLoc = CompileExp(ctx, stmt->statement.returnStmt.returnedExpression,
                                                 enclosingFunction->semantic.returnType);
             LlvmEmitRet(ctx, TypeToTypeRef(ctx, enclosingFunction->semantic.returnType, 0), retExpLoc);
-            break;
+            return true;
         }
 
         case MON_STMT_CALL:
@@ -424,6 +571,7 @@ static void CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_As
             break;
 
         case MON_STMT_BLOCK:
+            CompileBlock(ctx, stmt->statement.block, enclosingFunction);
             break;
 
         case MON_STMT_ECHO:
@@ -440,13 +588,15 @@ static void CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_As
         case MON_STMT_CONTINUE:
             break;           
     }
+
+    return false;
 }
 
-static LlvmLocation CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
+static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(call);
 
-    LlvmLocation retLoc = LocLocal(-1);
+    LlvmValue retLoc = ValLocal(-1);
 
     // Function might not have local implementation.
     // In this case, this call creates an external dependency to that function
@@ -457,9 +607,9 @@ static LlvmLocation CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
     
     // Compile each parameter expression
     int argsCount = Mon_VectorCount(&call->parameterList);
-    LlvmLocation* argsBuf = NULL;
+    LlvmValue* argsBuf = NULL;
     if (argsCount > 0) {
-        argsBuf = Mon_Alloc(sizeof(LlvmLocation)*argsCount);    
+        argsBuf = Mon_Alloc(sizeof(LlvmValue)*argsCount);    
         if (argsBuf == NULL) {
             THROW(ctx, JMP_ERRMEM);
         }
@@ -467,16 +617,16 @@ static LlvmLocation CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
         for (int i = 0; i < argsCount; ++i) {
             Mon_AstExp* paramExp = Mon_VectorGet(&call->parameterList, i);
             Mon_AstParam* paramDef = Mon_VectorGet(&call->semantic.callee->parameters, i);
-            LlvmLocation loc = CompileExp(ctx, paramExp, paramDef->semantic.type);
+            LlvmValue loc = CompileExp(ctx, paramExp, paramDef->semantic.type);
             argsBuf[i] = loc;
         }
     }
 
     if (retType != BUILTIN_TABLE->types.tVoid) {
-        // Function returns something, assign it to an LlvmLocation.
-        retLoc = LocLocal(ctx->blockCtx.nextLocalId++);
+        // Function returns something, assign it to an LlvmValue.
+        retLoc = ValLocal(ctx->blockCtx.nextLocalId++);
         LlvmEmit(ctx, "\t");
-        LlvmEmitLocation(ctx, retLoc);
+        LlvmEmitValue(ctx, retLoc);
         LlvmEmit(ctx, " = ");
     } else {
         LlvmEmit(ctx, "\t");
@@ -493,7 +643,7 @@ static LlvmLocation CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
 
         LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, paramDef->semantic.type, 0));
         LlvmEmit(ctx, " ");
-        LlvmEmitLocation(ctx, argsBuf[i]);
+        LlvmEmitValue(ctx, argsBuf[i]);
         if (i < argsCount - 1) {
             LlvmEmit(ctx, ", ");
         }
@@ -512,13 +662,17 @@ static void CompileBlock(LlvmGenContext* ctx, Mon_AstBlock* block, Mon_AstFuncDe
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(block);
 
-    int firstVarIdx = Mon_VectorCount(&ctx->blockCtx.locals) - 1;
+    int top = Mon_VectorCount(&ctx->blockCtx.locals);
 
     MON_VECTOR_FOREACH(&block->statements, Mon_AstStatement*, stmt,
-        CompileStatement(ctx, stmt, enclosingFunction);
+        if (CompileStatement(ctx, stmt, enclosingFunction)) {
+            // Compiled statement always returns, simply stop compiling
+            // other statements.
+            break;
+        }
     );
 
-    for (int i = Mon_VectorCount(&ctx->blockCtx.locals) - 1; i >= 0; --i) {
+    for (int i = Mon_VectorCount(&ctx->blockCtx.locals) - 1; i >= top; --i) {
         Mon_VectorRemoveLast(&ctx->blockCtx.locals);
     }
 }
@@ -568,8 +722,8 @@ static void CompileFunctionImpl(LlvmGenContext* ctx, Mon_AstFuncDef* func) {
         int locid = CompileLocal(ctx, p->name, p->semantic.type).locid;
         LlvmEmitStore(ctx, 
                      TypeToTypeRef(ctx, p->semantic.type, 0), 
-                     LocLocal(locid), 
-                     LocSsa(i++));
+                     ValLocal(locid), 
+                     ValSSA(i++));
     );
     
     if (Mon_VectorCount(&func->parameters) > 0) {

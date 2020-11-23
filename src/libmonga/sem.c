@@ -744,18 +744,29 @@ static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_As
         case MON_STMT_VARDEF:
             return ResolveVarDefinition(ctx, stmt->statement.varDef);
 
-        case MON_STMT_IF:
-            return ResolveCondition(ctx, stmt->statement.ifStmt.condition) &&
-                ResolveBlock(ctx, stmt->statement.ifStmt.thenBlock, enclosingFunction) &&
-                    (stmt->statement.ifStmt.elseBlock == NULL || 
-                    ResolveBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction));
+        case MON_STMT_IF: {
+            bool condResolved = ResolveCondition(ctx, stmt->statement.ifStmt.condition);
+            PushScope(ctx);
+            bool thenResolved = ResolveBlock(ctx, stmt->statement.ifStmt.thenBlock, enclosingFunction);
+            PopScope(ctx);
+            bool elseResolved = true;
+            if (stmt->statement.ifStmt.elseBlock != NULL) {
+                PushScope(ctx);
+                elseResolved = ResolveBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
+                PopScope(ctx);
+            }
+            return condResolved && thenResolved && elseResolved;                    
+        }
 
-        case MON_STMT_WHILE:
+        case MON_STMT_WHILE: {
             ctx->loopLevel++;
+            PushScope(ctx);
             bool ret = ResolveCondition(ctx, stmt->statement.whileStmt.condition) &&
                 ResolveBlock(ctx, stmt->statement.whileStmt.block, enclosingFunction);
+            PopScope(ctx);
             ctx->loopLevel--;
             return ret;
+        }
 
         case MON_STMT_ASSIGNMENT:
             if (!ResolveExpression(ctx, stmt->statement.assignment.rvalue) ||
@@ -808,8 +819,12 @@ static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_As
         case MON_STMT_CALL:
             return ResolveCall(ctx, stmt->statement.call);
 
-        case MON_STMT_BLOCK:
-            return ResolveBlock(ctx, stmt->statement.block, enclosingFunction);
+        case MON_STMT_BLOCK: {
+            PushScope(ctx);
+            bool resolved = ResolveBlock(ctx, stmt->statement.block, enclosingFunction);
+            PopScope(ctx);
+            return resolved;
+        }
 
         case MON_STMT_ECHO:
             return ResolveExpression(ctx, stmt->statement.echo.echoedExp);

@@ -67,7 +67,7 @@ LocalVariableData* AddLocal(LlvmGenContext* ctx, const char* name, Mon_AstTypeDe
         THROW(ctx, JMP_ERRMEM);
     }
 
-    d->location = LocLocal(ctx->blockCtx.nextLocalId++);
+    d->location = ValLocal(ctx->blockCtx.nextLocalId++);
     d->type = type;
     d->varName = name;    
 

@@ -6,6 +6,13 @@
 
 #include "mon_debug.h"
 
+LlvmTypeRef MakeTypeRef(const char* name, int indirection) {
+    LlvmTypeRef ret;
+    ret._indir = indirection;
+    ret._typeName = name;
+    return ret;
+}
+
 LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _indir) {
     MON_CANT_BE_NULL(type);
 
@@ -56,44 +63,44 @@ LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _
     return ret;
 }
 
-LlvmLocation LocGlobal(const char* globalName) {
+LlvmValue ValGlobal(const char* globalName) {
     MON_CANT_BE_NULL(globalName);
 
-    LlvmLocation loc;
+    LlvmValue loc;
     loc.kind = LOC_GLOBAL;
     loc.name = globalName;
     return loc;
 }
 
-LlvmLocation LocLocal(int locid) {
-    LlvmLocation loc;
+LlvmValue ValLocal(int locid) {
+    LlvmValue loc;
     loc.kind = LOC_LOCAL;
     loc.locid = locid;
     return loc;
 }
 
-LlvmLocation LocSsa(int ssaId) {
-    LlvmLocation loc;
+LlvmValue ValSSA(int ssaId) {
+    LlvmValue loc;
     loc.kind = LOC_SSA;
     loc.ssaId = ssaId;
     return loc;
 }
 
-LlvmLocation LocLabel(int localLabelId) {
-    LlvmLocation loc;
+LlvmValue ValLabel(int localLabelId) {
+    LlvmValue loc;
     loc.kind = LOC_LOCALLABEL;
     loc.localLabelId = localLabelId;
     return loc;
 }
 
-LlvmLocation LocLiteral(Mon_Literal literal) {
-    LlvmLocation loc;
+LlvmValue ValLiteral(Mon_Literal literal) {
+    LlvmValue loc;
     loc.kind = LOC_LITERAL;
     loc.literal = literal;
     return loc;
 }
 
-void LlvmEmitLocation(LlvmGenContext* ctx, LlvmLocation loc) {
+void LlvmEmitValue(LlvmGenContext* ctx, LlvmValue loc) {
     MON_CANT_BE_NULL(ctx);
 
     switch (loc.kind) {        
@@ -133,41 +140,41 @@ void LlvmEmitLocation(LlvmGenContext* ctx, LlvmLocation loc) {
     MON_UNREACHABLE();
 }
 
-void LlvmEmitStore(LlvmGenContext* ctx, LlvmTypeRef type, LlvmLocation destAddr, LlvmLocation src) {
+void LlvmEmitStore(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue destAddr, LlvmValue src) {
     MON_CANT_BE_NULL(ctx);
 
     LlvmEmit(ctx, "\tstore ");
     LlvmEmitTyperef(ctx, type);
 
     LlvmEmit(ctx, " ");
-    LlvmEmitLocation(ctx, src);
+    LlvmEmitValue(ctx, src);
     LlvmEmit(ctx, ", ");
     
     LlvmEmitTyperef(ctx, type);
     LlvmEmit(ctx, "* ");
-    LlvmEmitLocation(ctx, destAddr);
+    LlvmEmitValue(ctx, destAddr);
     LlvmEmit(ctx, "\n");
 }
 
-void LlvmEmitLoad(LlvmGenContext* ctx, LlvmTypeRef type, LlvmLocation srcAddr, LlvmLocation dest) {
+void LlvmEmitLoad(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue srcAddr, LlvmValue dest) {
     MON_CANT_BE_NULL(ctx);
 
     LlvmEmit(ctx, "\t");
-    LlvmEmitLocation(ctx, dest);
+    LlvmEmitValue(ctx, dest);
     LlvmEmit(ctx, " = load ");
     LlvmEmitTyperef(ctx, type);
     LlvmEmit(ctx, ", ");
     LlvmEmitTyperef(ctx, type);
     LlvmEmit(ctx, "* ");
-    LlvmEmitLocation(ctx, srcAddr);
+    LlvmEmitValue(ctx, srcAddr);
     LlvmEmit(ctx, "\n");
 }
 
-void LlvmEmitAlloca(LlvmGenContext* ctx, LlvmTypeRef type, LlvmLocation loc) {
+void LlvmEmitAlloca(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue loc) {
     MON_CANT_BE_NULL(ctx);
     
     LlvmEmit(ctx, "\t");
-    LlvmEmitLocation(ctx, loc);
+    LlvmEmitValue(ctx, loc);
     LlvmEmit(ctx, " = alloca ");
     LlvmEmitTyperef(ctx, type);
     LlvmEmit(ctx, "\n");
@@ -184,22 +191,22 @@ void LlvmEmitTyperef(LlvmGenContext* ctx, LlvmTypeRef typeRef) {
     }
 }
 
-static LlvmLocation CompileNumConversion(LlvmGenContext* ctx, 
+static LlvmValue CompileNumConversion(LlvmGenContext* ctx, 
                                         LlvmTypeRef expType, 
-                                        LlvmLocation expLoc, 
+                                        LlvmValue expLoc, 
                                         LlvmTypeRef destType,
                                         const char* conversion) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(conversion);
 
-    LlvmLocation ret = LocLocal(ctx->blockCtx.nextLocalId++);
+    LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
 
     LlvmEmit(ctx, "\t");
-    LlvmEmitLocation(ctx, ret);
+    LlvmEmitValue(ctx, ret);
     LlvmEmit(ctx, " = %s ", conversion);
     LlvmEmitTyperef(ctx, expType);
     LlvmEmit(ctx, " ");
-    LlvmEmitLocation(ctx, expLoc);
+    LlvmEmitValue(ctx, expLoc);
     LlvmEmit(ctx, " to ");
     LlvmEmitTyperef(ctx, destType);
     LlvmEmit(ctx, "\n");
@@ -207,54 +214,54 @@ static LlvmLocation CompileNumConversion(LlvmGenContext* ctx,
     return ret;
 }
 
-LlvmLocation LlvmEmitFpext(LlvmGenContext* ctx, 
+LlvmValue LlvmEmitFpext(LlvmGenContext* ctx, 
                           LlvmTypeRef expType, 
-                          LlvmLocation expLoc, 
+                          LlvmValue expLoc, 
                           LlvmTypeRef destType) {
     MON_CANT_BE_NULL(ctx);
 
     return CompileNumConversion(ctx, expType, expLoc, destType, "fpext");
 }
 
-LlvmLocation LlvmEmitFptrunc(LlvmGenContext* ctx, 
+LlvmValue LlvmEmitFptrunc(LlvmGenContext* ctx, 
                             LlvmTypeRef expType, 
-                            LlvmLocation expLoc, 
+                            LlvmValue expLoc, 
                             LlvmTypeRef destType) {
     MON_CANT_BE_NULL(ctx);
 
     return CompileNumConversion(ctx, expType, expLoc, destType, "fptrunc");
 }
 
-LlvmLocation LlvmEmitFptosi(LlvmGenContext* ctx, 
+LlvmValue LlvmEmitFptosi(LlvmGenContext* ctx, 
                            LlvmTypeRef expType, 
-                           LlvmLocation expLoc, 
+                           LlvmValue expLoc, 
                            LlvmTypeRef destType) {
     MON_CANT_BE_NULL(ctx);
 
     return CompileNumConversion(ctx, expType, expLoc, destType, "fptosi");
 }
 
-LlvmLocation LlvmEmitSitofp(LlvmGenContext* ctx, 
+LlvmValue LlvmEmitSitofp(LlvmGenContext* ctx, 
                            LlvmTypeRef expType, 
-                           LlvmLocation expLoc, 
+                           LlvmValue expLoc, 
                            LlvmTypeRef destType) {
     MON_CANT_BE_NULL(ctx);
 
     return CompileNumConversion(ctx, expType, expLoc, destType, "sitofp");
 }
 
-LlvmLocation LlvmEmitSext(LlvmGenContext* ctx, 
+LlvmValue LlvmEmitSext(LlvmGenContext* ctx, 
                            LlvmTypeRef expType, 
-                           LlvmLocation expLoc, 
+                           LlvmValue expLoc, 
                            LlvmTypeRef destType) {
     MON_CANT_BE_NULL(ctx);
 
     return CompileNumConversion(ctx, expType, expLoc, destType, "sext");
 }
 
-LlvmLocation LlvmEmitTrunc(LlvmGenContext* ctx, 
+LlvmValue LlvmEmitTrunc(LlvmGenContext* ctx, 
                            LlvmTypeRef expType, 
-                           LlvmLocation expLoc, 
+                           LlvmValue expLoc, 
                            LlvmTypeRef destType) {
     MON_CANT_BE_NULL(ctx);
 
@@ -263,20 +270,20 @@ LlvmLocation LlvmEmitTrunc(LlvmGenContext* ctx,
 
 void LlvmEmitRet(LlvmGenContext* ctx, 
                 LlvmTypeRef retType,
-                LlvmLocation retExpLoc) {
+                LlvmValue retExpLoc) {
     MON_CANT_BE_NULL(ctx);
 
     LlvmEmit(ctx, "\tret ");
     LlvmEmitTyperef(ctx, retType);
     LlvmEmit(ctx, " ");
-    LlvmEmitLocation(ctx, retExpLoc);
+    LlvmEmitValue(ctx, retExpLoc);
     LlvmEmit(ctx, "\n");
 }
 
-LlvmLocation LlvmEmitBinop(LlvmGenContext* ctx,
+LlvmValue LlvmEmitBinop(LlvmGenContext* ctx,
                            LlvmTypeRef type,
-                           LlvmLocation aLoc,
-                           LlvmLocation bLoc,
+                           LlvmValue aLoc,
+                           LlvmValue bLoc,
                            LlvmBinopKind binop) {
     MON_CANT_BE_NULL(ctx);
 
@@ -291,8 +298,8 @@ LlvmLocation LlvmEmitBinop(LlvmGenContext* ctx,
             opName = "sub";
             break;
 
-        case LLVM_BINOP_SMUL:
-            opName = "smul";
+        case LLVM_BINOP_MUL:
+            opName = "mul";
             break;
 
         case LLVM_BINOP_SDIV:
@@ -352,17 +359,140 @@ LlvmLocation LlvmEmitBinop(LlvmGenContext* ctx,
             break;
     }
 
-    LlvmLocation retLoc = LocLocal(ctx->blockCtx.nextLocalId++);
+    LlvmValue retLoc = ValLocal(ctx->blockCtx.nextLocalId++);
     LlvmEmit(ctx, "\t");
-    LlvmEmitLocation(ctx, retLoc);
+    LlvmEmitValue(ctx, retLoc);
     LlvmEmit(ctx, " = %s ", opName);
     LlvmEmitTyperef(ctx, type);
     LlvmEmit(ctx, " ");
-    LlvmEmitLocation(ctx, aLoc);
+    LlvmEmitValue(ctx, aLoc);
     LlvmEmit(ctx, ", ");
-    LlvmEmitLocation(ctx, bLoc);
+    LlvmEmitValue(ctx, bLoc);
     LlvmEmit(ctx, "\n");
 
     return retLoc;
+}
+
+void LlvmEmitLabel(LlvmGenContext* ctx, LlvmValue label) {
+    MON_CANT_BE_NULL(ctx);
+
+    MON_ASSERT(label.kind == LOC_LOCALLABEL, 
+        "'label' argument of LlvmEmitLabel must be of kind LOCALLABEL.");
+
+    LlvmEmit(ctx, "l.%d:\n", label.localLabelId);
+}
+
+void LlvmEmitBranch(LlvmGenContext* ctx,
+                    LlvmValue targetLabelLoc) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmEmit(ctx, "\tbr label ");
+    LlvmEmitValue(ctx, targetLabelLoc);
+    LlvmEmit(ctx, "\n");
+}
+
+void LlvmEmitCondBranch(LlvmGenContext* ctx,
+                        LlvmValue boolexpr,
+                        LlvmValue trueLabel,
+                        LlvmValue falseLabel) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmEmit(ctx, "\tbr i1 ");
+    LlvmEmitValue(ctx, boolexpr);
+    LlvmEmit(ctx, ", label ");
+    LlvmEmitValue(ctx, trueLabel);
+    LlvmEmit(ctx, ", label ");
+    LlvmEmitValue(ctx, falseLabel);
+    LlvmEmit(ctx, "\n");
+}
+
+LlvmValue LlvmEmitComparison(LlvmGenContext* ctx,
+                             LlvmTypeRef operandType,
+                             LlvmValue l,
+                             LlvmValue r,
+                             LlvmComparKind kind) {
+    MON_CANT_BE_NULL(ctx);
+
+    const char* cmpStr = NULL; // integer/float/pointer/etc comparison
+    const char* opStr = NULL; // comparison operator
+
+    switch (kind) {
+        case LLVM_CMP_EQ:
+            cmpStr = "icmp";
+            opStr = "eq";
+            break;
+
+        case LLVM_CMP_NEQ:
+            cmpStr = "icmp";
+            opStr = "ne";
+            break;
+
+        case LLVM_CMP_SGT:
+            cmpStr = "icmp";
+            opStr = "sgt";
+            break;
+
+        case LLVM_CMP_SLT:
+            cmpStr = "icmp";
+            opStr = "slt";
+            break;
+
+        case LLVM_CMP_SGE:
+            cmpStr = "icmp";
+            opStr = "sge";
+            break;
+
+        case LLVM_CMP_SLE:
+            cmpStr = "icmp";
+            opStr = "sle";
+            break;
+
+        case LLVM_CMP_OEQ:
+            cmpStr = "fcmp";
+            opStr = "oeq";
+            break;
+
+        case LLVM_CMP_UNEQ:
+            cmpStr = "fcmp";
+            opStr = "une";
+            break;
+
+        case LLVM_CMP_OGT:
+            cmpStr = "fcmp";
+            opStr = "ogt";
+            break;
+
+        case LLVM_CMP_OLT:
+            cmpStr = "fcmp";
+            opStr = "olt";
+            break;
+
+        case LLVM_CMP_OGE:
+            cmpStr = "fcmp";
+            opStr = "oge";
+            break;
+
+        case LLVM_CMP_OLE:
+            cmpStr = "fcmp";
+            opStr = "ole";
+            break;
+    }
+
+    MON_CANT_BE_NULL(cmpStr);
+    MON_CANT_BE_NULL(opStr);
+
+    LlvmValue boolexpr = ValLocal(ctx->blockCtx.nextLocalId++);
+
+    LlvmEmit(ctx, "\t");
+    LlvmEmitValue(ctx, boolexpr);
+    LlvmEmit(ctx, " = %s %s ", cmpStr, opStr);
+    LlvmEmitTyperef(ctx, operandType);
+    LlvmEmit(ctx, " ");
+    LlvmEmitValue(ctx, l);
+    LlvmEmit(ctx, ", ");
+    LlvmEmitValue(ctx, r);
+    LlvmEmit(ctx, "\n");
+
+    return boolexpr;
 }
 

@@ -82,7 +82,7 @@ typedef struct {
     /** The variable type. */
     Mon_AstTypeDef* type;
 
-    LlvmLocation location;
+    LlvmValue location;
 
 } LocalVariableData;
 

@@ -63,5 +63,5 @@ void Mon_Free(void* mem) {
         UseDefaultAllocator();
     }
 
-    return s_Allocator.free(mem);
+    s_Allocator.free(mem);
 }
