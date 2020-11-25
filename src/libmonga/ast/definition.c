@@ -17,15 +17,21 @@ static Mon_AstDef* MakeDefNode(void* defPtr, Mon_AstDefKind defKind) {
 }
 
 Mon_AstDef* Mon_AstDefNewVar(Mon_AstVarDef* varDef) {
-    return MakeDefNode(varDef, MON_AST_DEF_VAR);   
+    Mon_AstDef* ret = MakeDefNode(varDef, MON_AST_DEF_VAR);
+    ret->name = varDef->varName;
+    return ret;
 }
 
 Mon_AstDef* Mon_AstDefNewFunc(Mon_AstFuncDef* funcDef) {
-    return MakeDefNode(funcDef, MON_AST_DEF_FUNC);
+    Mon_AstDef* ret = MakeDefNode(funcDef, MON_AST_DEF_FUNC);
+    ret->name = funcDef->funcName;
+    return ret;
 }
 
 Mon_AstDef* Mon_AstDefNewType(Mon_AstTypeDef* typeDef) {
-    return MakeDefNode(typeDef, MON_AST_DEF_TYPE);
+    Mon_AstDef* ret =  MakeDefNode(typeDef, MON_AST_DEF_TYPE);
+    ret->name = typeDef->typeName;
+    return ret;
 }
 
 void Mon_AstDefDestroy(Mon_AstDef* def, bool rec) {

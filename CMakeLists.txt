@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DMON_DEBUG")
-
 project(monga)
 
 add_subdirectory(src)
@@ -16,8 +14,8 @@ set_property(GLOBAL PROPERTY C_STANDARD 11)
 
 enable_testing()
 
-add_test(NAME Montests
-         COMMAND montests ${CMAKE_SOURCE_DIR}/logs/tests/last_test)
+add_test(name Montests
+         command montests ${CMAKE_SOURCE_DIR}/logs/tests/last_test)
 
-add_test(NAME PythonTests
-         COMMAND python3 ${CMAKE_SOURCE_DIR}/tests/testall.py ${CMAKE_BINARY_DIR}/src/exec/monga)
+add_test(name PythonTests
+         command python3 ${CMAKE_SOURCE_DIR}/tests/testall.py ${CMAKE_BINARY_DIR}/src/exec/monga)

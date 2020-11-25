@@ -27,10 +27,6 @@ void InitializeLlvmContext(LlvmGenContext* ctx,
         THROW(ctx, JMP_ERRMEM);
     }
 
-    if (Mon_VectorInit(&ctx->typeDependencies) != MON_SUCCESS) {
-        THROW(ctx, JMP_ERRMEM);
-    }
-
     if (outStream == NULL) {
         outStream = stdout;
     }
@@ -132,17 +128,6 @@ void AddFunctionDependency(LlvmGenContext* ctx, Mon_AstFuncDef* func) {
     }
 }
 
-void AddTypeDependency(LlvmGenContext* ctx, Mon_AstTypeDef* type) {
-    if (Mon_VectorContains(&ctx->typeDependencies, type)) {
-        return;
-    }
-
-    if (Mon_VectorPush(&ctx->typeDependencies, type) != MON_SUCCESS) {
-        THROW(ctx, JMP_ERRMEM);
-        return;
-    }
-}
-
 void RegisterInternalFunction(LlvmGenContext* ctx, Mon_AstFuncDef* func) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(func);
@@ -158,5 +143,4 @@ void CleanupLlvmGenContext(LlvmGenContext* ctx) {
 
     Mon_VectorFinalize(&ctx->internalFunctions);
     Mon_VectorFinalize(&ctx->functionDependencies);
-    Mon_VectorFinalize(&ctx->typeDependencies);
 }

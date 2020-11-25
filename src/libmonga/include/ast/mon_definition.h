@@ -58,6 +58,8 @@ typedef struct Mon_AstDef_ {
 
     } definition;
 
+    const char* name;
+
 } Mon_AstDef;
 
 /**

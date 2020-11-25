@@ -18,6 +18,7 @@ static void CompileBlock(LlvmGenContext* ctx, Mon_AstBlock* block, Mon_AstFuncDe
 static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var);
 static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call);
 static LlvmValue CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef* targetType);
+static void CompileCondition(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue trueLabel, LlvmValue falseLabel);
 
 /** 
  *  Compiles a local variable. The local variable data is added to the block context.
@@ -34,17 +35,26 @@ static LlvmValue CompileLocal(LlvmGenContext* ctx, const char* name, Mon_AstType
     return d->location;
 }
 
-static void CompileBinCond(LlvmGenContext* ctx, Mon_BinCondKind kind, Mon_AstCond* l, Mon_AstCond* r) {
+static void CompileBinCond(LlvmGenContext* ctx, Mon_BinCondKind kind, 
+                           Mon_AstCond* l, Mon_AstCond* r, 
+                           LlvmValue trueLabel, LlvmValue falseLabel) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(l);
     MON_CANT_BE_NULL(r);
 
+    LlvmValue nextLabel = ValLabel(ctx->blockCtx.nextLabel++);
+
     switch (kind) {
         case MON_BINCOND_AND:
-        
+            CompileCondition(ctx, l, nextLabel, falseLabel);
+            LlvmEmitLabel(ctx, nextLabel);
+            CompileCondition(ctx, r, trueLabel, falseLabel);
             return;
 
         case MON_BINCOND_OR:
+            CompileCondition(ctx, l, trueLabel, nextLabel);
+            LlvmEmitLabel(ctx, nextLabel);
+            CompileCondition(ctx, r, trueLabel, falseLabel);
             return;
     }
     
@@ -157,6 +167,9 @@ static void CompileCondition(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue t
 
     switch (cond->condKind) {
         case MON_COND_BIN:
+            CompileBinCond(ctx, cond->condition.binCond.binCondKind, 
+                           cond->condition.binCond.left, cond->condition.binCond.right,
+                           trueLabel, falseLabel);
             break;
 
         case MON_COND_COMPARISON:
@@ -219,7 +232,7 @@ static LlvmValue CompileBinop(LlvmGenContext* ctx,
                 return LlvmEmitBinop(ctx, targetTypeRef, lLoc, rLoc, LLVM_BINOP_SDIV);
 
             case MON_BINOP_MODULO:
-                return LlvmEmitBinop(ctx, targetTypeRef, lLoc, rLoc, LLVM_BINOP_MOD);
+                return LlvmEmitBinop(ctx, targetTypeRef, lLoc, rLoc, LLVM_BINOP_SREM);
 
             case MON_BINOP_SHR:
                 return LlvmEmitBinop(ctx, targetTypeRef, lLoc, rLoc, LLVM_BINOP_LSHR);
@@ -392,6 +405,44 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
     return ValLocal(-1);
 }
 
+static LlvmValue CompileNew(LlvmGenContext* ctx, Mon_AstTypeDef* type, Mon_AstExp* sizeExp) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(type);
+
+    LlvmValue sizeExpLoc;
+
+    if (sizeExp != NULL) {
+        LlvmValue loc = CompileExp(ctx, sizeExp, BUILTIN_TABLE->types.tInt);
+        Mon_Literal lit;
+        lit.integer = GetTypeSize(type->typeDesc->typeDesc.array.semantic.innerTypeDef);
+        lit.literalKind = MON_LIT_INT;
+        sizeExpLoc = LlvmEmitBinop(ctx, TypeToTypeRef(ctx, BUILTIN_TABLE->types.tInt, 0), loc, ValLiteral(lit), LLVM_BINOP_MUL);
+    } else {
+        Mon_Literal lit;
+        lit.integer = GetRecordDescSize(type->typeDesc);
+        lit.literalKind = MON_LIT_INT;
+        sizeExpLoc = ValLiteral(lit);
+    }
+
+    // Array new
+    LlvmValue ptrVal = ValLocal(ctx->blockCtx.nextLocalId++);
+    LlvmEmit(ctx, "\t");
+    LlvmEmitValue(ctx, ptrVal);
+    LlvmEmit(ctx, " = call i8* @" NAMEOF(RtInternal_GcAlloc) "(i32 ");
+    LlvmEmitValue(ctx, sizeExpLoc);
+    LlvmEmit(ctx, ")\n");
+    LlvmValue expLoc = ValLocal(ctx->blockCtx.nextLocalId++);
+    LlvmEmit(ctx, "\t");
+    LlvmEmitValue(ctx, expLoc);
+    LlvmEmit(ctx, " = bitcast i8* ");
+    LlvmEmitValue(ctx, ptrVal);
+    LlvmEmit(ctx, " to ");
+    LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, type, 0));
+    LlvmEmit(ctx, "\n");
+
+    return expLoc;
+}
+
 /**
  *  Compiles an expression and returns its locid.
  */
@@ -435,8 +486,9 @@ static LlvmValue CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef
             expLoc = CompileCall(ctx, exp->exp.callExpr);            
             break;
 
-        case MON_EXP_NEW:
-            break;
+        case MON_EXP_NEW: {
+            return CompileNew(ctx, exp->semantic.type, exp->exp.newExpr.arraySizeExp);
+        }
 
         case MON_EXP_NULL:
             break;
@@ -470,12 +522,40 @@ static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
             return ValGlobal(var->var.direct.name);
         }
 
-        case MON_VAR_FIELD:
-            break;
+        case MON_VAR_FIELD: {
+            Mon_AstTypeDef* type = GetUnderlyingType(var->var.field.expr->semantic.type);
+            if (!IsStructuredType(type)) {
+                THROW(ctx, JMP_ERRILL);
+            }
 
-        case MON_VAR_INDEXED:
-            break;
+            LlvmValue expLoc = CompileExp(ctx, var->var.field.expr, type);
+            
+            LlvmTypeRef typeRef = TypeToTypeRef(ctx, type, 0);
+
+            // Discover field index
+            int fieldIdx = Mon_VectorGetIndex(&type->typeDesc->typeDesc.record.fields,
+                                              var->var.field.semantic.field);
+            
+            if (fieldIdx == -1) {
+                // Field should exist in type.
+                THROW(ctx, JMP_ERRILL);
+            }
+
+            return LlvmEmitGetStructElementPtr(ctx, typeRef, expLoc, fieldIdx);
+        }
+
+        case MON_VAR_INDEXED: {
+            Mon_AstTypeDef* elementType = var->semantic.type;
+
+            LlvmValue indexExp = CompileExp(ctx, var->var.indexed.indexExpr, 
+                                            BUILTIN_TABLE->types.tLong);
+            LlvmValue indexedExp = CompileExp(ctx, var->var.indexed.indexedExpr, var->var.indexed.indexedExpr->semantic.type);
+            return LlvmEmitGetArrayElementPtr(ctx, TypeToTypeRef(ctx, elementType, 0), indexedExp, indexExp);
+        }
     }
+
+    MON_UNREACHABLE();
+    THROW(ctx, JMP_ERRUNK);
 }
 
 /**
@@ -559,9 +639,13 @@ static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_As
         }
 
         case MON_STMT_RETURN: {
-            LlvmValue retExpLoc = CompileExp(ctx, stmt->statement.returnStmt.returnedExpression,
-                                                enclosingFunction->semantic.returnType);
-            LlvmEmitRet(ctx, TypeToTypeRef(ctx, enclosingFunction->semantic.returnType, 0), retExpLoc);
+            if (stmt->statement.returnStmt.returnedExpression != NULL) {
+                LlvmValue retExpLoc = CompileExp(ctx, stmt->statement.returnStmt.returnedExpression,
+                                                    enclosingFunction->semantic.returnType);
+                LlvmEmitRet(ctx, TypeToTypeRef(ctx, enclosingFunction->semantic.returnType, 0), retExpLoc);
+            } else {
+                LlvmEmitRetVoid(ctx);
+            }
             return true;
         }
 
@@ -638,7 +722,6 @@ static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
     LlvmEmit(ctx, " @%s(", call->semantic.callee->funcName);
 
     for (int i = 0; i < argsCount; ++i) {
-        Mon_AstExp* paramExp = Mon_VectorGet(&call->parameterList, i);
         Mon_AstParam* paramDef = Mon_VectorGet(&call->semantic.callee->parameters, i);
 
         LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, paramDef->semantic.type, 0));
@@ -732,8 +815,9 @@ static void CompileFunctionImpl(LlvmGenContext* ctx, Mon_AstFuncDef* func) {
 
     CompileBlock(ctx, func->body, func);
 
-    if (func->semantic.returnType == BUILTIN_TABLE->types.tVoid) {
-        LlvmEmit(ctx, "\tret void\n");
+    if (func->semantic.returnType == BUILTIN_TABLE->types.tVoid &&
+        !func->body->semantic.allPathsReturn) {
+        LlvmEmitRetVoid(ctx);
     }
 
     LlvmEmit(ctx, "}\n");
@@ -747,12 +831,13 @@ static void CompileType(LlvmGenContext* ctx, Mon_AstTypeDef* type) {
     switch (type->typeDesc->typeDescKind) {
         case MON_TYPEDESC_ALIAS:
         case MON_TYPEDESC_ARRAY:
+        case MON_TYPEDESC_SPECIAL:
+        case MON_TYPEDESC_PRIMITIVE:
             return;
 
         case MON_TYPEDESC_RECORD:
             LlvmEmit(ctx, "%%%s = type { ", type->typeName);
             int count = Mon_VectorCount(&type->typeDesc->typeDesc.record.fields);
-            int i = 0;
             for (int i = 0; i < count; ++i) {
                 Mon_AstField* f = Mon_VectorGet(&type->typeDesc->typeDesc.record.fields, i);
                 LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, f->semantic.type, 0));
@@ -762,11 +847,6 @@ static void CompileType(LlvmGenContext* ctx, Mon_AstTypeDef* type) {
             }
             LlvmEmit(ctx, " }\n");
             return;
-
-        case MON_TYPEDESC_SPECIAL:
-        case MON_TYPEDESC_PRIMITIVE:
-            // Ill formed, let it throw.
-            break;
     }
 
     MON_UNREACHABLE();
@@ -798,10 +878,19 @@ static void CompileDefinition(LlvmGenContext* ctx, Mon_AstDef* def) {
 
         case MON_AST_DEF_TYPE:
             // Types are compiled on demand afterwards.
-            break;
+            return;
     }
 
     LlvmEmit(ctx, "\n");
+}
+
+static void CompileUsedTypes(LlvmGenContext* ctx) {
+    MON_VECTOR_FOREACH(&ctx->targetAst->semantic.usedTypes, Mon_AstTypeDef*, type,
+        CompileType(ctx, type);
+        if (type->typeDesc->typeDescKind == MON_TYPEDESC_RECORD) {
+            LlvmEmit(ctx, "\n");
+        }
+    );
 }
 
 static void GenModulePreamble(LlvmGenContext* ctx) {
@@ -809,6 +898,10 @@ static void GenModulePreamble(LlvmGenContext* ctx) {
 
     LlvmEmit(ctx, "source_filename = \"%s\"\n", ctx->targetAst->moduleName);
 
+    LlvmEmit(ctx, "declare i8* @" NAMEOF(RtInternal_GcAlloc) "(i32)\n", ctx->targetAst->moduleName);
+
+    LlvmEmit(ctx, "\n");
+    CompileUsedTypes(ctx);
     LlvmEmit(ctx, "\n");
 }
 
@@ -820,16 +913,8 @@ static void CompileFunctionDependencies(LlvmGenContext* ctx) {
     );
 }
 
-static void CompileTypeDependencies(LlvmGenContext* ctx) {
-    MON_VECTOR_FOREACH(&ctx->typeDependencies, Mon_AstTypeDef*, type,
-        LlvmEmit(ctx, "\n");
-        CompileType(ctx, type);
-    );
-}
-
 static void CompileDependencies(LlvmGenContext* ctx) {
     CompileFunctionDependencies(ctx);
-    CompileTypeDependencies(ctx);
 }
 
 Mon_RetCode Mon_GenerateLLVM(Mon_Ast* ast,
@@ -878,7 +963,7 @@ Mon_RetCode Mon_GenerateLLVM(Mon_Ast* ast,
     // Add all functions declared here to the internal functions vector.
     // This will be useful when we get to the point that we need to generate
     // dependencies.
-    MON_VECTOR_FOREACH(&ast->defsVector, Mon_AstDef*, def,
+    MON_DEFGROUP_FOREACH(&ast->definitions, def,
         if (def->defKind != MON_AST_DEF_FUNC) {
             continue;
         }
@@ -891,7 +976,7 @@ Mon_RetCode Mon_GenerateLLVM(Mon_Ast* ast,
         RegisterInternalFunction(&ctx, def->definition.function);
     );
     // Now compile the definitions.
-    MON_VECTOR_FOREACH(&ast->defsVector, Mon_AstDef*, def,
+    MON_DEFGROUP_FOREACH(&ast->definitions, def,
         CompileDefinition(&ctx, def);
     );
     CompileDependencies(&ctx);

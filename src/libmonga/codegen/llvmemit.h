@@ -11,6 +11,7 @@ typedef struct {
 
     const char* _typeName;
     int _indir;
+    bool _builtin;
 
 } LlvmTypeRef;
 
@@ -50,7 +51,7 @@ typedef enum {
     LLVM_BINOP_AND,
     LLVM_BINOP_OR,
     LLVM_BINOP_XOR,
-    LLVM_BINOP_MOD,
+    LLVM_BINOP_SREM,
     LLVM_BINOP_FREM
 
 } LlvmBinopKind;
@@ -78,7 +79,7 @@ typedef enum {
 
 } LlvmComparKind;
 
-MON_PRIVATE LlvmTypeRef MakeTypeRef(const char* name, int indirection);
+MON_PRIVATE LlvmTypeRef MakeTypeRef(const char* name, int indirection, bool builtin);
 
 MON_PRIVATE LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int indirection);
 
@@ -143,6 +144,8 @@ MON_PRIVATE void LlvmEmitRet(LlvmGenContext* ctx,
                              LlvmTypeRef retType,
                              LlvmValue retExpLoc);
 
+MON_PRIVATE void LlvmEmitRetVoid(LlvmGenContext* ctx);
+
 MON_PRIVATE void LlvmEmitBranch(LlvmGenContext* ctx,
                                 LlvmValue targetLabelLoc);
 
@@ -164,5 +167,15 @@ MON_PRIVATE LlvmValue LlvmEmitComparison(LlvmGenContext* ctx,
                                          LlvmValue l,
                                          LlvmValue r,
                                          LlvmComparKind kind);
+
+MON_PRIVATE LlvmValue LlvmEmitGetStructElementPtr(LlvmGenContext* ctx,
+                                                  LlvmTypeRef structType,
+                                                  LlvmValue structPtrVal,
+                                                  int elementIdx);
+
+MON_PRIVATE LlvmValue LlvmEmitGetArrayElementPtr(LlvmGenContext* ctx,
+                                                 LlvmTypeRef type,
+                                                 LlvmValue arrayPtrVal,
+                                                 LlvmValue idxExpVal);
 
 #endif // LLVMUTILS_H

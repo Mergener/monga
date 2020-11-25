@@ -24,9 +24,9 @@ done
 
 function clean {
     for arg in $ARGS; do
-        rm_if_exists "$arg.ll"
+        #rm_if_exists "$arg.ll"
         rm_if_exists "$arg.opt.ll"
-        rm_if_exists "$arg.s"
+        #rm_if_exists "$arg.s"
         rm_if_exists "$arg.o"
     done
     for f in $MONRT; do
@@ -74,7 +74,7 @@ asm_files=""
 for f in $files; do
     asm_files="$asm_files $f.s"
 done
-clang -o a.out $asm_files src/monrt/c/*.c -no-pie
+clang -o $OUT_FILE $asm_files src/monrt/c/*.c -no-pie
 
 clean
 exit 0

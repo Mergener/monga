@@ -127,7 +127,7 @@ void Mon_VectorClaim(Mon_Vector* vector, void** outPtr, int* count, int* capacit
     vector->_count = 0;
 }
 
-int Mon_VectorGetIndex(const Mon_Vector* vector, void* elem) {
+int Mon_VectorGetIndex(const Mon_Vector* vector, const void* elem) {
     MON_CANT_BE_NULL(vector);
     
     for (int i = 0; i < vector->_count; ++i) {
@@ -139,7 +139,7 @@ int Mon_VectorGetIndex(const Mon_Vector* vector, void* elem) {
     return -1;
 }
 
-bool Mon_VectorContains(const Mon_Vector* vector, void* elem) {
+bool Mon_VectorContains(const Mon_Vector* vector, const void* elem) {
     MON_CANT_BE_NULL(vector);
     return Mon_VectorGetIndex(vector, elem) != -1;
 }

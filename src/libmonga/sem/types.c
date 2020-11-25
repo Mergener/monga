@@ -346,3 +346,71 @@ bool TypeCanCompare(const Mon_AstTypeDef* a,
 
     return false;
 }
+
+int GetRecordDescAlign(const Mon_AstTypeDesc* recordTypeDesc) {
+    MON_CANT_BE_NULL(recordTypeDesc);
+    MON_ASSERT(recordTypeDesc->typeDescKind == MON_TYPEDESC_RECORD,
+        "Specified argument must be a record type.");
+
+    unsigned int ret = 1;
+
+    MON_VECTOR_FOREACH(&recordTypeDesc->typeDesc.record.fields, Mon_AstField*, f,
+        if (IsRefType(f->semantic.type)) {            
+            ret = sizeof(void*) > ret ? sizeof(void*) : ret;
+            continue;
+        }
+
+        MON_ASSERT(f->semantic.type->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE,
+            "Currently expecting every non-ref type to be a primitive.");
+
+        unsigned int primitiveSize = Mon_GetPrimitiveSize(f->semantic.type->typeDesc->typeDesc.primitive.typeCode);
+        ret = primitiveSize > ret ? primitiveSize : ret;
+    );
+
+    return (int)ret;
+}
+
+int GetRecordDescSize(const Mon_AstTypeDesc* recordTypeDesc) {
+    MON_CANT_BE_NULL(recordTypeDesc);
+    MON_ASSERT(recordTypeDesc->typeDescKind == MON_TYPEDESC_RECORD,
+        "Specified argument must be a record type.");
+
+    // First, compute the record alignment
+    unsigned int align = GetRecordDescAlign(recordTypeDesc);
+
+    unsigned int totalSize = 0;
+
+    MON_VECTOR_FOREACH(&recordTypeDesc->typeDesc.record.fields, Mon_AstField*, f,
+        // Compute field size and alignment
+        unsigned int fieldSize = GetTypeSize(f->semantic.type);
+        unsigned int fieldAlign = fieldSize;
+
+        unsigned int remainder = totalSize % fieldAlign;
+        if (remainder > 0) {
+            totalSize += fieldAlign - remainder;
+        }
+        totalSize += fieldSize;
+    );
+
+    unsigned int remainder = totalSize % align;
+    if (remainder > 0) {
+        totalSize += align - remainder;
+    }
+
+    return (int)totalSize;
+}
+
+int GetTypeSize(const Mon_AstTypeDef* type) {
+    MON_CANT_BE_NULL(type);
+
+    type = GetUnderlyingType(type);
+
+    if (IsRefType(type)) {
+        return sizeof(void*);
+    }
+
+    MON_ASSERT(type->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE, 
+        "Currently expecting every non-ref type to be a primitive.");
+
+    return Mon_GetPrimitiveSize(type->typeDesc->typeDesc.primitive.typeCode);
+}

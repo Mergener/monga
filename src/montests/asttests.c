@@ -45,8 +45,8 @@ static void ConstructSampleAst(Mon_Ast* ast) {
 	Mon_AstFuncDef* funcDef = Mon_AstFuncDefNew("foo", 3, "int", 3, funcParams, block);
 	Mon_AstDef* firstDef = Mon_AstDefNewFunc(funcDef);
 
-	Mon_VectorInit(&ast->defsVector);
-	Mon_VectorPush(&ast->defsVector, firstDef);
+	Mon_DefGroupInit(&ast->definitions);
+	Mon_DefGroupReg(&ast->definitions, firstDef);
 
 	Logf("Generated sample AST:\n");
 	Mon_DumpAst(ast, g_LogFileStream, MON_ASTDUMP_XML, MON_ASTDUMP_FLAGS_PRETTYPRINT);
@@ -129,7 +129,8 @@ static void SemanticLeakTest() {
 
 static Test s_AstTests[] = {
 	{ "Ast Memory Leak Test", AstLeakTest },
-	{ "Parse Leak Test", ParseLeakTest }
+	{ "Parse Leak Test", ParseLeakTest },
+	{ "Semantic Leak Test", SemanticLeakTest }
 };
 
 void RunASTTests() {

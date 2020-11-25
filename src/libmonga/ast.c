@@ -45,12 +45,12 @@ Mon_RetCode Mon_DumpAst(const Mon_Ast* ast,
 
 void Mon_AstFinalize(Mon_Ast* ast) {
     if (ast != NULL) {
-        MON_VECTOR_FOREACH(&ast->defsVector, Mon_AstDef*, def,
+        MON_DEFGROUP_FOREACH(&ast->definitions, def,
             Mon_AstDefDestroy(def, true);
         );
     }
     if (ast->moduleName != NULL) {
         Mon_Free(ast->moduleName);
     }
-    Mon_VectorFinalize(&ast->defsVector);
+    Mon_DefGroupFinalize(&ast->definitions);
 }

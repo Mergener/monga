@@ -1,6 +1,7 @@
 #include "mon_alloc.h"
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "mon_error.h"
 
@@ -39,7 +40,8 @@ void* Mon_Alloc(size_t s) {
         UseDefaultAllocator();
     }
 
-    return s_Allocator.alloc(s);
+    void* mem = s_Allocator.alloc(s);
+    return mem;
 }
 
 void* Mon_AllocZero(size_t n, size_t s) {

@@ -44,7 +44,7 @@ void AstDumpXml(AstDumpContext* ctx, const Mon_Ast* ast) {
     DUMPF_OR_STOP(ctx, "<Module>");
     ctx->indentLevel++;
 
-    MON_VECTOR_FOREACH(&ast->defsVector, Mon_AstDef*, def,
+    MON_DEFGROUP_FOREACH(&ast->definitions, def,
         XmlDumpDefNode(ctx, def);
         if (ctx->ioErr) {
             return;

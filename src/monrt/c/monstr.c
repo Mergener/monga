@@ -26,7 +26,7 @@ Mon_Str* NewString(const Mon_Char* cstr, int len) {
         FATAL(BADARG);
     } 
 
-    Mon_Str* ret = GcAlloc(sizeof(Mon_Char) * len + sizeof(Mon_Char) + sizeof(Mon_Str));
+    Mon_Str* ret = RtInternal_GcAlloc(sizeof(Mon_Char) * len + sizeof(Mon_Char) + sizeof(Mon_Str));
 
     ret->hash = Hash(ret->buf, len);
     ret->length = len;

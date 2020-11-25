@@ -7,6 +7,7 @@
 
 #include "mon_error.h"
 #include "mon_vector.h"
+#include "mon_defgroup.h"
 
 #include "ast/mon_block.h"
 #include "ast/mon_call.h"
@@ -55,11 +56,16 @@ typedef enum {
 typedef struct {
 
     /** Vector containing all program definitions. Stored elements are of type Mon_AstDef*. */
-    Mon_Vector defsVector;
+    Mon_DefGroup definitions;
 
     Mon_AstState astState;
 
     char* moduleName;
+
+    struct {
+        /** Contains the list types used by this module. */
+        Mon_Vector usedTypes;
+    } semantic;
 
 } Mon_Ast;
 

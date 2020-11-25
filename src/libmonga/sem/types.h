@@ -112,4 +112,17 @@ MON_PRIVATE bool TypeCanCompare(const Mon_AstTypeDef* a,
                                 const Mon_AstTypeDef* b, 
                                 Mon_ComparKind comparKind);
 
+MON_PRIVATE int GetRecordDescAlign(const Mon_AstTypeDesc* recordTypeDesc);
+
+MON_PRIVATE int GetRecordDescSize(const Mon_AstTypeDesc* recordTypeDesc);
+
+/**
+ *  Returns the size of an element of a type.
+ *  Important note: this does not return the size of a record object
+ *  in memory. For record types (as well as all ref-types), this function
+ *  returns the size of a pointer. For the size of record instances in
+ *  memory, use GetRecordDescSize().
+ */
+MON_PRIVATE int GetTypeSize(const Mon_AstTypeDef* type);
+
 #endif // TYPES_H

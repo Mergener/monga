@@ -1,6 +1,8 @@
 #ifndef MON_DEFINES_H
 #define MON_DEFINES_H
 
+#define MON_DEBUG
+
 #if defined(_MSC_VER)
     #define MON_EXPORT __declspec(dllexport)
     #define MON_IMPORT __declspec(dllimport)

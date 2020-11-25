@@ -26,6 +26,9 @@
 #define ADD_TO_VECTOR(vec, value) \
     if (Mon_VectorPush(&vec, value) != MON_SUCCESS) { \
     }
+#define ADD_TO_DEFGROUP(defGroup, def)  \
+    if (Mon_DefGroupReg(&defGroup, def) != MON_SUCCESS) { \
+    }
 #define FILL_NODE_HEADER(header) \
     header.line = Mon_TkLine; \
     header.column = Mon_TkColumn
@@ -96,6 +99,7 @@ static void DumpReduce(const char* fmt, ...);
     Mon_Vector        vector;
     bool              boolean;
     Mon_AstDef*       defNode;
+    Mon_DefGroup      defGroup;
     Mon_AstBlock*     blockNode;
     Mon_AstTypeDef*   typeDefNode;
     Mon_AstVarDef*    varDefNode;
@@ -124,9 +128,10 @@ static void DumpReduce(const char* fmt, ...);
 %type <condNode>      cond cond_primary cond_not cond_and cond_or
 %type <callNode>      call
 %type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT MON_TK_LIT_STRING
-%type <vector>        definitions parameters opt_parameters statements opt_statements exps opt_exps field_defs
+%type <vector>        parameters opt_parameters statements opt_statements exps opt_exps field_defs
 %type <typeDescNode>  typedesc
 %type <fieldNode>     def_field
+%type <defGroup>      definitions 
 
 %%
 
@@ -134,13 +139,13 @@ module:
     definitions {
         DumpReduce("module r1");
 
-        mon_TargetAst->defsVector = $1;
+        mon_TargetAst->definitions = $1;
     }
 
     | /* nothing */ {
         DumpReduce("module r2");
 
-        INIT_VECTOR(mon_TargetAst->defsVector);
+        Mon_DefGroupInit(&mon_TargetAst->definitions);
     }
 ;
 
@@ -148,15 +153,15 @@ definitions:
     definition {
         DumpReduce("definitions r1");
 
-        INIT_VECTOR($$);
-        ADD_TO_VECTOR($$, $1);
+        Mon_DefGroupInit(&$$);
+        ADD_TO_DEFGROUP($$, $1);
     }
 
     | definitions definition {
         DumpReduce("definitions r2");
 
         $$ = $1;
-        ADD_TO_VECTOR($$, $2);
+        ADD_TO_DEFGROUP($$, $2);
     }
 ;
 

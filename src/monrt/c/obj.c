@@ -37,7 +37,7 @@ int RegisterTypeData(const TypeData* td) {
 
 MongaObject* NewObject(int typeId) {
     const TypeData* td = LoadTypeData(typeId);
-    void* mem = GcAlloc(sizeof(ObjectHeader) + td->size);
+    void* mem = RtInternal_GcAlloc(sizeof(ObjectHeader) + td->size);
 
     ObjectHeader* header = (ObjectHeader*)mem;
     header->length = 0;
@@ -52,7 +52,7 @@ MongaArray* NewArray(int typeId, int length) {
     }
 
     const TypeData* td = LoadTypeData(typeId);
-    void* mem = GcAlloc(sizeof(ObjectHeader) + td->size);
+    void* mem = RtInternal_GcAlloc(sizeof(ObjectHeader) + td->size);
 
     ObjectHeader* header = (ObjectHeader*)mem;
     header->length = length;

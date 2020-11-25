@@ -350,7 +350,7 @@ static void RunLLVMEmit(const struct LlvmEmitArgs* args) {
             exit(MON_ERR_FILENOTFOUND);
         }
 
-        ret = Mon_GenerateLLVM(&inputs[i].ast, out, stderr, MON_OPT_O0, MON_CGFLAGS_NONE);
+        ret = Mon_GenerateLLVM(&asts[i], out, stderr, MON_OPT_O0, MON_CGFLAGS_NONE);
         if (ret != MON_SUCCESS) {
             fprintf(stderr, "Error during code generation.\n");
             exit(EXIT_FAILURE);

@@ -6,10 +6,11 @@
 
 #include "mon_debug.h"
 
-LlvmTypeRef MakeTypeRef(const char* name, int indirection) {
+LlvmTypeRef MakeTypeRef(const char* name, int indirection, bool builtin) {
     LlvmTypeRef ret;
     ret._indir = indirection;
     ret._typeName = name;
+    ret._builtin = builtin;
     return ret;
 }
 
@@ -26,6 +27,8 @@ LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _
 
     if (IsRefType(type)) {
         ret._indir++;
+        ret._typeName = type->typeName;
+        ret._builtin = false;
         return ret;
     }
 
@@ -59,6 +62,8 @@ LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _
             ret._typeName = "void";
             break;
     }
+
+    ret._builtin = true;
 
     return ret;
 }
@@ -149,7 +154,7 @@ void LlvmEmitStore(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue destAddr, Ll
     LlvmEmit(ctx, " ");
     LlvmEmitValue(ctx, src);
     LlvmEmit(ctx, ", ");
-    
+
     LlvmEmitTyperef(ctx, type);
     LlvmEmit(ctx, "* ");
     LlvmEmitValue(ctx, destAddr);
@@ -182,6 +187,10 @@ void LlvmEmitAlloca(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue loc) {
 
 void LlvmEmitTyperef(LlvmGenContext* ctx, LlvmTypeRef typeRef) {
     MON_CANT_BE_NULL(ctx);
+    
+    if (!typeRef._builtin) {
+        LlvmEmit(ctx, "%%");
+    }
 
     LlvmEmit(ctx, "%s", typeRef._typeName);
     int indir = typeRef._indir;
@@ -280,6 +289,11 @@ void LlvmEmitRet(LlvmGenContext* ctx,
     LlvmEmit(ctx, "\n");
 }
 
+void LlvmEmitRetVoid(LlvmGenContext* ctx) {
+    MON_CANT_BE_NULL(ctx);
+    LlvmEmit(ctx, "\tret void\n");
+}
+
 LlvmValue LlvmEmitBinop(LlvmGenContext* ctx,
                            LlvmTypeRef type,
                            LlvmValue aLoc,
@@ -350,8 +364,8 @@ LlvmValue LlvmEmitBinop(LlvmGenContext* ctx,
             opName = "xor";
             break;
 
-        case LLVM_BINOP_MOD:
-            opName = "mod";
+        case LLVM_BINOP_SREM:
+            opName = "srem";
             break;
 
         case LLVM_BINOP_FREM:
@@ -494,5 +508,50 @@ LlvmValue LlvmEmitComparison(LlvmGenContext* ctx,
     LlvmEmit(ctx, "\n");
 
     return boolexpr;
+}
+
+LlvmValue LlvmEmitGetStructElementPtr(LlvmGenContext* ctx,
+                                      LlvmTypeRef structType,
+                                      LlvmValue structPtrVal,
+                                      int elementIdx) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
+
+    LlvmEmit(ctx, "\t");
+    LlvmEmitValue(ctx, ret);
+    LlvmEmit(ctx, " = getelementptr inbounds ");
+    structType._indir--;
+    LlvmEmitTyperef(ctx, structType);
+    structType._indir++;
+    LlvmEmit(ctx, ", ");
+    LlvmEmitTyperef(ctx, structType);
+    LlvmEmit(ctx, " ");
+    LlvmEmitValue(ctx, structPtrVal);
+    LlvmEmit(ctx, ", i32 0, i32 %d\n", elementIdx);  
+
+    return ret;  
+}
+
+LlvmValue LlvmEmitGetArrayElementPtr(LlvmGenContext* ctx,
+                                     LlvmTypeRef type,
+                                     LlvmValue arrayPtrVal,
+                                     LlvmValue idxExpVal) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmEmit(ctx, "\t");
+    LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
+    LlvmEmitValue(ctx, ret);
+    LlvmEmit(ctx, " = getelementptr ");
+    LlvmEmitTyperef(ctx, type);
+    LlvmEmit(ctx, ", ");
+    type._indir++;
+    LlvmEmitTyperef(ctx, type);
+    LlvmEmit(ctx, " ");
+    LlvmEmitValue(ctx, arrayPtrVal);
+    LlvmEmit(ctx, ", i64 ");
+    LlvmEmitValue(ctx, idxExpVal);
+    LlvmEmit(ctx, "\n");
+    return ret;
 }
 

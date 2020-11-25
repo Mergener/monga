@@ -51,7 +51,6 @@ struct SemAnalysisCtx_ {
     int anonRecCount;
 
     int loopLevel;
-
 };
 typedef volatile struct SemAnalysisCtx_ SemAnalysisCtx;
 
@@ -60,6 +59,19 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp);
 static bool ResolveBlock(SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDef* enclosingFunction);
 static void LogError(const SemAnalysisCtx* ctx, const Mon_AstNodeHeader* errNodeHeader, const char* fmt, ...);
 //
+
+static void AddUsedType(SemAnalysisCtx* ctx, Mon_AstTypeDef* type) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(type);
+
+    if (Mon_VectorContains(&ctx->currentAst->semantic.usedTypes, type)) {
+        return;
+    }
+
+    if (Mon_VectorPush(&ctx->currentAst->semantic.usedTypes, type) != MON_SUCCESS) {
+        THROW(ctx);
+    }
+}
 
 /**
  * 	Pushes a scope onto the scope stack. longjmps if memory fails.
@@ -447,15 +459,23 @@ static Mon_AstTypeDef* FindOrCreateArrayType(SemAnalysisCtx* ctx, Mon_AstTypeDef
         THROW(ctx);
     }
 
+    Mon_AstDef* def = Mon_AstDefNewType(anonTypeDef);
+    if (def == NULL) {
+        DestroySymbol(anonSym);
+        Mon_AstTypeDefDestroy(anonTypeDef, true);
+        Mon_Free(buf);
+        THROW(ctx);        
+    }
+
     // Add it to the AST. This is necessary because the ownership of all AST
     // nodes referenced by any nodes of this AST belongs to the AST itself.
     // Conveniently, we won't need to handle the deletion of created anonymous
     // nodes because they will be discarded altogether with other AST nodes when
     // the tree is destroyed.
-    if (Mon_VectorPush(&ctx->currentAst->defsVector, anonTypeDef) != MON_SUCCESS) {
+    if (Mon_DefGroupReg(&ctx->currentAst->definitions, def) != MON_SUCCESS) {
         DestroySymbol(anonSym);
-        Mon_AstTypeDefDestroy(anonTypeDef, true);
         Mon_Free(buf);
+        Mon_AstDefDestroy(def, true);
         THROW(ctx);        
     }
 
@@ -501,11 +521,18 @@ static Mon_AstTypeDef* CreateAnonymousRecord(SemAnalysisCtx* ctx, Mon_AstTypeDes
         THROW(ctx);
     }
 
-    // Add to AST
-    if (Mon_VectorPush(&ctx->currentAst->defsVector, ret) != MON_SUCCESS) {
+    Mon_AstDef* def = Mon_AstDefNewType(ret);
+    if (def == NULL) {
         DestroySymbol(sym);
         Mon_AstTypeDefDestroy(ret, false);
-        THROW(ctx);        
+        THROW(ctx);
+    }
+
+    // Add to AST
+    if (Mon_DefGroupReg(&ctx->currentAst->definitions, def) != MON_SUCCESS) {
+        DestroySymbol(sym);
+        Mon_AstDefDestroy(def, true);
+        THROW(ctx);
     }
 
     // All ok
@@ -733,7 +760,13 @@ static bool ResolveVarDefinition(SemAnalysisCtx* ctx, Mon_AstVarDef* varDef) {
     varDef->semantic.type = type;
 
     // Variable type exists, now try to register its symbol.
-    return TryRegisterSymbol(ctx, &varDef->header, NewVarSymbol(varDef)) && ret;
+    ret = TryRegisterSymbol(ctx, &varDef->header, NewVarSymbol(varDef)) && ret;
+
+    if (ret) {
+        AddUsedType(ctx, varDef->semantic.type);
+        return true;
+    }
+    return false;
 }
 
 static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_AstFuncDef* enclosingFunction) {
@@ -844,7 +877,6 @@ static bool ResolveBlock(SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDe
     MON_CANT_BE_NULL(enclosingFunction);
 
     bool ret = true;
-    Mon_AstStatement* st;
 
     // Resolve all statements in the block
     MON_VECTOR_FOREACH(&block->statements, Mon_AstStatement*, stmt,
@@ -934,9 +966,13 @@ static bool ResolveFunctionDeclaration(SemAnalysisCtx* ctx, Mon_AstFuncDef* func
             Mon_VectorRemove(&ctx->currentScope->symbols, index);
             return false;
         }
+        AddUsedType(ctx, type);
     }
 
     PopScope(ctx);
+    if (ret) {
+        AddUsedType(ctx, funcDef->semantic.returnType);
+    }
     return ret;
 }
 
@@ -1007,6 +1043,7 @@ static bool ResolveTypeDescription(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDes
                 ret = false;
             }
             typeDesc->typeDesc.alias.semantic.aliasedType = typeDef;
+            AddUsedType(ctx, typeDef);
             return ret;
 
         case MON_TYPEDESC_RECORD: {
@@ -1037,6 +1074,7 @@ static bool ResolveTypeDescription(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDes
                     PopScope(ctx);
                     return false;
                 }
+                AddUsedType(ctx, field->semantic.type);
             }
             PopScope(ctx);
             return ret;
@@ -1049,13 +1087,17 @@ static bool ResolveTypeDescription(SemAnalysisCtx* ctx, Mon_AstTypeDesc* typeDes
 
             if (typeDesc->typeDesc.array.innerTypeDesc->typeDescKind == MON_TYPEDESC_ARRAY) {
                 typeDesc->typeDesc.array.semantic.innerTypeDef = FindOrCreateArrayType(ctx, typeDesc->typeDesc.array.innerTypeDesc->typeDesc.array.semantic.innerTypeDef);
+                
             } else if (typeDesc->typeDesc.array.innerTypeDesc->typeDescKind == MON_TYPEDESC_ALIAS) {
                 typeDesc->typeDesc.array.semantic.innerTypeDef = typeDesc->typeDesc.array.innerTypeDesc->typeDesc.alias.semantic.aliasedType;
+                
             } else if (typeDesc->typeDesc.array.innerTypeDesc->typeDescKind == MON_TYPEDESC_RECORD) {
                 typeDesc->typeDesc.array.semantic.innerTypeDef = CreateAnonymousRecord(ctx, typeDesc->typeDesc.array.innerTypeDesc);
+
             } else {
                 MON_ASSERT(false, "Unimplemented type desc. (got %d)", (int)typeDesc->typeDesc.array.innerTypeDesc->typeDescKind);
             }
+            AddUsedType(ctx, typeDesc->typeDesc.array.semantic.innerTypeDef);
 
             return true;
 
@@ -1117,7 +1159,9 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
         ctx->currentAst = &ctx->targetAsts[i];
         ctx->currentAst->astState = MON_ASTSTATE_SEM_OK;
 
-        MON_VECTOR_FOREACH(&ctx->currentAst->defsVector, Mon_AstDef*, def,
+        Mon_VectorInit(&ctx->currentAst->semantic.usedTypes);
+
+        MON_DEFGROUP_FOREACH(&ctx->currentAst->definitions, def,
             if (def->defKind != MON_AST_DEF_TYPE) {
                 continue;
             }
@@ -1133,7 +1177,7 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
     for (int i = 0; i < ctx->targetAstCount; ++i) {
         ctx->currentAst = &ctx->targetAsts[i];
 
-        MON_VECTOR_FOREACH(&ctx->currentAst->defsVector, Mon_AstDef*, def,
+        MON_DEFGROUP_FOREACH(&ctx->currentAst->definitions, def,
             if (def->defKind != MON_AST_DEF_FUNC) {
                 continue;
             }
@@ -1149,7 +1193,7 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
     for (int i = 0; i < ctx->targetAstCount; ++i) {
         ctx->currentAst = &ctx->targetAsts[i];
 
-        MON_VECTOR_FOREACH(&ctx->currentAst->defsVector, Mon_AstDef*, def,
+        MON_DEFGROUP_FOREACH(&ctx->currentAst->definitions, def,
             if (def->defKind != MON_AST_DEF_VAR) {
                 continue;
             }

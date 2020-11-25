@@ -30,7 +30,7 @@ MON_PUBLIC Mon_RetCode MON_CALL Mon_VectorInit(Mon_Vector* vector);
  * 
  *  @returns The element index or -1 if the element is not found inside the vector.
  */
-MON_PUBLIC int MON_CALL Mon_VectorGetIndex(const Mon_Vector* vector, void* elem);
+MON_PUBLIC int MON_CALL Mon_VectorGetIndex(const Mon_Vector* vector, const void* elem);
 
 /**
  *  Tells whether an element is inside a vector or not.
@@ -40,7 +40,7 @@ MON_PUBLIC int MON_CALL Mon_VectorGetIndex(const Mon_Vector* vector, void* elem)
  * 
  *  @returns True if the vector contains the element, false otherwise.
  */
-MON_PUBLIC bool MON_CALL Mon_VectorContains(const Mon_Vector* vector, void* elem);
+MON_PUBLIC bool MON_CALL Mon_VectorContains(const Mon_Vector* vector, const void* elem);
 
 /**
  *  Returns the element at an index of a vector.

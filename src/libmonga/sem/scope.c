@@ -86,6 +86,7 @@ Mon_RetCode TryAddSymbolToScope(Scope* s, Symbol* sym) {
 
 void DestroyScope(Scope* s) {
     MON_CANT_BE_NULL(s);
+    
     MON_VECTOR_FOREACH(&s->symbols, Symbol*, sym, 
         MON_CANT_BE_NULL(sym);
         DestroySymbol(sym);

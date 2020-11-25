@@ -52,8 +52,6 @@ typedef struct LlvmGenContext_ {
     /** Checkpoint to return to in case of critical errors. */
     jmp_buf* errJumpBuf;
 
-    Mon_Vector typeDependencies;
-
     /** List of functions implemented internally. */
     Mon_Vector internalFunctions;
 
@@ -134,7 +132,7 @@ MON_PRIVATE void AddFunctionDependency(LlvmGenContext* ctx, Mon_AstFuncDef* func
 
 MON_PRIVATE void RegisterInternalFunction(LlvmGenContext* ctx, Mon_AstFuncDef* func);
 
-MON_PRIVATE void AddTypeDependency(LlvmGenContext* ctx, Mon_AstTypeDef* type);
+MON_PRIVATE void AddTypeDependency(LlvmGenContext* ctx, const Mon_AstTypeDef* type);
 
 MON_PRIVATE void CleanupLlvmGenContext(LlvmGenContext* ctx);
 

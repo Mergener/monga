@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 void GcCollect();
-void* GcAlloc(size_t size);
+void* RtInternal_GcAlloc(int size);
 void* RawAlloc(size_t size);
 void RawFree(void* ptr);
 
