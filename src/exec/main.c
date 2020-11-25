@@ -209,7 +209,7 @@ static void RunLexDump(const struct LexDumpArgs* args) {
 
         if (inputStream == NULL) {
             fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
-            exit(MON_ERR_FILENOTFOUND);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -226,35 +226,37 @@ static void RunAstDump(const struct AstDumpArgs* args) {
 
         if (inputStream == NULL) {
             fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
-            exit(MON_ERR_FILENOTFOUND);
+            exit(EXIT_FAILURE);
         }
     }
 
-    Mon_Ast ast;
-    Mon_RetCode ret = Mon_Parse(inputStream, &ast, args->inputFilePath, MON_PARSEFLAGS_NONE);
+    Mon_Ast* ast = Mon_AstNew(args->inputFilePath);
+    Mon_RetCode ret = Mon_Parse(inputStream, ast, MON_PARSEFLAGS_NONE);
 
     if (ret == MON_SUCCESS) {
-        Mon_DumpAst(&ast, stdout, MON_ASTDUMP_XML, MON_ASTDUMP_FLAGS_PRETTYPRINT);
+        Mon_DumpAst(ast, stdout, MON_ASTDUMP_XML, MON_ASTDUMP_FLAGS_PRETTYPRINT);
     } else {
         fprintf(stderr, "Parsing ended with errors.\n");
     }
 }
 
 static void RunSemTest(const struct SemTestArgs* args) {
-    Mon_Ast* asts = Mon_Alloc(sizeof(Mon_Ast) * args->fileCount);
+    Mon_Ast** asts = Mon_Alloc(sizeof(Mon_Ast*) * args->fileCount);
     if (asts == NULL) {
         perror("Out of memory.\n");
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < args->fileCount; ++i) {        
+    for (int i = 0; i < args->fileCount; ++i) {   
+        asts[i] = Mon_AstNew(args->inputFilePaths[i]);
+
         FILE* f = fopen(args->inputFilePaths[i], "r");
         if (f == NULL) {
             fprintf(stderr, "Error: Couldn't open file %s.", args->inputFilePaths[i]);
             exit(EXIT_FAILURE);
         }
         
-        if (Mon_Parse(f, &asts[i], args->inputFilePaths[i], MON_PARSEFLAGS_NONE) != MON_SUCCESS) {
+        if (Mon_Parse(f, asts[i], MON_PARSEFLAGS_NONE) != MON_SUCCESS) {
             fprintf(stderr, "Errors during syntax analysis.\n");
             exit(EXIT_FAILURE);
         }
@@ -278,12 +280,11 @@ static void RunReduceDump(const struct ReduceDumpArgs* args) {
 
         if (inputStream == NULL) {
             fprintf(stderr, "The specified input file (%s) wasn't found.\n", args->inputFilePath);
-            exit(MON_ERR_FILENOTFOUND);
+            exit(EXIT_FAILURE);
         }
     }
 
-    Mon_Ast ast;
-    Mon_Parse(inputStream, &ast, args->inputFilePath, MON_PARSEFLAGS_DUMPREDUCES);
+    Mon_Parse(inputStream, Mon_AstNew(args->inputFilePath), MON_PARSEFLAGS_DUMPREDUCES);
 }
 
 static void RunLLVMEmit(const struct LlvmEmitArgs* args) {
@@ -291,34 +292,36 @@ static void RunLLVMEmit(const struct LlvmEmitArgs* args) {
     struct {
         char* filePath;
         FILE* inFile;
-        Mon_Ast ast;
+        Mon_Ast* ast;
     } *inputs = Mon_Alloc(sizeof(*inputs) * args->inputFileCount);
 
     for (int i = 0; i < args->inputFileCount; ++i) {
         if (strlen(args->inputFilePaths[i]) >= 255) {
             fprintf(stderr, "Filename '%s' too big.", args->inputFilePaths[i]);
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
+        
+        inputs[i].ast = Mon_AstNew(args->inputFilePaths[i]);
 
         inputs[i].filePath = args->inputFilePaths[i];
         inputs[i].inFile = fopen(args->inputFilePaths[i], "r");
         if (inputs[i].inFile == NULL) {
             fprintf(stderr, "Couldn't open input file '%s'.\n", inputs[i].filePath);
-            exit(MON_ERR_FILENOTFOUND);
+            exit(EXIT_FAILURE);
         }
     }
 
     // Perform parses
     for (int i = 0; i < args->inputFileCount; ++i) {
-        Mon_RetCode ret = Mon_Parse(inputs[i].inFile, &inputs[i].ast, inputs[i].filePath, MON_PARSEFLAGS_NONE);
+        Mon_RetCode ret = Mon_Parse(inputs[i].inFile, inputs[i].ast, MON_PARSEFLAGS_NONE);
         if (ret != MON_SUCCESS) {
-            exit(MON_ERR_SYNTAX);
+            exit(EXIT_FAILURE);
         }
         fclose(inputs[i].inFile);
     }
     
     // Perform semantic analysis
-    Mon_Ast* asts = Mon_Alloc(sizeof(Mon_Ast) * args->inputFileCount);
+    Mon_Ast** asts = Mon_Alloc(sizeof(Mon_Ast*) * args->inputFileCount);
     for (int i = 0; i < args->inputFileCount; ++i) {
         asts[i] = inputs[i].ast;
     }
@@ -347,10 +350,10 @@ static void RunLLVMEmit(const struct LlvmEmitArgs* args) {
         FILE* out = fopen(buf, "w");
         if (!out) {
             fprintf(stderr, "Couldn't open output file '%s'.\n", buf);
-            exit(MON_ERR_FILENOTFOUND);
+            exit(EXIT_FAILURE);
         }
 
-        ret = Mon_GenerateLLVM(&asts[i], out, stderr, MON_OPT_O0, MON_CGFLAGS_NONE);
+        ret = Mon_GenerateLLVM(inputs[i].ast, out, stderr, MON_OPT_O0, MON_CGFLAGS_NONE);
         if (ret != MON_SUCCESS) {
             fprintf(stderr, "Error during code generation.\n");
             exit(EXIT_FAILURE);
@@ -397,7 +400,7 @@ static void* Alloc(size_t s) {
 
     if (mem == NULL) {
         fprintf(stderr, "Error: out of memory.");
-        exit(MON_ERR_NOMEM);
+        exit(EXIT_FAILURE);
     }
 
     return mem;
@@ -408,7 +411,7 @@ static void* AllocZero(size_t s1, size_t s2) {
 
     if (mem == NULL) {
         fprintf(stderr, "Error: out of memory.");
-        exit(MON_ERR_NOMEM);
+        exit(EXIT_FAILURE);
     }
 
     return mem;
@@ -423,7 +426,7 @@ static void* ReAlloc(void* src, size_t newSize) {
 
     if (newMem == NULL) {
         fprintf(stderr, "Error: out of memory.");
-        exit(MON_ERR_NOMEM);
+        exit(EXIT_FAILURE);
     }
 
     return newMem;

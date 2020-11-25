@@ -94,6 +94,13 @@ bool IsTypeAssignableFrom(const Mon_AstTypeDef* a, const Mon_AstTypeDef* b) {
         return true;
     }    
 
+    // Strings are assignable to char arrays.
+    if (a == BUILTIN_TABLE->types.tString &&
+        b->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY &&
+        b->typeDesc->typeDesc.array.semantic.innerTypeDef == BUILTIN_TABLE->types.tChar) {
+        return true;
+    }
+
     // 'null' is assignable to any reference type.
     if (b == BUILTIN_TABLE->types.tNull) {
         return IsRefType(a);

@@ -56,3 +56,10 @@ This mode will perform semantic analysis on Monga source files, outputting error
 ```sh
 monga -s <sourceFile1> [<sourceFilen>...]
 ```
+
+## TO-DO
+
+* Implement echo statement
+* Integrate runtime ecosystem with a true GC
+* Fix issues with Mon_Dict
+  * Replace several uses of vectors with hashtables (once Mon_Dict works properly)

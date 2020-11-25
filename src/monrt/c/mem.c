@@ -34,8 +34,7 @@ void* RawAlloc(size_t size) {
 
     void* ret = calloc(1, size);
     if (!ret) {
-        FATAL(NOMEM);
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     return ret;
 }

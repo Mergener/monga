@@ -20,6 +20,7 @@ C_LINKAGE_BEGIN
      *  by optional format arguments.
      */
     #define MON_ASSERT(cond, ...) \
+        printf("%s %d\n", __func__, __LINE__);\
         Mon_AssertInternal((cond), __FILE__, __func__, __LINE__, __VA_ARGS__)
 
     /**

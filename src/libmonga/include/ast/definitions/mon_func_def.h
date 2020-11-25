@@ -3,6 +3,8 @@
 
 #include <mon_defines.h>
 
+#include <stdbool.h>
+
 #include "ast/mon_parameter.h"
 #include "ast/definitions/mon_var_def.h"
 #include "ast/mon_block.h"
@@ -30,6 +32,7 @@ typedef struct Mon_AstFuncDef_ {
 
     struct {
         Mon_AstTypeDef* returnType;
+        bool isEntryPoint;
     } semantic;
 
 } Mon_AstFuncDef;

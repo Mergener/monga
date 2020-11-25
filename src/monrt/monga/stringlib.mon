@@ -1,0 +1,5 @@
+extern function Substr(str: string, begin: int, length: int): string;
+
+extern function Strconcat(a: string, b: string): string;
+
+extern function Strfind(a: string, content: string): int;

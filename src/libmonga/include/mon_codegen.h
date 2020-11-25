@@ -32,7 +32,6 @@ typedef enum {
  *      MON_SUCCESS :: Code generated succesfully.
  *      MON_ERR_IO :: An IO error occurred when generating the code.
  *      MON_ERR_NOMEM :: The system ran out of memory when generating the code.
- *      MON_ERR_BADARG :: The provided AST is ill formed.
  */
 MON_PUBLIC Mon_RetCode MON_CALL Mon_GenerateLLVM(Mon_Ast* ast,
                                                  FILE* outStream,

@@ -32,11 +32,23 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 \"([^\\\"]|\\.)*\" {
     Mon_TkColumn += yyleng;
 
-    yylval.literal.string.arr = DuplicateString(yytext + sizeof(char), yyleng - 2*sizeof(char));
-    yylval.literal.string.len = yyleng - 2;
+    int len;
+    ProcessStringLiteral(yytext, &yylval.literal.string.arr, &len);
+    yylval.literal.string.len = len;
     yylval.literal.literalKind = MON_LIT_STR;
 
     return MON_TK_LIT_STRING;
+}
+
+\'\\.\' {
+    Mon_TkColumn += yyleng;
+
+    
+}
+
+\'.\' {
+    Mon_TkColumn += yyleng;
+    
 }
 
 \n {
@@ -112,9 +124,15 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
     Mon_TkColumn += yyleng;
     return MON_TK_WHILE;
 }
+
 "==" {
     Mon_TkColumn += yyleng;
     return MON_TK_OP_EQ;
+}
+
+"!=" {
+    Mon_TkColumn += yyleng;
+    return MON_TK_OP_NE;
 }
 
 ">=" {
@@ -140,7 +158,7 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 "<<" {
     Mon_TkColumn += yyleng;
     return MON_TK_OP_SHL;
-}
+} 
 
 ">>" {
     Mon_TkColumn += yyleng;

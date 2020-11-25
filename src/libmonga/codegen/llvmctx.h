@@ -21,9 +21,6 @@
 /** IO error */
 #define JMP_ERRIO  -3
 
-/** Ill formed AST */
-#define JMP_ERRILL -4
-
 /** Unknown error. */
 #define JMP_ERRUNK -5
 
@@ -57,6 +54,15 @@ typedef struct LlvmGenContext_ {
 
     /** List of functions implemented externally in which this module depends. */
     Mon_Vector functionDependencies;
+
+    Mon_AstFuncDef* enclosingFunction;
+
+    Mon_Vector stringLiterals;
+    
+    LlvmValue enclosingLoopEndLabel;
+    LlvmValue enclosingLoopCheckLabel;
+
+    int nextGlobalId;
 
     /** The context of an AST execution block. */
     struct {
@@ -123,6 +129,8 @@ MON_PRIVATE LocalVariableData* FindLocal(LlvmGenContext* ctx, const char* name);
  * Initializes the block context of an LlvmGenContext. 
  */
 MON_PRIVATE void InitializeBlockContext(LlvmGenContext* ctx);
+
+MON_PRIVATE int AddOrGetStringLiteralId(LlvmGenContext* ctx, const char* s);
 
 /**
  *  Registers the function node as an external function dependency.

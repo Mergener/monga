@@ -1,0 +1,18 @@
+type Vec3 = {
+    x: float;
+    y: float;
+    z: float;
+};
+
+function main() {
+    var a: Vec3;
+    a = new Vec3;
+
+    a.x = 5.0;
+    a.y = 3.0;
+    a.z = 2.0;
+
+    printFloat(a.x);
+    printFloat(a.y);
+    printFloat(a.z);
+}

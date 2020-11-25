@@ -1,20 +1,31 @@
 source_filename = "tests/codegen_cases/conversions.mon"
 
+%string = type { i32, i32 }
+
+declare %string* @RtInternal_StrFromSZ(i8*)
 declare i8* @RtInternal_GcAlloc(i32)
+declare void @RtInternal_Init()
 
 define void @main() {
+	call void @RtInternal_Init()
 	%t.0 = alloca i8
 
+	store i8 0, i8* %t.0
 	%t.1 = alloca i16
 
+	store i16 0, i16* %t.1
 	%t.2 = alloca i32
 
+	store i32 0, i32* %t.2
 	%t.3 = alloca i64
 
+	store i64 0, i64* %t.3
 	%t.4 = alloca float
 
+	store float 0.000000, float* %t.4
 	%t.5 = alloca double
 
+	store double 0.000000, double* %t.5
 	%t.6 = trunc i32 2 to i8
 	store i8 %t.6, i8* %t.0
 
@@ -53,4 +64,7 @@ define void @main() {
 	ret void
 }
 
-declare void @printInteger(i32)declare void @printFloat(float)
+declare void @printInteger(i32)
+declare void @printFloat(float)
+
+

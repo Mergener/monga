@@ -7,4 +7,6 @@
 #include "err.h"
 #include "obj.h"
 
+void RtInternal_Init();
+
 #endif // MONRT_H

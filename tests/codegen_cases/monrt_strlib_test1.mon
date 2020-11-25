@@ -1,0 +1,12 @@
+function main() {
+    var s1: string;
+    var s2: string;
+
+    s1 = "Hello";
+    s2 = ", world!";
+
+    var s3: string;
+    s3 = Strconcat(s1, s2);
+
+    printString(s3);
+}

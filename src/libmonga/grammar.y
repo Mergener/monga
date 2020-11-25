@@ -18,6 +18,7 @@
 #include "mon_alloc.h"
 #include "sem/types.h"
 #include "strutils.h"
+#include "ast_private.h"
 
 #define THROW_IF_ALLOC_FAIL(var)
 #define INIT_VECTOR(vec) \

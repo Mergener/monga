@@ -17,8 +17,8 @@ typedef struct Mon_AstBlock_ {
     Mon_Vector    statements;
 
     struct {
-        /** True if all paths of this block have a return statement. */
-        bool allPathsReturn;
+        /** True if all paths of this block have a return/break/continue statement. */
+        bool allPathsExit;
     } semantic;
 
 } Mon_AstBlock;

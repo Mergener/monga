@@ -43,6 +43,6 @@ typedef uint32_t Mon_ParseFlags;
  *  thread to wait until the ongoing parsing finishes.
  *
  */
-MON_PUBLIC Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst, const char* moduleName, Mon_ParseFlags flags);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags);
 
 #endif // PARSER_H

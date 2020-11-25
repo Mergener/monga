@@ -1,0 +1,14 @@
+function foo(i: int): int {
+    while (i > 3) {
+        if (i > 10) {
+            i = i - 1;
+            continue;
+        }
+        return 5;
+    }
+    return 2;
+}
+
+function main() {
+    printInteger(foo(13));
+}

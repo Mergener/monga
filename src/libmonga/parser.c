@@ -9,6 +9,7 @@
 #include "mon_error.h"
 #include "lex_private.h"
 #include "strutils.h"
+#include "ast_private.h"
 
 extern FILE* yyin;
 
@@ -28,16 +29,9 @@ Mon_Vector* mon_ParseStack = NULL;
 
 static atomic_bool s_Busy = false;
 
-Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, const char* moduleName, Mon_ParseFlags flags) {
+Mon_RetCode Mon_Parse(FILE* f, Mon_Ast* outAst, Mon_ParseFlags flags) {
     if (f == NULL || outAst == NULL) {
         return MON_ERR_BAD_ARG;
-    }
-
-    if (moduleName != NULL) {
-        outAst->moduleName = DuplicateString(moduleName, strlen(moduleName));
-        if (outAst->moduleName == NULL) {
-            return MON_ERR_NOMEM;
-        }
     }
 
     // Wait until an ongoing parsing is finished.

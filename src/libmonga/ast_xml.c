@@ -3,6 +3,7 @@
 #include <mon_debug.h>
 
 #include "ast/definitions/mon_type_def.h"
+#include "ast_private.h"
 
 /** Dumps a single parameter node. */
 static void XmlDumpParam(AstDumpContext* ctx, const Mon_AstParam* param);

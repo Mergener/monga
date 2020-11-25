@@ -15,6 +15,7 @@
 #include "mon_vector.h"
 #include "mon_alloc.h"
 #include "mon_debug.h"
+#include "ast_private.h"
 
 // SETJMP error codes:
 #define SETJMP_OK  0
@@ -30,7 +31,7 @@
 struct SemAnalysisCtx_ {
 
     /** The ASTs to be analysed. */
-    Mon_Ast* targetAsts;
+    Mon_Ast** targetAsts;
 
     /** The number of ASTs to be analysed. */
     int targetAstCount;
@@ -682,7 +683,7 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp) {
                 exp->semantic.type = type;
                 return true;
             } else if (exp->exp.literalExpr.literalKind == MON_LIT_STR) {
-                type = BUILTIN_TABLE->types.tString;
+                type = FindOrCreateArrayType(ctx, BUILTIN_TABLE->types.tChar);
                 exp->semantic.type = type;
                 return true;
             } else {
@@ -882,28 +883,28 @@ static bool ResolveBlock(SemAnalysisCtx* ctx, Mon_AstBlock* block, Mon_AstFuncDe
     MON_VECTOR_FOREACH(&block->statements, Mon_AstStatement*, stmt,
         ret = ResolveStatement(ctx, stmt, enclosingFunction) && ret;
 
-        if (!block->semantic.allPathsReturn) {
+        if (!block->semantic.allPathsExit) {
             // For each statement, we need to check if they are returning values.
             switch (stmt->statementKind) {
                 case MON_STMT_BLOCK:
-                    block->semantic.allPathsReturn = stmt->statement.block->semantic.allPathsReturn;
+                    block->semantic.allPathsExit = stmt->statement.block->semantic.allPathsExit;
                     break;
 
                 case MON_STMT_IF:
                     if (stmt->statement.ifStmt.elseBlock == NULL) {
                         break;
                     }
-                    block->semantic.allPathsReturn = stmt->statement.ifStmt.thenBlock->semantic.allPathsReturn && 
-                                                     stmt->statement.ifStmt.elseBlock->semantic.allPathsReturn;
+                    block->semantic.allPathsExit = stmt->statement.ifStmt.thenBlock->semantic.allPathsExit && 
+                                                   stmt->statement.ifStmt.elseBlock->semantic.allPathsExit;
                     break;
 
+                case MON_STMT_BREAK:
+                case MON_STMT_CONTINUE:
                 case MON_STMT_RETURN:
-                    block->semantic.allPathsReturn = true;
+                    block->semantic.allPathsExit = true;
                     break;
 
                 case MON_STMT_WHILE:
-                case MON_STMT_BREAK:
-                case MON_STMT_CONTINUE:
                 case MON_STMT_CALL:
                 case MON_STMT_ECHO:
                 case MON_STMT_VARDEF:
@@ -970,6 +971,11 @@ static bool ResolveFunctionDeclaration(SemAnalysisCtx* ctx, Mon_AstFuncDef* func
     }
 
     PopScope(ctx);
+    funcDef->semantic.isEntryPoint = (strcmp(funcDef->funcName, "main") == 0);
+    if (funcDef->semantic.isEntryPoint) {
+        ctx->currentAst->semantic.hasEntryPointFunction = true;
+    }
+
     if (ret) {
         AddUsedType(ctx, funcDef->semantic.returnType);
     }
@@ -1017,7 +1023,7 @@ static bool ResolveFunctionImpl(SemAnalysisCtx* ctx, Mon_AstFuncDef* funcDef) {
 
     // Block has been resolved, now check for necessary returns.
     if (funcDef->semantic.returnType != BUILTIN_TABLE->types.tVoid &&
-        !funcDef->body->semantic.allPathsReturn) {
+        !funcDef->body->semantic.allPathsExit) {
         LogError(ctx, &funcDef->body->header, "Not all paths are returning a value.");
         return false;
     }
@@ -1156,10 +1162,8 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
     
     // Analyse type declarations:
     for (int i = 0; i < ctx->targetAstCount; ++i) {
-        ctx->currentAst = &ctx->targetAsts[i];
+        ctx->currentAst = ctx->targetAsts[i];
         ctx->currentAst->astState = MON_ASTSTATE_SEM_OK;
-
-        Mon_VectorInit(&ctx->currentAst->semantic.usedTypes);
 
         MON_DEFGROUP_FOREACH(&ctx->currentAst->definitions, def,
             if (def->defKind != MON_AST_DEF_TYPE) {
@@ -1175,7 +1179,7 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
 
     // Analyse function declarations:
     for (int i = 0; i < ctx->targetAstCount; ++i) {
-        ctx->currentAst = &ctx->targetAsts[i];
+        ctx->currentAst = ctx->targetAsts[i];
 
         MON_DEFGROUP_FOREACH(&ctx->currentAst->definitions, def,
             if (def->defKind != MON_AST_DEF_FUNC) {
@@ -1191,7 +1195,7 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
 
     // Analyse global variables:
     for (int i = 0; i < ctx->targetAstCount; ++i) {
-        ctx->currentAst = &ctx->targetAsts[i];
+        ctx->currentAst = ctx->targetAsts[i];
 
         MON_DEFGROUP_FOREACH(&ctx->currentAst->definitions, def,
             if (def->defKind != MON_AST_DEF_VAR) {
@@ -1206,28 +1210,36 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
     }
 
     // Analyse type definitions:
-    MON_VECTOR_FOREACH(&ctx->currentScope->symbols, Symbol*, s,
-        if (s->kind != SYM_TYPE) {
-            continue;
-        }
+    for (int i = 0; i < ctx->targetAstCount; ++i) {
+        ctx->currentAst = ctx->targetAsts[i];
 
-        if (!ResolveTypeDefinition(ctx, s->definition.type)) {
-            ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
-            ret = false;
-        }
-    );
+        MON_DEFGROUP_FOREACH(&ctx->currentAst->definitions, def,
+            if (def->defKind != MON_AST_DEF_TYPE) {
+                continue;
+            }
 
-    // Analyse function implementations:
-    MON_VECTOR_FOREACH(&ctx->currentScope->symbols, Symbol*, s,
-        if (s->kind != SYM_FUNC) {
-            continue;
-        }
+            if (!ResolveTypeDefinition(ctx, def->definition.type)) {
+                ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
+                ret = false;
+            }
+        );
+    }
 
-        if (!ResolveFunctionImpl(ctx, s->definition.func)) {
-            ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
-            ret = false;
-        }
-    );
+    // Analyse function definitions:
+    for (int i = 0; i < ctx->targetAstCount; ++i) {
+        ctx->currentAst = ctx->targetAsts[i];
+
+        MON_DEFGROUP_FOREACH(&ctx->currentAst->definitions, def,
+            if (def->defKind != MON_AST_DEF_FUNC) {
+                continue;
+            }
+
+            if (!ResolveFunctionImpl(ctx, def->definition.function)) {
+                ctx->currentAst->astState = MON_ASTSTATE_SEM_ERR;
+                ret = false;
+            }
+        );
+    }
 
     Cleanup(ctx);
 
@@ -1237,15 +1249,15 @@ static Mon_RetCode Analyse(SemAnalysisCtx* ctx) {
 Mon_RetCode Mon_SemAnalyse(Mon_Ast* ast, FILE* semErrOutStream) {
     MON_CANT_BE_NULL(ast);
 
-    return Mon_SemAnalyseMultiple(ast, 1, semErrOutStream);
+    return Mon_SemAnalyseMultiple(&ast, 1, semErrOutStream);
 }
 
-Mon_RetCode Mon_SemAnalyseMultiple(Mon_Ast* asts, int astCount, FILE* semErrOutStream) {
+Mon_RetCode Mon_SemAnalyseMultiple(Mon_Ast** asts, int astCount, FILE* semErrOutStream) {
     MON_CANT_BE_NULL(asts);
 
     SemAnalysisCtx ctx;
     ctx.currentScope = NULL;
-    ctx.currentAst = &asts[0];
+    ctx.currentAst = asts[0];
     ctx.errStream = semErrOutStream;
 
     ctx.targetAstCount = astCount;

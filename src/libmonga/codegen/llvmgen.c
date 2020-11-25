@@ -10,15 +10,20 @@
 #include "mon_debug.h"
 #include "../nameof.h"
 #include "../sem/types.h"
+#include "../ast_private.h"
 
 #include "llvmctx.h"
 #include "llvmemit.h"
 
-static void CompileBlock(LlvmGenContext* ctx, Mon_AstBlock* block, Mon_AstFuncDef* enclosingFunction);
+//
+//  Forward declarations:
+//
+static void CompileBlock(LlvmGenContext* ctx, Mon_AstBlock* block);
 static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var);
 static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call);
 static LlvmValue CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef* targetType);
 static void CompileCondition(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue trueLabel, LlvmValue falseLabel);
+//
 
 /** 
  *  Compiles a local variable. The local variable data is added to the block context.
@@ -74,10 +79,8 @@ static void CompileComparison(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue 
     Mon_AstTypeDef* rType = cond->condition.compar.right->semantic.type;
     Mon_AstTypeDef* lType = cond->condition.compar.left->semantic.type;
 
-    if (!TypeCanCompare(lType, rType,
-                        cond->condition.compar.comparKind)) {
-        THROW(ctx, JMP_ERRILL);
-    }
+    MON_ASSERT(TypeCanCompare(lType, rType, cond->condition.compar.comparKind),
+        "lType and rType must be comparable.");
 
     LlvmValue lExpLoc = CompileExp(ctx, cond->condition.compar.left, lType);
     LlvmValue rExpLoc = CompileExp(ctx, cond->condition.compar.right, lType);
@@ -144,7 +147,6 @@ static void CompileComparison(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue 
         } else if (cond->condition.compar.comparKind == MON_COMPAR_NE) {
             comparKind = LLVM_CMP_NEQ;
         } else {
-            THROW(ctx, JMP_ERRUNK);
             MON_UNREACHABLE();
         }
     }
@@ -214,8 +216,8 @@ static LlvmValue CompileBinop(LlvmGenContext* ctx,
             case MON_BINOP_BITAND:
             case MON_BINOP_BITOR:
             case MON_BINOP_XOR:
-                THROW(ctx, JMP_ERRILL);
-                break;            
+                MON_UNREACHABLE();
+                return ValLocal(-1);
         }
     } else if (IsIntegerType(targetType)) {
         switch (binop) {   
@@ -252,7 +254,6 @@ static LlvmValue CompileBinop(LlvmGenContext* ctx,
     }
 
     MON_UNREACHABLE();
-    THROW(ctx, JMP_ERRUNK);
     return ValLocal(-1);
 }
 
@@ -293,7 +294,6 @@ static LlvmValue CompileFloatToFloat(LlvmGenContext* ctx,
     }
 
     MON_UNREACHABLE();
-    THROW(ctx, JMP_ERRILL);
     return ValLocal(-1);
 }
 
@@ -350,9 +350,23 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
         return ValNull();
     }
 
-    if (!IsTypeCastableFrom(destType, expType)) {
-        THROW(ctx, JMP_ERRILL);
+    if (destType == BUILTIN_TABLE->types.tString &&
+        expType->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY &&
+        GetUnderlyingType(expType->typeDesc->typeDesc.array.semantic.innerTypeDef) == BUILTIN_TABLE->types.tChar) {
+        LlvmEmit(ctx, "\t");
+
+        // Get array pointer
+        LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
+        LlvmEmitValue(ctx, ret);
+        LlvmEmit(ctx, " = call %%string* @" NAMEOF(RtInternal_StrFromSZ) "(i8* ");
+        LlvmEmitValue(ctx, expLoc);
+        LlvmEmit(ctx, ")\n");
+        return ret;
     }
+
+    MON_ASSERT(IsTypeCastableFrom(destType, expType),
+        "destType must be castable from expType.");     
+         
     // We are assuming that the current rule for type casting
     // is to allow if and only if both types are primitives and
     // they aren't a 'char' + 'floatx' pair.
@@ -363,10 +377,9 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
                destType->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE,
                "Conversion codegen assumes both types are primitives.");
 
-    if (expType->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_VOID ||
-        destType->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_VOID) {
-        THROW(ctx, JMP_ERRILL);
-    }
+    MON_ASSERT(expType->typeDesc->typeDesc.primitive.typeCode != MON_PRIMITIVE_VOID &&
+               destType->typeDesc->typeDesc.primitive.typeCode != MON_PRIMITIVE_VOID,
+               "expType and destType cannot hava void primitive type code.");
 
     if (IsIntegerType(expType)) {
         MON_ASSERT(IsNumericType(destType), 
@@ -403,8 +416,34 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
     }
 
     MON_UNREACHABLE();
-    THROW(ctx, JMP_ERRUNK);
     return ValLocal(-1);
+}
+
+static LlvmValue GetDefaultValue(Mon_AstTypeDef* type) {
+    MON_CANT_BE_NULL(type);
+
+    type = GetUnderlyingType(type);
+
+    if (IsFloatingPointType(type)) {
+        Mon_Literal lit;
+        lit.literalKind = MON_LIT_FLOAT;
+        lit.real = 0;
+        return ValLiteral(lit);        
+    }
+
+    if (type->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE) {
+        Mon_Literal lit;
+        lit.literalKind = MON_LIT_INT;
+        lit.integer = 0;
+        return ValLiteral(lit);
+    }
+
+    if (IsRefType(type)) {
+        return ValNull();
+    }
+
+    MON_UNREACHABLE();
+    return ValNull();
 }
 
 static LlvmValue CompileNew(LlvmGenContext* ctx, Mon_AstTypeDef* type, Mon_AstExp* sizeExp) {
@@ -445,6 +484,37 @@ static LlvmValue CompileNew(LlvmGenContext* ctx, Mon_AstTypeDef* type, Mon_AstEx
     return expLoc;
 }
 
+static LlvmValue CompileUnop(LlvmGenContext* ctx, 
+                             Mon_AstExp* exp, 
+                             Mon_UnopKind unop) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(exp);
+    
+    LlvmValue expLoc = CompileExp(ctx, exp, exp->semantic.type);
+
+    switch (unop) {
+        case MON_UNOP_NEGATIVE: {
+            LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
+
+            Mon_Literal litZero;
+            litZero.integer = 0;
+            litZero.literalKind = MON_LIT_INT;
+            ret = LlvmEmitBinop(ctx, TypeToTypeRef(ctx, exp->semantic.type, 0),
+                                ValLiteral(litZero), expLoc, LLVM_BINOP_SUB);
+            return ret;
+        }
+
+        case MON_UNOP_BITNOT:
+            break;
+
+        case MON_UNOP_LEN:
+            break;
+    }
+
+    MON_UNREACHABLE();
+    return ValLocal(-1);
+}
+
 /**
  *  Compiles an expression and returns its locid.
  */
@@ -455,10 +525,35 @@ static LlvmValue CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef
     LlvmValue expLoc;
 
     switch (exp->expKind) {
-        case MON_EXP_CONDITIONAL:
+        case MON_EXP_CONDITIONAL: {
+            LlvmValue trueLabel = ValLabel(ctx->blockCtx.nextLabel++);
+            LlvmValue falseLabel = ValLabel(ctx->blockCtx.nextLabel++);
+            LlvmValue endLabel = ValLabel(ctx->blockCtx.nextLabel++);
+            CompileCondition(ctx, exp->exp.conditionalExpr.condition, trueLabel, falseLabel);
+            
+            LlvmEmitLabel(ctx, trueLabel);
+            LlvmValue trueValue = CompileExp(ctx, exp->exp.conditionalExpr.thenExpr, exp->semantic.type);
+            LlvmValue trueLabelEnd = ValLabel(ctx->blockCtx.nextLabel++);
+            LlvmEmitBranch(ctx, trueLabelEnd);
+            LlvmEmitLabel(ctx, trueLabelEnd);
+            LlvmEmitBranch(ctx, endLabel);
+            
+            LlvmEmitLabel(ctx, falseLabel);
+            LlvmValue falseValue = CompileExp(ctx, exp->exp.conditionalExpr.elseExpr, exp->semantic.type);
+            LlvmValue falseLabelEnd = ValLabel(ctx->blockCtx.nextLabel++);
+            LlvmEmitBranch(ctx, falseLabelEnd);
+            LlvmEmitLabel(ctx, falseLabelEnd);
+            LlvmEmitBranch(ctx, endLabel);
+            LlvmEmitLabel(ctx, endLabel);
+
+            expLoc = LlvmEmitPhi(ctx, TypeToTypeRef(ctx, exp->semantic.type, 0), 
+                                 trueLabelEnd, trueValue, 
+                                 falseLabelEnd, falseValue);
             break;
+        }
 
         case MON_EXP_UNOP:
+            expLoc = CompileUnop(ctx, exp->exp.unaryOperation.operand, exp->exp.unaryOperation.unOpKind);
             break;
 
         case MON_EXP_BINOP:
@@ -521,14 +616,12 @@ static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
             }
 
             // Global variable, use its qualified name.
-            return ValGlobal(var->var.direct.name);
+            return ValNamedGlobal(var->var.direct.name);
         }
 
         case MON_VAR_FIELD: {
             Mon_AstTypeDef* type = GetUnderlyingType(var->var.field.expr->semantic.type);
-            if (!IsStructuredType(type)) {
-                THROW(ctx, JMP_ERRILL);
-            }
+            MON_ASSERT(IsStructuredType(type), "Type must be structured.");
 
             LlvmValue expLoc = CompileExp(ctx, var->var.field.expr, type);
             
@@ -540,7 +633,7 @@ static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
             
             if (fieldIdx == -1) {
                 // Field should exist in type.
-                THROW(ctx, JMP_ERRILL);
+                MON_UNREACHABLE();
             }
 
             return LlvmEmitGetStructElementPtr(ctx, typeRef, expLoc, fieldIdx);
@@ -557,76 +650,128 @@ static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
     }
 
     MON_UNREACHABLE();
-    THROW(ctx, JMP_ERRUNK);
+    return ValLocal(-1);
+}
+
+static bool CompileIf(LlvmGenContext* ctx, 
+                      Mon_AstCond* cond, 
+                      Mon_AstBlock* thenBlock, 
+                      Mon_AstBlock* elseBlock, 
+                      LlvmValue thenLabel,
+                      LlvmValue elseLabel) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(cond);
+    MON_CANT_BE_NULL(thenBlock);
+
+    CompileCondition(ctx, cond, thenLabel, elseLabel);
+
+    // Compile 'then' block, since it will always exist.
+    LlvmEmitLabel(ctx, thenLabel);
+    CompileBlock(ctx, thenBlock);
+
+    if (elseBlock != NULL) {
+        LlvmValue endLabel;
+
+        if (thenBlock->semantic.allPathsExit) {
+            if (elseBlock->semantic.allPathsExit) {
+                // Do not create an endLabel and compile else block.
+                LlvmEmitLabel(ctx, elseLabel);
+                CompileBlock(ctx, elseBlock);
+                return true;
+            }
+            // Create end label, then does not branch, else does.
+            endLabel = ValLabel(ctx->blockCtx.nextLabel++);
+            LlvmEmitLabel(ctx, elseLabel);
+            CompileBlock(ctx, elseBlock);
+            LlvmEmitBranch(ctx, endLabel);
+            return false;
+        }
+
+        if (elseBlock->semantic.allPathsExit) {
+            // Create end label, then branches, else doesn't.
+            endLabel = ValLabel(ctx->blockCtx.nextLabel++);
+            LlvmEmitBranch(ctx, endLabel);
+            LlvmEmitLabel(ctx, elseLabel);
+            CompileBlock(ctx, elseBlock);
+            return false;
+        }
+
+        // Create end label, then branches, else does too.
+        endLabel = ValLabel(ctx->blockCtx.nextLabel++);
+        LlvmEmitBranch(ctx, endLabel);
+        LlvmEmitLabel(ctx, elseLabel);
+        CompileBlock(ctx, elseBlock);
+        LlvmEmitBranch(ctx, endLabel);
+        LlvmEmitLabel(ctx, endLabel);
+        return false;
+    }
+
+    if (thenBlock->semantic.allPathsExit) {
+        LlvmEmitLabel(ctx, elseLabel);
+        return false;
+    }
+    LlvmEmitBranch(ctx, elseLabel);
+    LlvmEmitLabel(ctx, elseLabel);
+    return false;
+}
+
+static bool CompileWhile(LlvmGenContext* ctx, 
+                         Mon_AstCond* cond, 
+                         Mon_AstBlock* body, 
+                         LlvmValue endLabel) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(cond);
+    MON_CANT_BE_NULL(body);
+
+    LlvmValue loopBodyLabel = ValLabel(ctx->blockCtx.nextLabel++);
+    LlvmValue loopCheckLabel = ValLabel(ctx->blockCtx.nextLabel++);
+    CompileCondition(ctx, cond, loopBodyLabel, endLabel);
+    LlvmEmitLabel(ctx, loopBodyLabel);
+
+    LlvmValue prevEndLabel = ctx->enclosingLoopEndLabel;
+    LlvmValue prevCheckLabel = ctx->enclosingLoopCheckLabel;
+    ctx->enclosingLoopEndLabel = endLabel;
+    ctx->enclosingLoopCheckLabel = loopCheckLabel;
+    CompileBlock(ctx, body);
+    ctx->enclosingLoopCheckLabel = prevCheckLabel;
+    ctx->enclosingLoopEndLabel = prevEndLabel;
+
+    if (!body->semantic.allPathsExit) {
+        LlvmEmitBranch(ctx, loopCheckLabel);
+    }
+
+    LlvmEmitLabel(ctx, loopCheckLabel);
+    CompileCondition(ctx, cond, loopBodyLabel, endLabel);
+    LlvmEmitLabel(ctx, endLabel);
+
+    return false;
 }
 
 /**
  *  Compiles a statement. Returns true if the statement always returns (and thus there is no point in compiling)
  *  other statements in a block.
  */
-static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_AstFuncDef* enclosingFunction) {
+static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(stmt);
+    MON_CANT_BE_NULL(ctx->enclosingFunction);
 
     switch (stmt->statementKind) {
         case MON_STMT_IF: {
             LlvmValue thenLabel = ValLabel(ctx->blockCtx.nextLabel++);
-            LlvmValue elseLabel = ValLabel(ctx->blockCtx.nextLabel++);
-
-            CompileCondition(ctx, stmt->statement.ifStmt.condition, thenLabel, elseLabel);
-
-            // Compile 'then' block, since it will always exist.
-            LlvmEmitLabel(ctx, thenLabel);
-            CompileBlock(ctx, stmt->statement.ifStmt.thenBlock, enclosingFunction);
-
-            if (stmt->statement.ifStmt.elseBlock != NULL) {
-                LlvmValue endLabel;
-
-                if (stmt->statement.ifStmt.thenBlock->semantic.allPathsReturn) {
-                    if (stmt->statement.ifStmt.elseBlock->semantic.allPathsReturn) {
-                        // Do not create an endLabel and compile else block.
-                        LlvmEmitLabel(ctx, elseLabel);
-                        CompileBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
-                        return true;
-                    }
-                    // Create end label, then does not branch, else does.
-                    endLabel = ValLabel(ctx->blockCtx.nextLabel++);
-                    LlvmEmitLabel(ctx, elseLabel);
-                    CompileBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
-                    LlvmEmitBranch(ctx, endLabel);
-                    return false;
-                }
-
-                if (stmt->statement.ifStmt.elseBlock->semantic.allPathsReturn) {
-                    // Create end label, then branches, else doesn't.
-                    endLabel = ValLabel(ctx->blockCtx.nextLabel++);
-                    LlvmEmitBranch(ctx, endLabel);
-                    LlvmEmitLabel(ctx, elseLabel);
-                    CompileBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
-                    return false;
-                }
-
-                // Create end label, then branches, else does too.
-                endLabel = ValLabel(ctx->blockCtx.nextLabel++);
-                LlvmEmitBranch(ctx, endLabel);
-                LlvmEmitLabel(ctx, elseLabel);
-                CompileBlock(ctx, stmt->statement.ifStmt.elseBlock, enclosingFunction);
-                LlvmEmitBranch(ctx, endLabel);
-                LlvmEmitLabel(ctx, endLabel);
-                return false;
-            }
-
-            if (stmt->statement.ifStmt.thenBlock->semantic.allPathsReturn) {
-                LlvmEmitLabel(ctx, elseLabel);
-                return false;
-            }
-            LlvmEmitBranch(ctx, elseLabel);
-            LlvmEmitLabel(ctx, elseLabel);
-            return false;
+            LlvmValue elseLabel = ValLabel(ctx->blockCtx.nextLabel++); 
+            return CompileIf(ctx, stmt->statement.ifStmt.condition,
+                                  stmt->statement.ifStmt.thenBlock,
+                                  stmt->statement.ifStmt.elseBlock,
+                                  thenLabel, elseLabel);
         }
 
-        case MON_STMT_WHILE:
-            break;
+        case MON_STMT_WHILE: {
+            LlvmValue loopEndLabel = ValLabel(ctx->blockCtx.nextLabel++);
+            return CompileWhile(ctx, stmt->statement.whileStmt.condition, 
+                                stmt->statement.whileStmt.block,
+                                loopEndLabel);
+        }
 
         case MON_STMT_ASSIGNMENT: {
             LlvmValue varLoc = CompileVar(ctx, stmt->statement.assignment.lvalue);
@@ -643,8 +788,8 @@ static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_As
         case MON_STMT_RETURN: {
             if (stmt->statement.returnStmt.returnedExpression != NULL) {
                 LlvmValue retExpLoc = CompileExp(ctx, stmt->statement.returnStmt.returnedExpression,
-                                                    enclosingFunction->semantic.returnType);
-                LlvmEmitRet(ctx, TypeToTypeRef(ctx, enclosingFunction->semantic.returnType, 0), retExpLoc);
+                                                    ctx->enclosingFunction->semantic.returnType);
+                LlvmEmitRet(ctx, TypeToTypeRef(ctx, ctx->enclosingFunction->semantic.returnType, 0), retExpLoc);
             } else {
                 LlvmEmitRetVoid(ctx);
             }
@@ -657,21 +802,27 @@ static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt, Mon_As
             break;
 
         case MON_STMT_BLOCK:
-            CompileBlock(ctx, stmt->statement.block, enclosingFunction);
+            CompileBlock(ctx, stmt->statement.block);
             break;
 
         case MON_STMT_ECHO:
             break;
 
-        case MON_STMT_VARDEF:
-            CompileLocal(ctx, stmt->statement.varDef->varName, stmt->statement.varDef->semantic.type);
+        case MON_STMT_VARDEF: {
+            LlvmValue addr = CompileLocal(ctx, stmt->statement.varDef->varName, stmt->statement.varDef->semantic.type);
             LlvmEmit(ctx, "\n");
+            // Store default value of variable
+            LlvmEmitStore(ctx, TypeToTypeRef(ctx, stmt->statement.varDef->semantic.type, 0),
+                          addr, GetDefaultValue(stmt->statement.varDef->semantic.type));
             break;
+        }
 
         case MON_STMT_BREAK:
+            LlvmEmitBranch(ctx, ctx->enclosingLoopEndLabel);
             break;
 
         case MON_STMT_CONTINUE:
+            LlvmEmitBranch(ctx, ctx->enclosingLoopCheckLabel);
             break;           
     }
 
@@ -743,14 +894,14 @@ static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
     return retLoc;   
 }
 
-static void CompileBlock(LlvmGenContext* ctx, Mon_AstBlock* block, Mon_AstFuncDef* enclosingFunction) {
+static void CompileBlock(LlvmGenContext* ctx, Mon_AstBlock* block) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(block);
 
     int top = Mon_VectorCount(&ctx->blockCtx.locals);
 
     MON_VECTOR_FOREACH(&block->statements, Mon_AstStatement*, stmt,
-        if (CompileStatement(ctx, stmt, enclosingFunction)) {
+        if (CompileStatement(ctx, stmt)) {
             // Compiled statement always returns, simply stop compiling
             // other statements.
             break;
@@ -815,10 +966,16 @@ static void CompileFunctionImpl(LlvmGenContext* ctx, Mon_AstFuncDef* func) {
         LlvmEmit(ctx, "\n");
     }
 
-    CompileBlock(ctx, func->body, func);
+    if (func->semantic.isEntryPoint) {
+        LlvmEmit(ctx, "\tcall void @" NAMEOF(RtInternal_Init) "()\n");
+    }
+
+    ctx->enclosingFunction = func;
+    CompileBlock(ctx, func->body);
+    ctx->enclosingFunction = NULL;
 
     if (func->semantic.returnType == BUILTIN_TABLE->types.tVoid &&
-        !func->body->semantic.allPathsReturn) {
+        !func->body->semantic.allPathsExit) {
         LlvmEmitRetVoid(ctx);
     }
 
@@ -852,7 +1009,6 @@ static void CompileType(LlvmGenContext* ctx, Mon_AstTypeDef* type) {
     }
 
     MON_UNREACHABLE();
-    THROW(ctx, JMP_ERRILL);
 }
 
 static void CompileGlobalVar(LlvmGenContext* ctx, Mon_AstVarDef* def) {
@@ -861,7 +1017,9 @@ static void CompileGlobalVar(LlvmGenContext* ctx, Mon_AstVarDef* def) {
 
     LlvmEmit(ctx, "@%s = internal global ", def->varName);
     LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, def->semantic.type, 0));
-    LlvmEmit(ctx, " undef\n");
+    LlvmEmit(ctx, " ");
+    LlvmEmitValue(ctx, GetDefaultValue(def->semantic.type));
+    LlvmEmit(ctx, "\n");
 }
 
 static void CompileDefinition(LlvmGenContext* ctx, Mon_AstDef* def) {
@@ -900,16 +1058,36 @@ static void GenModulePreamble(LlvmGenContext* ctx) {
 
     LlvmEmit(ctx, "source_filename = \"%s\"\n\n", ctx->targetAst->moduleName);
 
-    LlvmEmit(ctx, "declare i8* @" NAMEOF(RtInternal_GcAlloc) "(i32)\n\n", ctx->targetAst->moduleName);
+    LlvmEmit(ctx, "%%" TYPENAME_STRING " = type { i32, i32 }\n\n");
+    LlvmEmit(ctx, "declare %%" TYPENAME_STRING "* @" NAMEOF(RtInternal_StrFromSZ) "(i8*)\n", ctx->targetAst->moduleName);
+
+    LlvmEmit(ctx, "declare i8* @" NAMEOF(RtInternal_GcAlloc) "(i32)\n", ctx->targetAst->moduleName);
+    if (ctx->targetAst->semantic.hasEntryPointFunction) {
+        LlvmEmit(ctx, "declare void @" NAMEOF(RtInternal_Init) "()\n");
+    }
+
+    LlvmEmit(ctx, "\n");
 
     CompileUsedTypes(ctx);
+}
+
+static void CompileStringLiterals(LlvmGenContext* ctx) {
+    int id = 0;
+
+    MON_VECTOR_FOREACH(&ctx->stringLiterals, const char*, s,
+        LlvmEmitString(ctx, id, s);
+        id++;
+    );
 }
 
 static void CompileFunctionDependencies(LlvmGenContext* ctx) {
     // Write dependencies:
     MON_VECTOR_FOREACH(&ctx->functionDependencies, Mon_AstFuncDef*, func,
         CompileFunctionSignature(ctx, func, false);
+        LlvmEmit(ctx, "\n");
     );
+    LlvmEmit(ctx, "\n");
+    CompileStringLiterals(ctx);
     LlvmEmit(ctx, "\n");
 }
 
@@ -940,11 +1118,6 @@ Mon_RetCode Mon_GenerateLLVM(Mon_Ast* ast,
             CleanupLlvmGenContext(&ctx);
             return MON_ERR_NOMEM;
 
-        case JMP_ERRILL:
-            fprintf(ctx.errStream, "Code generation halted; specified AST was ill-formed.\n");
-            CleanupLlvmGenContext(&ctx);
-            return MON_ERR_BAD_ARG;
-        
         case JMP_SUCCESS:
             break;
 

@@ -1,6 +1,8 @@
 #include "llvmemit.h"
 
+#include <string.h>
 #include <stdint.h>
+#include <ctype.h>
 
 #include "llvmctx.h"
 
@@ -93,12 +95,12 @@ LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _
     return ret;
 }
 
-LlvmValue ValGlobal(const char* globalName) {
+LlvmValue ValNamedGlobal(const char* globalName) {
     MON_CANT_BE_NULL(globalName);
 
     LlvmValue loc;
     loc.kind = LOC_GLOBAL;
-    loc.name = globalName;
+    loc.globalName = globalName;
     return loc;
 }
 
@@ -143,7 +145,7 @@ void LlvmEmitValue(LlvmGenContext* ctx, LlvmValue loc) {
             return;
 
         case LOC_GLOBAL:
-            LlvmEmit(ctx, "@%s", loc.name);
+            LlvmEmit(ctx, "@%s", loc.globalName);
             return;
 
         case LOC_SSA:
@@ -156,9 +158,12 @@ void LlvmEmitValue(LlvmGenContext* ctx, LlvmValue loc) {
 
         case LOC_LITERAL:
             switch (loc.literal.literalKind) {
-                case MON_LIT_STR:
-
+                case MON_LIT_STR: {
+                    int id = AddOrGetStringLiteralId(ctx, loc.literal.string.arr);
+                    LlvmEmit(ctx, "getelementptr inbounds ([%d x i8], [%d x i8]* @str.%d, i32 0, i32 0)", 
+                        loc.literal.string.len + 1, loc.literal.string.len + 1, id);
                     break;
+                }
 
                 case MON_LIT_FLOAT:
                     LlvmEmit(ctx, "%f", loc.literal.real);
@@ -584,3 +589,49 @@ LlvmValue LlvmEmitGetArrayElementPtr(LlvmGenContext* ctx,
     return ret;
 }
 
+LlvmValue LlvmEmitPhi(LlvmGenContext* ctx,
+                      LlvmTypeRef type,
+                      LlvmValue aLabel,
+                      LlvmValue aValue,
+                      LlvmValue bLabel,
+                      LlvmValue bValue) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
+    LlvmEmit(ctx, "\t");
+    LlvmEmitValue(ctx, ret);
+    LlvmEmit(ctx, " = phi ");
+    LlvmEmitTyperef(ctx, type);
+
+    LlvmEmit(ctx, " [");
+    LlvmEmitValue(ctx, aValue);
+    LlvmEmit(ctx, ", ");
+    LlvmEmitValue(ctx, aLabel);
+
+    LlvmEmit(ctx, "], [");
+    LlvmEmitValue(ctx, bValue);
+    LlvmEmit(ctx, ", ");
+    LlvmEmitValue(ctx, bLabel);
+    LlvmEmit(ctx, "]\n");
+
+    return ret;
+}
+
+void LlvmEmitString(LlvmGenContext* ctx, int id, const char* s) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(s);
+
+    LlvmEmit(ctx, "@str.%d = private unnamed_addr constant [%d x i8] c\"", 
+             id, strlen(s) + 1);
+
+    while (*s != '\0') {
+        if (!iscntrl(*s)) {
+            LlvmEmit(ctx, "%c", *s);
+        } else {
+            LlvmEmit(ctx, "\\%02X", (int)(*s));
+        }
+        s++;
+    }
+
+    LlvmEmit(ctx, "\\00\", align 1\n");
+}

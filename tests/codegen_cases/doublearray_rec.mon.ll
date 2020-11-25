@@ -1,6 +1,10 @@
 source_filename = "tests/codegen_cases/doublearray_rec.mon"
 
+%string = type { i32, i32 }
+
+declare %string* @RtInternal_StrFromSZ(i8*)
 declare i8* @RtInternal_GcAlloc(i32)
+declare void @RtInternal_Init()
 
 define void @printDoubleArray(double*, i32, i32) {
 	%t.0 = alloca double*
@@ -82,10 +86,13 @@ l.3:
 }
 
 define void @main() {
+	call void @RtInternal_Init()
 	%t.0 = alloca i32
 
+	store i32 0, i32* %t.0
 	%t.1 = alloca double*
 
+	store double* null, double** %t.1
 	store i32 12, i32* %t.0
 
 	%t.2 = load i32, i32* %t.0
@@ -103,14 +110,17 @@ define void @main() {
 	call void @printDoubleArray(double* %t.8, i32 0, i32 %t.9)
 
 	%t.10 = load double*, double** %t.1
-	call void @fillArray(double* %t.10, i32 0, i32 0, double 3.000000)
+	%t.12 = sub i32 0, 3
+	call void @fillArray(double* %t.10, i32 0, i32 %t.12, double 3.000000)
 
-	%t.11 = load double*, double** %t.1
-	%t.12 = load i32, i32* %t.0
-	%t.13 = sub i32 %t.12, 2
-	call void @printDoubleArray(double* %t.11, i32 0, i32 %t.13)
+	%t.13 = load double*, double** %t.1
+	%t.14 = load i32, i32* %t.0
+	%t.15 = sub i32 %t.14, 2
+	call void @printDoubleArray(double* %t.13, i32 0, i32 %t.15)
 
 	ret void
 }
 
 declare void @printFloat(float)
+
+

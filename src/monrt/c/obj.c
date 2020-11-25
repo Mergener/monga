@@ -12,7 +12,7 @@ static int s_TypeDataCap = 0;
 
 const TypeData* LoadTypeData(int typeId) {
     if (typeId < 0 || typeId >= s_TypeDataCount) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_BADARG);
     }
 
     return &s_RegisteredTypeData[typeId];
@@ -22,6 +22,7 @@ int RegisterTypeData(const TypeData* td) {
     if (s_RegisteredTypeData == NULL) {
         s_TypeDataCap = 32;
         s_RegisteredTypeData = RawAlloc(s_TypeDataCap * sizeof(TypeData));
+
     } else if (s_TypeDataCap == s_TypeDataCount) {
         int newCap = s_TypeDataCap * 2;
         TypeData* newMem = RawAlloc(newCap * sizeof(TypeData));
@@ -48,7 +49,7 @@ MongaObject* NewObject(int typeId) {
 
 MongaArray* NewArray(int typeId, int length) {
     if (length < 0) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_BADARG);
     }
 
     const TypeData* td = LoadTypeData(typeId);

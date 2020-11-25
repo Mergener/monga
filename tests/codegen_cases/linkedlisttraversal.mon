@@ -1,0 +1,33 @@
+type Node = {
+    next: Node;
+    value: byte;
+};
+
+function makeNode(next: Node, value: byte): Node {
+    var ret: Node;
+    ret = new Node;
+    ret.next = next;
+    ret.value = value;
+    return ret;
+}
+
+function printList(head: Node) {
+    while (head != null) {
+        printInteger(head.value);
+        head = head.next;
+    }
+}
+
+function main() {
+    var head: Node;
+    head = null;
+
+    var i: long;
+    i = 20;
+    while (i >= 0) {
+        head = makeNode(head, i);
+        i = i - 1;
+    }
+
+    printList(head);
+}

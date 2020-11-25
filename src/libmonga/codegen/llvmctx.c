@@ -33,11 +33,14 @@ void InitializeLlvmContext(LlvmGenContext* ctx,
     if (errStream == NULL) {
         errStream = stderr;
     }
+
+    Mon_VectorInit(&ctx->stringLiterals);
     ctx->outStream = outStream;
     ctx->errStream = errStream;
     ctx->flags = codeGenFlags;
     ctx->targetAst = targetAst;
     ctx->optimizationLevel = optLevel;
+    ctx->nextGlobalId = 0;
 }
 
 void LlvmEmit(LlvmGenContext* ctx, const char* fmt, ...) {
@@ -91,6 +94,21 @@ LocalVariableData* FindLocal(LlvmGenContext* ctx, const char* name) {
 
 static void DestroyLocal(LocalVariableData* d) {
     Mon_Free(d);
+}
+
+int AddOrGetStringLiteralId(LlvmGenContext* ctx, const char* s) {
+    int id = 0;
+    MON_VECTOR_FOREACH(&ctx->stringLiterals, const char*, it,
+        id++;
+        if (it == s || (strcmp(it, s) == 0)) {
+            return id;
+        }
+    );
+
+    if (Mon_VectorPush(&ctx->stringLiterals, s) != MON_SUCCESS) {
+        THROW(ctx, JMP_ERRMEM);
+    }
+    return id;
 }
 
 void ResetBlockContext(LlvmGenContext* ctx) {

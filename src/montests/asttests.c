@@ -15,8 +15,10 @@ static const char* s_TestableFiles[] = {
 	"tests/reduce_dump_cases/vector3"
 };
 
-static void ConstructSampleAst(Mon_Ast* ast) {
+static Mon_Ast* ConstructSampleAst() {
 	Logf("Generating sample AST...\n");
+
+	Mon_Ast* ast = Mon_AstNew("testAST");
 
 	// Create a variable:
 	Mon_AstVarDef* varDef = Mon_AstVarDefNew("xyz", 3, "int", 3);
@@ -29,8 +31,6 @@ static void ConstructSampleAst(Mon_Ast* ast) {
 	literal.literalKind = MON_LIT_INT;
 	Mon_AstExp* rvalue = Mon_AstExpNewLiteral(literal);
 	Mon_AstStatement* assignment = Mon_AstStatementNewAssignment(lvalue, rvalue);
-
-	ast->moduleName = NULL;
 
 	Mon_Vector statements;
 	Mon_VectorInit(&statements);
@@ -45,20 +45,19 @@ static void ConstructSampleAst(Mon_Ast* ast) {
 	Mon_AstFuncDef* funcDef = Mon_AstFuncDefNew("foo", 3, "int", 3, funcParams, block);
 	Mon_AstDef* firstDef = Mon_AstDefNewFunc(funcDef);
 
-	Mon_DefGroupInit(&ast->definitions);
-	Mon_DefGroupReg(&ast->definitions, firstDef);
+	Mon_AstAddDefinition(ast, firstDef);
 
 	Logf("Generated sample AST:\n");
 	Mon_DumpAst(ast, g_LogFileStream, MON_ASTDUMP_XML, MON_ASTDUMP_FLAGS_PRETTYPRINT);
+
+	return ast;
 }
 
 static void AstLeakTest() {
-	Mon_Ast ast;
 	int initialAllocCount = GetAllocCount();
+	Mon_Ast* ast = ConstructSampleAst(&ast);
 
-	ConstructSampleAst(&ast);
-
-	Mon_AstFinalize(&ast);
+	Mon_AstDestroy(ast);
 
 	int finalAllocCount = GetAllocCount();
 	MON_ASSERT(finalAllocCount == initialAllocCount,
@@ -71,7 +70,7 @@ static void ParseLeakTest() {
 	int count = sizeof(s_TestableFiles)/sizeof(*s_TestableFiles);
 
 	for (int i = 0; i < count; ++i) {
-		Mon_Ast ast;
+		Mon_Ast* ast = Mon_AstNew("ast");
 
 		FILE* f = fopen(s_TestableFiles[i], "r");
 		if (f == NULL) {
@@ -83,9 +82,9 @@ static void ParseLeakTest() {
 
 		// We are not testing the outputs of a parsing here, but merely 
 		// checking the existence of memory leaks.
-		Mon_Parse(f, &ast, s_TestableFiles[i], MON_PARSEFLAGS_NONE);		
+		Mon_Parse(f, ast, MON_PARSEFLAGS_NONE);		
 
-		Mon_AstFinalize(&ast);
+		Mon_AstDestroy(ast);
 
 		int finalAlloc = GetAllocCount();
 		MON_ASSERT(finalAlloc == initial,
@@ -100,7 +99,7 @@ static void SemanticLeakTest() {
 	int count = sizeof(s_TestableFiles)/sizeof(*s_TestableFiles);
 
 	for (int i = 0; i < count; ++i) {
-		Mon_Ast ast;
+		Mon_Ast* ast = Mon_AstNew("ast");
 
 		FILE* f = fopen(s_TestableFiles[i], "r");
 		if (f == NULL) {
@@ -112,11 +111,11 @@ static void SemanticLeakTest() {
 
 		// We are not testing the outputs of a parsing here, but merely 
 		// checking the existence of memory leaks.
-		Mon_Parse(f, &ast, s_TestableFiles[i], MON_PARSEFLAGS_NONE);	
+		Mon_Parse(f, ast, MON_PARSEFLAGS_NONE);	
 
-		Mon_SemAnalyse(&ast, g_LogFileStream);
+		Mon_SemAnalyse(ast, g_LogFileStream);
 
-		Mon_AstFinalize(&ast);
+		Mon_AstDestroy(ast);
 
 		int finalAlloc = GetAllocCount();
 		MON_ASSERT(finalAlloc == initial,

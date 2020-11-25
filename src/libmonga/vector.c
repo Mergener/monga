@@ -10,15 +10,9 @@
 Mon_RetCode Mon_VectorInit(Mon_Vector* vector) {
     MON_CANT_BE_NULL(vector);
 
-    vector->_arr = Mon_Alloc(DEFAULT_CAP * sizeof(void*));
+    vector->_arr = NULL;
     vector->_count = 0;
-
-    if (vector->_arr == NULL) {
-        vector->_cap = 0;
-        return MON_ERR_NOMEM;
-    }
-
-    vector->_cap = DEFAULT_CAP;
+    vector->_cap = 0;
 
     return MON_SUCCESS;
 }
@@ -43,6 +37,9 @@ Mon_RetCode Mon_VectorPush(Mon_Vector* vector, const void* obj) {
 
     if (vector->_count == vector->_cap) {
         int newCap = vector->_cap * 2;
+        if (newCap < MIN_SIZE) {
+            newCap = MIN_SIZE;
+        }
 
         const void** newMem;        
         if (vector->_arr != NULL) {

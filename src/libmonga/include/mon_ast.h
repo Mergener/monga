@@ -53,21 +53,52 @@ typedef enum {
 /**
  *  Abstract syntax tree for a Monga language module.
  */
-typedef struct {
+typedef struct Mon_Ast_ Mon_Ast;
 
-    /** Vector containing all program definitions. Stored elements are of type Mon_AstDef*. */
-    Mon_DefGroup definitions;
+/**
+ *  Creates an empty Monga AST, with state set to MON_ASTSTATE_NONE.
+ * 
+ *  @return A pointer to a newly allocated Monga AST or NULL if allocation
+ *  failed.
+ */
+MON_PUBLIC Mon_Ast* MON_CALL Mon_AstNew(const char* moduleName);
 
-    Mon_AstState astState;
+/**
+ *  Destroys an AST, releasing its resources.
+ */
+MON_PUBLIC void MON_CALL Mon_AstDestroy(Mon_Ast* ast);
 
-    char* moduleName;
+/**
+ *  Returns the state of an AST.
+ * 
+ *  @param ast The AST.
+ * 
+ *  @return The AST's current state.
+ */
+MON_PUBLIC Mon_AstState MON_CALL Mon_AstGetState(const Mon_Ast* ast);
 
-    struct {
-        /** Contains the list types used by this module. */
-        Mon_Vector usedTypes;
-    } semantic;
+/**
+ *  Returns a pointer to an AST's definition group.
+ * 
+ *  @param ast The AST.
+ * 
+ *  @return The AST's definition group.
+ */
+MON_PUBLIC const Mon_DefGroup* MON_CALL Mon_AstGetDefinitions(const Mon_Ast* ast);
 
-} Mon_Ast;
+/**
+ *  Adds a definition to an ast.
+ *  If the AST was in a SEM_OK or SEM_ERR state, its state is returned 
+ *  to SYNTAX_OK. Otherwise, its state is maintained.
+ * 
+ *  @param ast The AST.
+ *  @param definition The definition to be added.
+ * 
+ *  @returns One of the following:
+ *      MON_SUCCESS :: Definition added successfully.
+ *      MON_ERR_NOMEM :: Allocation failed.
+ */
+MON_PUBLIC Mon_RetCode MON_CALL Mon_AstAddDefinition(Mon_Ast* ast, Mon_AstDef* definition);
 
 /**
  *  Dumps an AST to a given output stream in a given format.
@@ -93,7 +124,7 @@ MON_PUBLIC Mon_RetCode MON_CALL Mon_DumpAst(const Mon_Ast* ast,
  *
  *  @remarks Does not free the specified AST object.
  */
-MON_PUBLIC void MON_CALL Mon_AstFinalize(Mon_Ast* ast);
+MON_PUBLIC void MON_CALL Mon_AstDestroy(Mon_Ast* ast);
 
 C_LINKAGE_END
 

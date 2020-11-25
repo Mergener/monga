@@ -18,10 +18,19 @@ typedef struct {
 typedef struct {
 
     union {
-        const char* name;
+        /** Available when kind == LOC_GLOBAL */
+        const char* globalName;
+
+        /** Available when kind == LOC_LOCAL */
         int locid;
+
+        /** Available when kind == LOC_LOCALLABEL */
         int localLabelId;
+
+        /** Available when kind == LOC_SSA */
         int ssaId;
+
+        /** Available when kind == LOC_LITERAL */
         Mon_Literal literal;
     };
     enum {
@@ -85,7 +94,7 @@ MON_PRIVATE LlvmTypeRef MakeTypeRef(const char* name, int indirection, bool buil
 MON_PRIVATE LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int indirection);
 
 /** Creates a new LLVM global location (prefixed with @). */
-MON_PRIVATE LlvmValue ValGlobal(const char* globalName);
+MON_PRIVATE LlvmValue ValNamedGlobal(const char* globalName);
 
 /** Creates a new LLVM local variable location (prefixed with %T). */
 MON_PRIVATE LlvmValue ValLocal(int locid);
@@ -95,6 +104,8 @@ MON_PRIVATE LlvmValue ValLabel(int localLabelId);
 MON_PRIVATE LlvmValue ValSSA(int ssaId);
 
 MON_PRIVATE LlvmValue ValNull();
+
+MON_PRIVATE LlvmValue ValGlobal(int globalId);
 
 MON_PRIVATE LlvmValue ValLiteral(Mon_Literal lit);
 
@@ -180,5 +191,16 @@ MON_PRIVATE LlvmValue LlvmEmitGetArrayElementPtr(LlvmGenContext* ctx,
                                                  LlvmTypeRef type,
                                                  LlvmValue arrayPtrVal,
                                                  LlvmValue idxExpVal);
+
+MON_PRIVATE LlvmValue LlvmEmitPhi(LlvmGenContext* ctx,
+                                  LlvmTypeRef type,
+                                  LlvmValue aLabel,
+                                  LlvmValue aValue,
+                                  LlvmValue bLabel,
+                                  LlvmValue bValue);
+
+MON_PRIVATE void LlvmEmitString(LlvmGenContext* ctx,
+                                int stringId,
+                                const char* str);
 
 #endif // LLVMUTILS_H

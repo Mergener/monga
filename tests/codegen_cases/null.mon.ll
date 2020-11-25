@@ -1,10 +1,16 @@
 source_filename = "tests/codegen_cases/null.mon"
 
+%string = type { i32, i32 }
+
+declare %string* @RtInternal_StrFromSZ(i8*)
 declare i8* @RtInternal_GcAlloc(i32)
+declare void @RtInternal_Init()
 
 define void @main() {
+	call void @RtInternal_Init()
 	%t.0 = alloca i32*
 
+	store i32* null, i32** %t.0
 	store i32* null, i32** %t.0
 
 	%t.1 = load i32*, i32** %t.0
@@ -23,3 +29,5 @@ l.2:
 }
 
 declare void @printInteger(i32)
+
+

@@ -7,4 +7,4 @@ extern function printInteger(i: int);
 extern function printFloat(f: float);
 
 # Prints a string to stdout.
-#extern function printString(s: string);
+extern function printString(s: string);

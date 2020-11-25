@@ -5,6 +5,7 @@ function foo() {
 }
 
 function main() {
+    printInteger(i);
     i = 5;
     foo();
     i = 3;

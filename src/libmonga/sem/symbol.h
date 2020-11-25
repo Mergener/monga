@@ -48,6 +48,8 @@ typedef struct Symbol_ {
 
     const char* symName;
 
+    Mon_Ast* ast;
+
 } Symbol;
 
 MON_PRIVATE Symbol* NewParamSymbol(Mon_AstParam* param);

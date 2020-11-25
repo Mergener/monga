@@ -1,0 +1,107 @@
+type T = int;
+
+type TArray = [T];
+
+type TArrayList = {
+    array    : TArray;
+    count    : int;
+    capacity : int;
+};
+
+# Creates an array list.
+function Al_Create(): TArrayList {
+    var ret : TArrayList;
+
+    ret = new TArrayList;
+
+    ret.count = 0;
+    ret.array = new T[8];
+    ret.capacity = 8;
+
+    return ret;
+}
+
+function Al_Resize(al : TArrayList, newSize : int) {
+    var newArr : TArray;
+    var i : int;
+    var min : int;
+
+    newArr = new T[newSize];
+
+    min = newSize < al.count ? newSize : al.count;
+    i = 0;
+    while (i < min) {
+        newArr[i] = al.array[i];        
+        i = i + 1;
+    }
+
+    al.capacity = newSize;
+    al.array = newArr;
+}
+
+function Al_Add(al : TArrayList, value : T) {
+    if (al.count == al.capacity) {
+        Al_Resize(al, al.capacity * 2);
+    }
+
+    al.array[al.count] = value;
+    al.count = al.count + 1;
+}
+
+function Al_RemoveIdx(al : TArrayList, index : int) {
+    var i : int;
+
+    if (index < 0 || index >= al.count) {
+        return;
+    }
+
+    if (al.count < al.capacity / 3) {
+        Al_Resize(al, al.capacity/2);
+    }
+
+    i = index;
+    al.count = al.count - 1;
+    while (i < al.count) {
+        al.array[i] = al.array[i+1];
+        i = i + 1;
+    }
+}
+
+function Al_Get(al: TArrayList, i: int): T {
+    if (i < 0 || i >= al.count) {
+        return -1; # Monga should have a better error handling mechanism
+    }
+
+    return al.array[i];
+}
+
+function Al_Print(al: TArrayList) {
+    var count: int;
+
+    count = al.count;
+
+    var i: int;
+    i = 0;
+    while (i < count) {
+        printInteger(Al_Get(al, i));
+
+        i = i + 1;
+    }    
+}
+
+function main() {
+    var al: TArrayList;
+
+    al = Al_Create();
+    Al_Add(al, 5);
+    Al_Add(al, 12);
+    Al_Add(al, 13);
+    Al_Add(al, 15);
+    Al_Add(al, 16);
+    Al_Add(al, 5);
+    Al_Add(al, 6);
+    Al_Add(al, 5);
+    Al_Add(al, -8);
+    Al_Print(al);
+
+}

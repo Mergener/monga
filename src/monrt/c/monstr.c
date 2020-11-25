@@ -6,10 +6,10 @@
 #include "err.h"
 #include "mem.h"
 
-static int Hash(const Mon_Char* key, int len) {
+static int Hash(const Mon_Char* key, int32_t len) {
     // Uses djb2 hash algorithm.
-    unsigned int hash = 5381;
-    int c;
+    uint32_t hash = 5381;
+    int32_t c;
     const Mon_Char* end = key + len;
 
     while (key != end) {
@@ -18,12 +18,12 @@ static int Hash(const Mon_Char* key, int len) {
         key++;
     }
 
-    return (int)hash;
+    return (int32_t)hash;
 }
 
-Mon_Str* NewString(const Mon_Char* cstr, int len) {
+static Mon_Str* NewString(const Mon_Char* cstr, int len) {
     if (cstr == NULL) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_BADARG);
     } 
 
     Mon_Str* ret = RtInternal_GcAlloc(sizeof(Mon_Char) * len + sizeof(Mon_Char) + sizeof(Mon_Str));
@@ -36,25 +36,56 @@ Mon_Str* NewString(const Mon_Char* cstr, int len) {
     return ret;
 }
 
-Mon_Str* FUNC_SUBSTR(Mon_Str* str, int begin, int len) {
+Mon_Str* RtInternal_StrFromSZ(const Mon_Char* sz) {
+    if (sz == NULL) {
+        FatalError(RT_ERR_NULLARG);
+    }
+
+    int len = strlen(sz);
+    int bufSize = len * sizeof(Mon_Char) + sizeof(Mon_Char) + // buffer
+                  sizeof(Mon_Str); // header
+    
+    Mon_Str* ret = RtInternal_GcAlloc(bufSize);
+
+    memcpy(ret->buf, sz, len * sizeof(Mon_Char));
+    ret->buf[len] = '\0';
+    ret->length = len;
+    ret->hash = Hash(ret->buf, len);
+
+    return ret;
+}
+
+Mon_Char* RtInternal_CharArrayFromStr(Mon_Str* str) {
     if (str == NULL) {
-        FATAL(BADARG);
+        return NULL;
+    }
+
+    Mon_Char* buffer = RtInternal_GcAlloc(str->length * sizeof(Mon_Char) + sizeof(Mon_Char));
+    memcpy(buffer, str->buf, str->length * sizeof(Mon_Char));
+    buffer[str->length] = '\0';
+
+    return buffer;
+}
+
+Mon_Str* Substr(Mon_Str* str, int32_t begin, int32_t len) {
+    if (str == NULL) {
+        FatalError(RT_ERR_NULLARG);
     }
     if (begin < 0 || begin >= str->length) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_BADARG);
     }
     if ((len + begin) >= str->length || len < 0) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_BADARG);
     }
     return NewString(&str->buf[begin], len);
 }
 
-Mon_Str* FUNC_STRCONCAT(Mon_Str* stra, Mon_Str* strb) {
+Mon_Str* Strconcat(Mon_Str* stra, Mon_Str* strb) {
     if (stra == NULL) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_NULLARG);
     }
     if (strb == NULL) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_NULLARG);
     }
     
     Mon_Char stackBuf[128];
@@ -77,12 +108,12 @@ Mon_Str* FUNC_STRCONCAT(Mon_Str* stra, Mon_Str* strb) {
     return NewString(buf, combinedLen);
 }
 
-int FUNC_STRFIND(Mon_Str* s, Mon_Str* content) {
+int Strfind(Mon_Str* s, Mon_Str* content) {
     if (s == NULL) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_NULLARG);
     }
     if (content == NULL) {
-        FATAL(BADARG);
+        FatalError(RT_ERR_NULLARG);
     }
     
     int eqBegin = 0;
@@ -103,6 +134,6 @@ int FUNC_STRFIND(Mon_Str* s, Mon_Str* content) {
     return -1;
 }
 
-Mon_Str* FUNC_STRREPL(Mon_Str* s) {
+Mon_Str* Strrepl(Mon_Str* s) {
     return NULL;
 }

@@ -1,0 +1,10 @@
+function foo(i: int): int {
+    while (i > 6) {
+        return 5;
+    }
+    return 3;
+}
+
+function main() {
+    printInteger(foo(7));
+}

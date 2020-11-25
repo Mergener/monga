@@ -45,7 +45,7 @@ MON_PUBLIC Mon_RetCode MON_CALL Mon_SemAnalyse(Mon_Ast* ast, FILE* semErrOutStre
  * 	@remarks If returned code was MON_SUCCESS, all semantic fields in all AST nodes of
  * 	the specified AST will be properly filled.
  */
-MON_PUBLIC Mon_RetCode MON_CALL Mon_SemAnalyseMultiple(Mon_Ast* asts, int astCount, FILE* semErrOutStream);
+MON_PUBLIC Mon_RetCode MON_CALL Mon_SemAnalyseMultiple(Mon_Ast** asts, int astCount, FILE* semErrOutStream);
 
 C_LINKAGE_END
 

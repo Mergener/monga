@@ -20,4 +20,6 @@
  */
 MON_PRIVATE char* DuplicateString(const char* s, size_t len);
 
+MON_PRIVATE void ProcessStringLiteral(const char* s, char** outBuf, int* outLen);
+
 #endif // STRUTILS_H
