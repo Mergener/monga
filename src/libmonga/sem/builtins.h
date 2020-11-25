@@ -22,6 +22,7 @@
 #define TYPENAME_FLOAT64 "double"
 #define TYPENAME_VOID    "void"
 #define TYPENAME_STRING  "string"
+#define TYPENAME_INTPTR  "intptr"
 //
 
 typedef struct {
@@ -40,6 +41,7 @@ typedef struct {
         Mon_AstTypeDef* tError;
         Mon_AstTypeDef* tVoid;
         Mon_AstTypeDef* tString;
+        Mon_AstTypeDef* tIntPtr;
     } types;        
 
 } BuiltinTable;

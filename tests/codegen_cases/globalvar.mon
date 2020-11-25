@@ -1,0 +1,12 @@
+var i: int;
+
+function foo() {
+    printInteger(i);
+}
+
+function main() {
+    i = 5;
+    foo();
+    i = 3;
+    foo();
+}

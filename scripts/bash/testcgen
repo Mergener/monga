@@ -1,0 +1,28 @@
+#!/bin/bash
+
+MONGA_PATH=$1
+shift
+
+TEST_FILE=$1
+shift
+
+function rm_if_exists {
+    rm $1 &>/dev/null
+}
+
+scripts/bash/domonga $MONGA_PATH testtemp.out $TEST_FILE >/dev/null ||
+exit
+
+wait
+
+# cleanup compiler garbage
+rm_if_exists $TEST_FILE.o
+rm_if_exists $TEST_FILE.opt.ll
+rm_if_exists $TEST_FILE.s
+
+./testtemp.out
+
+wait
+
+# cleanup executable
+rm_if_exists testtemp.out

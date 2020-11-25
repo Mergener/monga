@@ -8,7 +8,7 @@
 MONGA_EXEC_PATH=$1
 shift
 
-function gen_cases {
+function gen_cases_monga {
 	for f in $2/*; do
 		[ -e "$f" ] || continue
 
@@ -31,7 +31,22 @@ function gen_cases {
 	done
 }
 
-gen_cases -s tests/sem_test_cases
-gen_cases -r tests/reduce_dump_cases
-gen_cases -p tests/ast_dump_cases
-gen_cases -l tests/lex_cases
+gen_cases_monga -s tests/sem_test_cases
+gen_cases_monga -r tests/reduce_dump_cases
+gen_cases_monga -p tests/ast_dump_cases
+gen_cases_monga -l tests/lex_cases
+
+# Executable outputs work differently -- we need to test
+# the output of the generated program, not only monga's output.
+for f in tests/codegen_cases/*.mon; do
+	[ -e "$f" ] || continue
+
+	if [ -f "$f.expected" ]; then
+		# Ignore files that already have a reference
+		continue
+	fi
+
+	rm $f.ll &>/dev/null
+
+	scripts/bash/testcgen $MONGA_EXEC_PATH $f > $f.expected
+done

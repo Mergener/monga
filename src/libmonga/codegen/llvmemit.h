@@ -29,7 +29,8 @@ typedef struct {
         LOC_LOCALLABEL,
         LOC_LITERAL,
         LOC_GLOBAL,
-        LOC_SSA
+        LOC_SSA,
+        LOC_NULL
     } kind;
 
 } LlvmValue;
@@ -92,6 +93,8 @@ MON_PRIVATE LlvmValue ValLocal(int locid);
 MON_PRIVATE LlvmValue ValLabel(int localLabelId);
 
 MON_PRIVATE LlvmValue ValSSA(int ssaId);
+
+MON_PRIVATE LlvmValue ValNull();
 
 MON_PRIVATE LlvmValue ValLiteral(Mon_Literal lit);
 

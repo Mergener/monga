@@ -179,9 +179,9 @@ static void CompileCondition(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue t
 }
 
 static LlvmValue CompileBinop(LlvmGenContext* ctx, 
-                                 Mon_AstTypeDef* targetType, 
-                                 Mon_AstExp* l, Mon_AstExp* r, 
-                                 Mon_BinopKind binop) {
+                              Mon_AstTypeDef* targetType, 
+                              Mon_AstExp* l, Mon_AstExp* r, 
+                              Mon_BinopKind binop) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(targetType);
     MON_CANT_BE_NULL(l);
@@ -330,9 +330,9 @@ static LlvmValue CompileIntToInt(LlvmGenContext* ctx,
 }
 
 static LlvmValue CompileConversion(LlvmGenContext* ctx, 
-                                      Mon_AstTypeDef* expType, 
-                                      LlvmValue expLoc, 
-                                      Mon_AstTypeDef* destType) {
+                                   Mon_AstTypeDef* expType, 
+                                   LlvmValue expLoc, 
+                                   Mon_AstTypeDef* destType) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(expType);
     MON_CANT_BE_NULL(destType);
@@ -344,6 +344,10 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
         // Expression type is the same as the target type,
         // no need to perform conversions.
         return expLoc;
+    }
+
+    if (expType == BUILTIN_TABLE->types.tNull && IsRefType(destType)) {
+        return ValNull();
     }
 
     if (!IsTypeCastableFrom(destType, expType)) {
@@ -364,40 +368,38 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
         THROW(ctx, JMP_ERRILL);
     }
 
-    switch (expType->typeDesc->typeDesc.primitive.typeCode) {
-        case MON_PRIMITIVE_CHAR:
-            MON_ASSERT(!IsFloatingPointType(destType), 
-                "Conversion codegen assumes chars cannot be converted to floats.");
-            break;
+    if (IsIntegerType(expType)) {
+        MON_ASSERT(IsNumericType(destType), 
+            "Conversion codegen assumes integers can only be converted to other numeric types.");
 
-        case MON_PRIMITIVE_INT8:
-        case MON_PRIMITIVE_INT16:
-        case MON_PRIMITIVE_INT32:
-        case MON_PRIMITIVE_INT64:
-            MON_ASSERT(IsNumericType(destType), 
-                "Conversion codegen assumes integers can only be converted to other numeric types.");
-            if (IsIntegerType(destType)) {
-                return CompileIntToInt(ctx, expType, expLoc, destType);
-            }
+        if (IsIntegerType(destType)) {
+            return CompileIntToInt(ctx, expType, expLoc, destType);
+        }
 
-            return LlvmEmitSitofp(ctx, TypeToTypeRef(ctx, expType, 0),
-                                  expLoc, TypeToTypeRef(ctx, destType, 0));
+        return LlvmEmitSitofp(ctx, TypeToTypeRef(ctx, expType, 0),
+                                expLoc, TypeToTypeRef(ctx, destType, 0));
+    }
 
-        case MON_PRIMITIVE_FLOAT32:
-        case MON_PRIMITIVE_FLOAT64:
-            MON_ASSERT(destType->typeDesc->typeDesc.primitive.typeCode != MON_PRIMITIVE_CHAR, 
-                "Conversion codegen assumes floats cannot be converted to chars.");
+    if (IsFloatingPointType(destType)) {
+        MON_ASSERT(destType->typeDesc->typeDesc.primitive.typeCode != MON_PRIMITIVE_CHAR, 
+            "Conversion codegen assumes floats cannot be converted to chars.");
 
-            if (IsFloatingPointType(destType)) {
-                return CompileFloatToFloat(ctx, expType, expLoc, destType);
-            }
+        if (IsFloatingPointType(destType)) {
+            return CompileFloatToFloat(ctx, expType, expLoc, destType);
+        }
 
-            return LlvmEmitFptosi(ctx, TypeToTypeRef(ctx, expType, 0),
-                                  expLoc, TypeToTypeRef(ctx, destType, 0));
+        return LlvmEmitFptosi(ctx, TypeToTypeRef(ctx, expType, 0),
+                                expLoc, TypeToTypeRef(ctx, destType, 0));
+    }
 
-        case MON_PRIMITIVE_VOID:
-            // Unreachable, fall below.
-            break;
+    if (expType->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_CHAR) {
+        MON_ASSERT(!IsFloatingPointType(destType), 
+            "Conversion codegen assumes chars cannot be converted to floats.");
+
+        MON_ASSERT(Mon_GetPrimitiveSize(MON_PRIMITIVE_CHAR) == Mon_GetPrimitiveSize(MON_PRIMITIVE_INT8),
+            "Assumes chars are the size of an int8.");
+            
+        return CompileConversion(ctx, BUILTIN_TABLE->types.tByte, expLoc, destType);
     }
 
     MON_UNREACHABLE();
@@ -896,21 +898,19 @@ static void CompileUsedTypes(LlvmGenContext* ctx) {
 static void GenModulePreamble(LlvmGenContext* ctx) {
     MON_CANT_BE_NULL(ctx);
 
-    LlvmEmit(ctx, "source_filename = \"%s\"\n", ctx->targetAst->moduleName);
+    LlvmEmit(ctx, "source_filename = \"%s\"\n\n", ctx->targetAst->moduleName);
 
-    LlvmEmit(ctx, "declare i8* @" NAMEOF(RtInternal_GcAlloc) "(i32)\n", ctx->targetAst->moduleName);
+    LlvmEmit(ctx, "declare i8* @" NAMEOF(RtInternal_GcAlloc) "(i32)\n\n", ctx->targetAst->moduleName);
 
-    LlvmEmit(ctx, "\n");
     CompileUsedTypes(ctx);
-    LlvmEmit(ctx, "\n");
 }
 
 static void CompileFunctionDependencies(LlvmGenContext* ctx) {
     // Write dependencies:
     MON_VECTOR_FOREACH(&ctx->functionDependencies, Mon_AstFuncDef*, func,
         CompileFunctionSignature(ctx, func, false);
-        LlvmEmit(ctx, "\n");
     );
+    LlvmEmit(ctx, "\n");
 }
 
 static void CompileDependencies(LlvmGenContext* ctx) {

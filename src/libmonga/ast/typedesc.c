@@ -1,6 +1,7 @@
 #include "ast/mon_typedesc.h"
 
 #include <string.h>
+#include <stdint.h>
 
 #include "ast/mon_field.h"
 
@@ -129,6 +130,9 @@ int Mon_GetPrimitiveSize(Mon_PrimitiveTypeCode typeCode) {
 
         case MON_PRIMITIVE_VOID:
             return 0;
+        
+        case MON_PRIMITIVE_INTPTR:
+            return sizeof(intptr_t);
     }
     MON_UNREACHABLE();
     return 0;

@@ -14,6 +14,12 @@ LlvmTypeRef MakeTypeRef(const char* name, int indirection, bool builtin) {
     return ret;
 }
 
+LlvmValue ValNull() {
+    LlvmValue ret;
+    ret.kind = LOC_NULL;
+    return ret;
+}
+
 LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _indir) {
     MON_CANT_BE_NULL(type);
 
@@ -32,35 +38,54 @@ LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _
         return ret;
     }
 
-    switch (type->typeDesc->typeDesc.primitive.typeCode) {
-        case MON_PRIMITIVE_CHAR:
-        case MON_PRIMITIVE_INT8:
-            ret._typeName = "i8";
-            break;
+    if (IsFloatingPointType(type)) {
+        switch (Mon_GetPrimitiveSize(type->typeDesc->typeDesc.primitive.typeCode)) {
+            case 2:
+                ret._typeName = "half";
+                break;
 
-        case MON_PRIMITIVE_INT16:
-            ret._typeName = "i16";
-            break;
+            case 4:
+                ret._typeName = "float";
+                break;
 
-        case MON_PRIMITIVE_INT32:
-            ret._typeName = "i32";
-            break;
+            case 8:
+                ret._typeName = "double";
+                break;
 
-        case MON_PRIMITIVE_INT64:
-            ret._typeName = "i64";
-            break;
+            case 10:
+                ret._typeName = "x86_fp80";
+                break;
 
-        case MON_PRIMITIVE_FLOAT32:
-            ret._typeName = "float";
-            break;
+            case 16:
+                ret._typeName = "fp128";   
+                break;
 
-        case MON_PRIMITIVE_FLOAT64:
-            ret._typeName = "double";
-            break;
+            default:
+                MON_UNREACHABLE();
+                break;         
+        }
+    } else {
+        switch (Mon_GetPrimitiveSize(type->typeDesc->typeDesc.primitive.typeCode)) {
+            case 0:
+                ret._typeName = "void";
+                break;
 
-        case MON_PRIMITIVE_VOID:
-            ret._typeName = "void";
-            break;
+            case 1:
+                ret._typeName = "i8";
+                break;
+
+            case 2:
+                ret._typeName = "i16";
+                break;
+
+            case 4:
+                ret._typeName = "i32";
+                break;
+
+            case 8:
+                ret._typeName = "i64";   
+                break;
+        }
     }
 
     ret._builtin = true;
@@ -123,6 +148,10 @@ void LlvmEmitValue(LlvmGenContext* ctx, LlvmValue loc) {
 
         case LOC_SSA:
             LlvmEmit(ctx, "%%%d", loc.ssaId);
+            return;
+
+        case LOC_NULL:
+            LlvmEmit(ctx, "null");
             return;
 
         case LOC_LITERAL:
@@ -201,10 +230,10 @@ void LlvmEmitTyperef(LlvmGenContext* ctx, LlvmTypeRef typeRef) {
 }
 
 static LlvmValue CompileNumConversion(LlvmGenContext* ctx, 
-                                        LlvmTypeRef expType, 
-                                        LlvmValue expLoc, 
-                                        LlvmTypeRef destType,
-                                        const char* conversion) {
+                                      LlvmTypeRef expType, 
+                                      LlvmValue expLoc, 
+                                      LlvmTypeRef destType,
+                                      const char* conversion) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(conversion);
 

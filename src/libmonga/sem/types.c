@@ -30,6 +30,7 @@ bool IsIntegerType(const Mon_AstTypeDef* type) {
     }
 
     switch (type->typeDesc->typeDesc.primitive.typeCode) {
+        case MON_PRIMITIVE_INTPTR:
         case MON_PRIMITIVE_INT8:
         case MON_PRIMITIVE_INT16:
         case MON_PRIMITIVE_INT32:
@@ -56,10 +57,23 @@ bool IsFloatingPointType(const Mon_AstTypeDef* type) {
     switch (type->typeDesc->typeDesc.primitive.typeCode) {
         case MON_PRIMITIVE_FLOAT32:
         case MON_PRIMITIVE_FLOAT64:
-            return true;
+            return true;        
 
-        default: return false;
+        // We could use 'default' label here, but doing this makes compilers
+        // warn us in case we forget handling a new floating type code
+        // in the future.
+        case MON_PRIMITIVE_CHAR:
+        case MON_PRIMITIVE_INT8:
+        case MON_PRIMITIVE_INT16:
+        case MON_PRIMITIVE_INT32:
+        case MON_PRIMITIVE_INT64:
+        case MON_PRIMITIVE_INTPTR:
+        case MON_PRIMITIVE_VOID:
+            return false;
     }
+
+    MON_UNREACHABLE();
+    return false;
 }
 
 bool IsNumericType(const Mon_AstTypeDef* type) {

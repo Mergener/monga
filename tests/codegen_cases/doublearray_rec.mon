@@ -1,0 +1,38 @@
+type doublearray = [double];
+
+function printDoubleArray(d: doublearray, index: int, size: int) {
+    if (index < 0) {
+        return;
+    }
+    if (index >= size) {
+        return;
+    }
+
+    printFloat(d[index]);
+    printDoubleArray(d, index + 1, size);
+}
+
+function fillArray(d: doublearray, index: int, size: int, startingValue: double) {
+    if (index < 0) {
+        return;
+    }
+    if (index >= size) {
+        return;
+    }
+
+    d[index] = startingValue;
+    fillArray(d, index + 1, size, startingValue + 2.0);
+}
+
+function main() {
+    var size: int;
+    var ia: doublearray;
+    size = 12;
+
+    ia = new double[size];
+
+    fillArray(ia, 0, size, 3.0);
+    printDoubleArray(ia, 0, size);
+    fillArray(ia, 0, -3, 3.0);
+    printDoubleArray(ia, 0, size - 2);
+}

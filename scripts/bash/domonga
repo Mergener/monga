@@ -24,9 +24,8 @@ done
 
 function clean {
     for arg in $ARGS; do
-        #rm_if_exists "$arg.ll"
         rm_if_exists "$arg.opt.ll"
-        #rm_if_exists "$arg.s"
+        rm_if_exists "$arg.s"
         rm_if_exists "$arg.o"
     done
     for f in $MONRT; do

@@ -1,0 +1,12 @@
+type intarray = [int];
+
+function main() {
+    var ia: intarray;
+    ia = null;
+
+    if (ia == null) {
+        printInteger(1);
+    } else {
+        printInteger(0);
+    }
+}

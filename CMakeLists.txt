@@ -14,8 +14,12 @@ set_property(GLOBAL PROPERTY C_STANDARD 11)
 
 enable_testing()
 
-add_test(name Montests
-         command montests ${CMAKE_SOURCE_DIR}/logs/tests/last_test)
+find_package(Python3 COMPONENTS Interpreter)
 
-add_test(name PythonTests
-         command python3 ${CMAKE_SOURCE_DIR}/tests/testall.py ${CMAKE_BINARY_DIR}/src/exec/monga)
+add_test(NAME Montests
+         COMMAND montests ${CMAKE_SOURCE_DIR}/logs/tests/last_test)
+
+if (${Python3_FOUND})
+    add_test(NAME PythonTests
+             COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tests/testall.py" "${CMAKE_BINARY_DIR}/src/exec/monga")
+endif()

@@ -75,6 +75,10 @@ def test_reducedump(input_file_path, expected_out_path):
 	global MONGA_PATH
 	test_cmd([MONGA_PATH, '-r', input_file_path], expected_out_path)
 
+def test_codegen(input_file_path, expected_out_path):
+	global MONGA_PATH
+	test_cmd(["scripts/bash/testcgen", MONGA_PATH, input_file_path], expected_out_path)
+
 def test_each(path, test_name, test_func):
 	global done
 	global passed
@@ -98,6 +102,7 @@ def test_all():
 	test_each(os.path.join("tests", "reduce_dump_cases"), "Rule Reduce Dump", test_reducedump)
 	test_each(os.path.join("tests", "ast_dump_cases"), "AST Dump", test_astdump)
 	test_each(os.path.join("tests", "sem_test_cases"), "Semantic", test_sem)
+	test_each(os.path.join("tests", "codegen_cases"), "Codegen", test_codegen)
 
 test_all()
 
