@@ -20,6 +20,14 @@
  */
 MON_PRIVATE char* DuplicateString(const char* s, size_t len);
 
+/**
+ *  Converts a control character (one that would be placed after a '\' in a
+ *  string or character literal) to its equivalent ASCII character codepoint.
+ *  For example: The character n becomes 10, which is the ASCII for the control
+ *  newline character ('\n').
+ */
+MON_PRIVATE char ConvertControlCharacter(char c);
+
 MON_PRIVATE void ProcessStringLiteral(const char* s, char** outBuf, int* outLen);
 
 #endif // STRUTILS_H

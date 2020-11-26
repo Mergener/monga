@@ -453,11 +453,11 @@ static LlvmValue CompileNew(LlvmGenContext* ctx, Mon_AstTypeDef* type, Mon_AstEx
     LlvmValue sizeExpLoc;
 
     if (sizeExp != NULL) {
-        LlvmValue loc = CompileExp(ctx, sizeExp, BUILTIN_TABLE->types.tInt);
+        LlvmValue loc = CompileExp(ctx, sizeExp, BUILTIN_TABLE->types.tIntPtr);
         Mon_Literal lit;
         lit.integer = GetTypeSize(type->typeDesc->typeDesc.array.semantic.innerTypeDef);
         lit.literalKind = MON_LIT_INT;
-        sizeExpLoc = LlvmEmitBinop(ctx, TypeToTypeRef(ctx, BUILTIN_TABLE->types.tInt, 0), loc, ValLiteral(lit), LLVM_BINOP_MUL);
+        sizeExpLoc = LlvmEmitBinop(ctx, TypeToTypeRef(ctx, BUILTIN_TABLE->types.tIntPtr, 0), loc, ValLiteral(lit), LLVM_BINOP_MUL);
     } else {
         Mon_Literal lit;
         lit.integer = GetRecordDescSize(type->typeDesc);
@@ -465,21 +465,14 @@ static LlvmValue CompileNew(LlvmGenContext* ctx, Mon_AstTypeDef* type, Mon_AstEx
         sizeExpLoc = ValLiteral(lit);
     }
 
-    // Array new
-    LlvmValue ptrVal = ValLocal(ctx->blockCtx.nextLocalId++);
-    LlvmEmit(ctx, "\t");
-    LlvmEmitValue(ctx, ptrVal);
-    LlvmEmit(ctx, " = call i8* @" NAMEOF(RtInternal_GcAlloc) "(i32 ");
-    LlvmEmitValue(ctx, sizeExpLoc);
-    LlvmEmit(ctx, ")\n");
-    LlvmValue expLoc = ValLocal(ctx->blockCtx.nextLocalId++);
-    LlvmEmit(ctx, "\t");
-    LlvmEmitValue(ctx, expLoc);
-    LlvmEmit(ctx, " = bitcast i8* ");
-    LlvmEmitValue(ctx, ptrVal);
-    LlvmEmit(ctx, " to ");
-    LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, type, 0));
-    LlvmEmit(ctx, "\n");
+    // Gc Alloc
+    LlvmTypeRef intPtrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tIntPtr, 0);
+    LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tByte, 1);
+    LlvmValue ptrVal = LlvmBeginCallExp(ctx, NAMEOF(RtInternal_GcAlloc), bytePtrTypeRef);
+    LlvmCallEmitArg(ctx, intPtrTypeRef, sizeExpLoc);
+    LlvmEndCall(ctx);
+    LlvmValue expLoc = LlvmEmitBitcast(ctx, bytePtrTypeRef,
+                                       ptrVal, TypeToTypeRef(ctx, type, 0));
 
     return expLoc;
 }
@@ -507,8 +500,9 @@ static LlvmValue CompileUnop(LlvmGenContext* ctx,
         case MON_UNOP_BITNOT:
             break;
 
-        case MON_UNOP_LEN:
+        case MON_UNOP_LEN: {
             break;
+        }
     }
 
     MON_UNREACHABLE();
@@ -747,6 +741,68 @@ static bool CompileWhile(LlvmGenContext* ctx,
     return false;
 }
 
+static void CompileEcho(LlvmGenContext* ctx, Mon_AstExp* echoedExp) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(echoedExp);
+
+    LlvmValue expLoc = CompileExp(ctx, echoedExp, echoedExp->semantic.type);
+    Mon_AstTypeDef* expType = GetUnderlyingType(echoedExp->semantic.type);
+    LlvmTypeRef expTypeRef = TypeToTypeRef(ctx, expType, 0);
+    LlvmTypeRef voidTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tVoid, 0);
+
+    if (expType == BUILTIN_TABLE->types.tString) {
+
+        LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoString), voidTypeRef);
+        LlvmCallEmitArg(ctx, expTypeRef, expLoc);
+        LlvmEndCall(ctx);
+        
+    } else if (IsRefType(expType)) {
+
+        // Cast to byte pointer
+        LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tByte, 1);
+        LlvmValue bitcastedPointer = LlvmEmitBitcast(ctx, expTypeRef, expLoc, bytePtrTypeRef);
+
+        if (expType->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY) {
+            LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoArray), voidTypeRef);
+        } else {
+            LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoObject), voidTypeRef);
+        }
+
+        LlvmCallEmitArg(ctx, bytePtrTypeRef, bitcastedPointer);
+        LlvmEndCall(ctx);
+        return;
+
+    } else if (expType->typeDesc->typeDescKind == MON_TYPEDESC_PRIMITIVE) {
+
+        if (expType->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_CHAR) {
+
+            LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoChar), voidTypeRef);
+            LlvmCallEmitArg(ctx, TypeToTypeRef(ctx, BUILTIN_TABLE->types.tChar, 0), expLoc);
+            LlvmEndCall(ctx);
+
+        } else if (IsFloatingPointType(expType)) {
+
+            expLoc = CompileConversion(ctx, expType, expLoc, BUILTIN_TABLE->types.tDouble);
+            LlvmTypeRef doubleTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tDouble, 0);
+            LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoReal), voidTypeRef);
+            LlvmCallEmitArg(ctx, doubleTypeRef, expLoc);
+            LlvmEndCall(ctx);           
+
+        } else {
+
+            expLoc = CompileConversion(ctx, expType, expLoc, BUILTIN_TABLE->types.tLong);
+            LlvmTypeRef longTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tLong, 0);
+            LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoInteger), voidTypeRef);
+            LlvmCallEmitArg(ctx, longTypeRef, expLoc);
+            LlvmEndCall(ctx);       
+
+        }
+
+    } else {
+        MON_UNREACHABLE();
+    }
+}
+
 /**
  *  Compiles a statement. Returns true if the statement always returns (and thus there is no point in compiling)
  *  other statements in a block.
@@ -806,6 +862,7 @@ static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt) {
             break;
 
         case MON_STMT_ECHO:
+            CompileEcho(ctx, stmt->statement.echo.echoedExp);
             break;
 
         case MON_STMT_VARDEF: {
@@ -859,37 +916,26 @@ static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
         }
     }
 
+    LlvmTypeRef retTypeRef = TypeToTypeRef(ctx, retType, 0);
     if (retType != BUILTIN_TABLE->types.tVoid) {
         // Function returns something, assign it to an LlvmValue.
-        retLoc = ValLocal(ctx->blockCtx.nextLocalId++);
-        LlvmEmit(ctx, "\t");
-        LlvmEmitValue(ctx, retLoc);
-        LlvmEmit(ctx, " = ");
+        retLoc = LlvmBeginCallExp(ctx, call->semantic.callee->funcName, retTypeRef);
     } else {
-        LlvmEmit(ctx, "\t");
+        LlvmBeginCallStmt(ctx, call->semantic.callee->funcName, retTypeRef);
     }
 
-    // Compile the call itself
-    LlvmEmit(ctx, "call ");
-    LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, retType, 0));
-    LlvmEmit(ctx, " @%s(", call->semantic.callee->funcName);
-
+    // Compile argument passing
     for (int i = 0; i < argsCount; ++i) {
         Mon_AstParam* paramDef = Mon_VectorGet(&call->semantic.callee->parameters, i);
 
-        LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, paramDef->semantic.type, 0));
-        LlvmEmit(ctx, " ");
-        LlvmEmitValue(ctx, argsBuf[i]);
-        if (i < argsCount - 1) {
-            LlvmEmit(ctx, ", ");
-        }
+        LlvmCallEmitArg(ctx, TypeToTypeRef(ctx, paramDef->semantic.type, 0), argsBuf[i]);
     }
 
     if (argsBuf != NULL) {
         Mon_Free(argsBuf);
     }
 
-    LlvmEmit(ctx, ")\n");
+    LlvmEndCall(ctx);
 
     return retLoc;   
 }
@@ -1058,10 +1104,31 @@ static void GenModulePreamble(LlvmGenContext* ctx) {
 
     LlvmEmit(ctx, "source_filename = \"%s\"\n\n", ctx->targetAst->moduleName);
 
+    // Runtime typedefs
     LlvmEmit(ctx, "%%" TYPENAME_STRING " = type { i32, i32 }\n\n");
+
+    // Generate internal runtime function headers:
+    // All functions below are implemented at C level and are not to
+    // be directly referenced by the programmer.
+
+    // StrFromSz -- string construction
     LlvmEmit(ctx, "declare %%" TYPENAME_STRING "* @" NAMEOF(RtInternal_StrFromSZ) "(i8*)\n", ctx->targetAst->moduleName);
 
-    LlvmEmit(ctx, "declare i8* @" NAMEOF(RtInternal_GcAlloc) "(i32)\n", ctx->targetAst->moduleName);
+    // GcAlloc() -- object allocation
+    LlvmTypeRef intptrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tIntPtr, 0);
+    LlvmEmit(ctx, "declare i8* @" NAMEOF(RtInternal_GcAlloc) "(", ctx->targetAst->moduleName);
+    LlvmEmitTyperef(ctx, intptrTypeRef);
+    LlvmEmit(ctx, ")\n");
+
+    // Echo functions
+    LlvmEmit(ctx, "declare void @" NAMEOF(RtInternal_EchoArray) "(i8*)\n");
+    LlvmEmit(ctx, "declare void @" NAMEOF(RtInternal_EchoObject) "(i8*)\n");
+    LlvmEmit(ctx, "declare void @" NAMEOF(RtInternal_EchoInteger) "(i64)\n");
+    LlvmEmit(ctx, "declare void @" NAMEOF(RtInternal_EchoReal) "(double)\n");
+    LlvmEmit(ctx, "declare void @" NAMEOF(RtInternal_EchoChar) "(i8)\n");
+    LlvmEmit(ctx, "declare void @" NAMEOF(RtInternal_EchoString) "(%%string*)\n");
+
+    // Init() -- runtime initialization
     if (ctx->targetAst->semantic.hasEntryPointFunction) {
         LlvmEmit(ctx, "declare void @" NAMEOF(RtInternal_Init) "()\n");
     }

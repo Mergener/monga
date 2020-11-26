@@ -1,0 +1,2 @@
+[Error] Module tests/sem_test_cases/err_nullassign, line 3, column 14: Cannot assign value of type '<null-type>' to lvalue of type 'int'.
+Semantic errors were caught during analysis.

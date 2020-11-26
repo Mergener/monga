@@ -76,6 +76,8 @@ typedef struct LlvmGenContext_ {
         int nextLabel;
     } blockCtx;
 
+    bool emittingCallFirstArg;
+
 } LlvmGenContext;
 
 typedef struct {

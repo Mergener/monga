@@ -1,0 +1,7 @@
+function main() {
+    var s: string;
+
+    s = "Hello, Hello, world! world!";
+
+    printString(Substr(s, 7, 13));
+}

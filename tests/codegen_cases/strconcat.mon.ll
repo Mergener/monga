@@ -1,4 +1,4 @@
-source_filename = "tests/codegen_cases/monrt_strlib_test1.mon"
+source_filename = "tests/codegen_cases/strconcat.mon"
 
 %string = type { i32, i32 }
 

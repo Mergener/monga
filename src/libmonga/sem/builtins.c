@@ -77,6 +77,7 @@ static bool ConstructBuiltinTypes() {
         { TYPENAME_FLOAT32, &s_BuiltinTable.types.tFloat, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_FLOAT32) },
         { TYPENAME_FLOAT64, &s_BuiltinTable.types.tDouble, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_FLOAT64) },
         { TYPENAME_VOID, &s_BuiltinTable.types.tVoid, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_VOID) },
+        { TYPENAME_INTPTR, &s_BuiltinTable.types.tIntPtr, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INTPTR) },
         { TYPENAME_NULL, &s_BuiltinTable.types.tNull, nullTypeDesc },
         { TYPENAME_ERROR, &s_BuiltinTable.types.tError, errTypeDesc },
         { TYPENAME_STRING, &s_BuiltinTable.types.tString, strTypeDesc }

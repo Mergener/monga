@@ -172,6 +172,10 @@ void LlvmEmitValue(LlvmGenContext* ctx, LlvmValue loc) {
                 case MON_LIT_INT:
                     LlvmEmit(ctx, "%lld", loc.literal.integer);
                     break;
+
+                case MON_LIT_CHAR:
+                    LlvmEmit(ctx, "%d", (int)loc.literal.character);
+                    break;
             }
             return;
     }
@@ -255,6 +259,27 @@ static LlvmValue CompileNumConversion(LlvmGenContext* ctx,
     LlvmEmit(ctx, "\n");
 
     return ret;
+}
+
+LlvmValue LlvmEmitBitcast(LlvmGenContext* ctx, 
+                          LlvmTypeRef srcType, 
+                          LlvmValue srcVal,
+                          LlvmTypeRef destType) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmEmit(ctx, "\t");
+
+    LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
+    LlvmEmitValue(ctx, ret);
+
+    LlvmEmit(ctx, " = bitcast ");
+    LlvmEmitTyperef(ctx, srcType);
+    LlvmEmit(ctx, " ");
+    LlvmEmitValue(ctx, srcVal);
+    LlvmEmit(ctx, " to ");
+    LlvmEmitTyperef(ctx, destType);
+    LlvmEmit(ctx, "\n");
+    return ret;    
 }
 
 LlvmValue LlvmEmitFpext(LlvmGenContext* ctx, 
@@ -634,4 +659,59 @@ void LlvmEmitString(LlvmGenContext* ctx, int id, const char* s) {
     }
 
     LlvmEmit(ctx, "\\00\", align 1\n");
+}
+
+LlvmValue LlvmBeginCallExp(LlvmGenContext* ctx,
+                           const char* funcName,
+                           LlvmTypeRef returnType) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(funcName);
+
+    ctx->emittingCallFirstArg = true;
+
+    LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
+
+    LlvmEmit(ctx, "\t");
+    LlvmEmitValue(ctx, ret);
+    LlvmEmit(ctx, " = call ");
+    LlvmEmitTyperef(ctx, returnType);
+    LlvmEmit(ctx, " @%s(", funcName);
+
+    return ret;
+}
+
+void LlvmBeginCallStmt(LlvmGenContext* ctx,
+                       const char* funcName,
+                       LlvmTypeRef funcReturnType) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(funcName);
+
+    ctx->emittingCallFirstArg = true;
+
+    LlvmEmit(ctx, "\tcall ");
+    LlvmEmitTyperef(ctx, funcReturnType);
+    LlvmEmit(ctx, " @%s(", funcName);
+}
+
+void LlvmCallEmitArg(LlvmGenContext* ctx,
+                     LlvmTypeRef argType,
+                     LlvmValue argValue) {
+    
+    MON_CANT_BE_NULL(ctx);
+    
+    if (!ctx->emittingCallFirstArg) {
+        LlvmEmit(ctx, ", ");
+    } else {
+        ctx->emittingCallFirstArg = false;
+    }
+
+    LlvmEmitTyperef(ctx, argType);
+    LlvmEmit(ctx, " ");
+    LlvmEmitValue(ctx, argValue);
+}
+
+void LlvmEndCall(LlvmGenContext* ctx) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmEmit(ctx, ")\n");
 }

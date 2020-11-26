@@ -109,6 +109,34 @@ MON_PRIVATE LlvmValue ValGlobal(int globalId);
 
 MON_PRIVATE LlvmValue ValLiteral(Mon_Literal lit);
 
+MON_PRIVATE LlvmValue LlvmEmitBitcast(LlvmGenContext* ctx, 
+                                      LlvmTypeRef srcType, 
+                                      LlvmValue srcVal,
+                                      LlvmTypeRef destType);
+
+/**
+ *  Begins emitting a call instruction.
+ *  This function is meant to be used for calls that will get
+ *  a return value. For 'statement-like' simple function calls,
+ *  use LlvmBeginCallStmt.
+ * 
+ *  Every call to a 'BeginCall' function must be matched with
+ *  and 'EndCall' afterwards.
+ */
+MON_PRIVATE LlvmValue LlvmBeginCallExp(LlvmGenContext* ctx,
+                                       const char* funcName,
+                                       LlvmTypeRef returnType);
+
+MON_PRIVATE void LlvmBeginCallStmt(LlvmGenContext* ctx,
+                                   const char* funcName,
+                                   LlvmTypeRef funcReturnType);
+
+MON_PRIVATE void LlvmCallEmitArg(LlvmGenContext* ctx,
+                                 LlvmTypeRef argType,
+                                 LlvmValue argValue);
+
+MON_PRIVATE void LlvmEndCall(LlvmGenContext* ctx);
+
 /** Writes an llvm location. */
 MON_PRIVATE void LlvmEmitValue(LlvmGenContext* ctx, LlvmValue loc);
 

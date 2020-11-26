@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "err.h"
 #include "obj.h"
+#include "montypes.h"
 
 void RtInternal_Init();
 

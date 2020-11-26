@@ -71,6 +71,7 @@ static void DumpReduce(const char* fmt, ...);
 %token MON_TK_LIT_INT
 %token MON_TK_LIT_FLOAT
 %token MON_TK_LIT_STRING
+%token MON_TK_LIT_CHAR
 %token MON_TK_OP_ADD
 %token MON_TK_OP_SUB
 %token MON_TK_OP_MUL
@@ -128,7 +129,7 @@ static void DumpReduce(const char* fmt, ...);
 %type <expNode>       exp_shift exp_bitand exp_xor exp_bitor opt_exp exp exp_primary exp_postfix exp_unary exp_multiplicative exp_additive exp_conditional opt_bracket_exp bracket_exp
 %type <condNode>      cond cond_primary cond_not cond_and cond_or
 %type <callNode>      call
-%type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT MON_TK_LIT_STRING
+%type <literal>       numeral MON_TK_LIT_FLOAT MON_TK_LIT_INT MON_TK_LIT_STRING MON_TK_LIT_CHAR
 %type <vector>        parameters opt_parameters statements opt_statements exps opt_exps field_defs
 %type <typeDescNode>  typedesc
 %type <fieldNode>     def_field
@@ -686,6 +687,16 @@ exp_primary:
 
     | MON_TK_LIT_STRING {
         DumpReduce("exp_primary r7");
+
+        $$ = Mon_AstExpNewLiteral($1);
+
+        THROW_IF_ALLOC_FAIL($$);
+
+        FILL_NODE_HEADER($$->header);
+    }
+
+    | MON_TK_LIT_CHAR {
+        DumpReduce("exp_primary r8");
 
         $$ = Mon_AstExpNewLiteral($1);
 

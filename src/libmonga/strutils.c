@@ -20,6 +20,44 @@ char* DuplicateString(const char* s, size_t len) {
     return ret;
 }
 
+char ConvertControlCharacter(char c) {
+    switch (c) {
+        case '0': 
+            return '\0';
+
+        case 'A':
+        case 'a': 
+            return '\a';
+
+        case 'B':
+        case 'b': 
+            return '\b';
+
+        case 'T':
+        case 't': 
+            return '\t';
+
+        case 'N':
+        case 'n': 
+            return '\n';
+
+        case 'V':
+        case 'v': 
+            return '\v';
+
+        case 'F':
+        case 'f': 
+            return '\f';
+
+        case 'R':
+        case 'r': 
+            return '\r';
+
+        default:
+            return c;
+    }
+}
+
 void ProcessStringLiteral(const char* s, char** outBuf, int* outLen) {
     MON_CANT_BE_NULL(s);
     MON_CANT_BE_NULL(outBuf);
@@ -47,50 +85,7 @@ void ProcessStringLiteral(const char* s, char** outBuf, int* outLen) {
         } else {
             len--;
             ++i;
-            switch (s[i]) {
-                case '0': 
-                    newStr[j] = '\0';
-                    break;
-
-                case 'A':
-                case 'a': 
-                    newStr[j] = '\a';
-                    break;
-
-                case 'B':
-                case 'b': 
-                    newStr[j] = '\b';
-                    break;
-
-                case 'T':
-                case 't': 
-                    newStr[j] = '\t';
-                    break;
-
-                case 'N':
-                case 'n': 
-                    newStr[j] = '\n';
-                    break;
-
-                case 'V':
-                case 'v': 
-                    newStr[j] = '\v';
-                    break;
-
-                case 'F':
-                case 'f': 
-                    newStr[j] = '\f';
-                    break;
-
-                case 'R':
-                case 'r': 
-                    newStr[j] = '\r';
-                    break;
-
-                default:
-                    newStr[j] = s[i];
-                    break;
-            }
+            newStr[j] = ConvertControlCharacter(s[i]);
         }
         ++j;
     }

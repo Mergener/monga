@@ -41,6 +41,7 @@ void InitializeLlvmContext(LlvmGenContext* ctx,
     ctx->targetAst = targetAst;
     ctx->optimizationLevel = optLevel;
     ctx->nextGlobalId = 0;
+    ctx->emittingCallFirstArg = false;
 }
 
 void LlvmEmit(LlvmGenContext* ctx, const char* fmt, ...) {

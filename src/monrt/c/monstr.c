@@ -6,10 +6,10 @@
 #include "err.h"
 #include "mem.h"
 
-static int Hash(const Mon_Char* key, int32_t len) {
+static int Hash(const Mon_Char* key, Mon_Int len) {
     // Uses djb2 hash algorithm.
     uint32_t hash = 5381;
-    int32_t c;
+    Mon_Int c;
     const Mon_Char* end = key + len;
 
     while (key != end) {
@@ -18,7 +18,7 @@ static int Hash(const Mon_Char* key, int32_t len) {
         key++;
     }
 
-    return (int32_t)hash;
+    return (Mon_Int)hash;
 }
 
 static Mon_Str* NewString(const Mon_Char* cstr, int len) {
@@ -67,7 +67,7 @@ Mon_Char* RtInternal_CharArrayFromStr(Mon_Str* str) {
     return buffer;
 }
 
-Mon_Str* Substr(Mon_Str* str, int32_t begin, int32_t len) {
+Mon_Str* Substr(Mon_Str* str, Mon_Int begin, Mon_Int len) {
     if (str == NULL) {
         FatalError(RT_ERR_NULLARG);
     }

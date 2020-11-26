@@ -235,6 +235,10 @@ static void XmlDumpLiteral(AstDumpContext* ctx, Mon_Literal literal) {
         case MON_LIT_INT:
             DUMPF_OR_STOP(ctx, "<IntConstant>%ld</IntConstant>", literal.integer);
             break;
+
+        case MON_LIT_CHAR:
+            DUMPF_OR_STOP(ctx, "<CharConstant>%c</CharConstant>", literal.character);
+            break;
     }
 }
 

@@ -1,0 +1,14 @@
+type ByteArray = [byte];
+type ArrayOfArray = [ByteArray];
+
+function main() {
+    var ba: ArrayOfArray;
+
+    ba = new ByteArray[32];
+
+    if (ba[0] == null) {
+        printString("True");
+    } else {
+        printString("False");
+    }
+}

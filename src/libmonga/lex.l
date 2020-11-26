@@ -42,13 +42,20 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 
 \'\\.\' {
     Mon_TkColumn += yyleng;
-
     
+    yylval.literal.character = ConvertControlCharacter(yytext[2]);
+    yylval.literal.literalKind = MON_LIT_CHAR;
+
+    return MON_TK_LIT_CHAR;
 }
 
 \'.\' {
     Mon_TkColumn += yyleng;
-    
+
+    yylval.literal.character = yytext[1];
+    yylval.literal.literalKind = MON_LIT_CHAR;
+
+    return MON_TK_LIT_CHAR;
 }
 
 \n {

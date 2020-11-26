@@ -398,10 +398,10 @@ static Mon_AstTypeDef* FindOrCreateArrayType(SemAnalysisCtx* ctx, Mon_AstTypeDef
     MON_CANT_BE_NULL(innerType);
 
     // Anonymous array types will be prefixed with the following prefix:
-    static const char prefix[] = "@array_";
+    static const char prefix[] = ".array_";
 
     // In practice, anonymous array types will be named as the example below:
-    // new int[24] -> creates an anonymous type of name '@array_int'.
+    // new int[24] -> creates an anonymous type of name '.array_int'.
 
     size_t bufLen = sizeof(prefix) + strlen(innerType->typeName);
     char* buf = Mon_Alloc(bufLen); // No need to add space for '\0' because
@@ -489,7 +489,7 @@ static Mon_AstTypeDef* CreateAnonymousRecord(SemAnalysisCtx* ctx, Mon_AstTypeDes
     MON_ASSERT(typeDesc->typeDescKind == MON_TYPEDESC_RECORD,
         "Can only create anonymous record types for resolved anonymous record typedescs.");
 
-    static const char format[] = "@record_%x";
+    static const char format[] = ".record_%x";
 
     Mon_AstTypeDef* ret;
 
@@ -669,26 +669,35 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp) {
             break;
 
         case MON_EXP_LITERAL:
-            if (exp->exp.literalExpr.literalKind == MON_LIT_INT) {
-                int64_t val = exp->exp.literalExpr.integer;
-                if (val > INT32_MAX || val < INT32_MIN) {
-                    type = BUILTIN_TABLE->types.tLong;
-                } else {
-                    type = BUILTIN_TABLE->types.tInt;
+            switch (exp->exp.literalExpr.literalKind) {
+                case MON_LIT_INT: {
+                    int64_t val = exp->exp.literalExpr.integer;
+                    if (val > INT32_MAX || val < INT32_MIN) {
+                        type = BUILTIN_TABLE->types.tLong;
+                    } else {
+                        type = BUILTIN_TABLE->types.tInt;
+                    }
+                    exp->semantic.type = type;
+                    return true;
                 }
-                exp->semantic.type = type;
-                return true;
-            } else if (exp->exp.literalExpr.literalKind == MON_LIT_FLOAT) {
-                type = BUILTIN_TABLE->types.tDouble;                
-                exp->semantic.type = type;
-                return true;
-            } else if (exp->exp.literalExpr.literalKind == MON_LIT_STR) {
-                type = FindOrCreateArrayType(ctx, BUILTIN_TABLE->types.tChar);
-                exp->semantic.type = type;
-                return true;
-            } else {
-                MON_ASSERT(false, "Unimplemented literalKind. (got %d)", (int)exp->exp.literalExpr.literalKind);
+                case MON_LIT_FLOAT: {
+                    type = BUILTIN_TABLE->types.tDouble;                
+                    exp->semantic.type = type;
+                    return true;
+                }
+                case MON_LIT_STR: {
+                    type = FindOrCreateArrayType(ctx, BUILTIN_TABLE->types.tChar);
+                    exp->semantic.type = type;
+                    return true;
+                }
+                case MON_LIT_CHAR: {
+                    type = BUILTIN_TABLE->types.tChar;
+                    exp->semantic.type = type;
+                    return true;
+                }
             }
+            MON_ASSERT(false, "Unimplemented literalKind. (got %d)", 
+                (int)exp->exp.literalExpr.literalKind);
             break;
 
         case MON_EXP_CALL:

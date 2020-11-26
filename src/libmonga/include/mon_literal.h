@@ -9,7 +9,8 @@ typedef enum {
 
     MON_LIT_STR,
     MON_LIT_FLOAT,
-    MON_LIT_INT
+    MON_LIT_INT,
+    MON_LIT_CHAR
 
 } Mon_LiteralKind;
 

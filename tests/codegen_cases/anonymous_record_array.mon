@@ -1,0 +1,10 @@
+# I don't really know how anonymous records can be useful
+# if we can't 'new' them, but OK nevertheless...
+type T = [{
+    x: int;
+    y: int;
+}];
+
+function main() {
+    var t: T;
+}
