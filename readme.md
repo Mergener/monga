@@ -59,6 +59,5 @@ monga -s <sourceFile1> [<sourceFilen>...]
 
 ## TO-DO
 
-* Implement echo statement
 * Fix issues with Mon_Dict
   * Replace several uses of vectors with hashtables (once Mon_Dict works properly)
