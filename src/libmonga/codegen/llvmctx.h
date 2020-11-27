@@ -77,6 +77,7 @@ typedef struct LlvmGenContext_ {
     } blockCtx;
 
     bool emittingCallFirstArg;
+    bool emittingFnDeclFirstArg;
 
 } LlvmGenContext;
 

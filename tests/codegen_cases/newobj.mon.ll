@@ -3,7 +3,14 @@ source_filename = "tests/codegen_cases/newobj.mon"
 %string = type { i32, i32 }
 
 declare %string* @RtInternal_StrFromSZ(i8*)
-declare i8* @RtInternal_GcAlloc(i32)
+declare i8* @RtInternal_GcAlloc(i64)
+declare void @RtInternal_EchoArray(i8*)
+declare void @RtInternal_EchoObject(i8*)
+declare void @RtInternal_EchoInteger(i64)
+declare void @RtInternal_EchoReal(double)
+declare void @RtInternal_EchoChar(i8)
+declare void @RtInternal_EchoString(%string*)
+declare i8* @RtInternal_GetAllocSize(i64)
 declare void @RtInternal_Init()
 
 %Vec3 = type { float, float, float }
@@ -13,7 +20,7 @@ define void @main() {
 	%t.0 = alloca %Vec3*
 
 	store %Vec3* null, %Vec3** %t.0
-	%t.1 = call i8* @RtInternal_GcAlloc(i32 12)
+	%t.1 = call i8* @RtInternal_GcAlloc(i64 12)
 	%t.2 = bitcast i8* %t.1 to %Vec3*
 	store %Vec3* %t.2, %Vec3** %t.0
 

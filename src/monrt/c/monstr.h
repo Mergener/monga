@@ -3,11 +3,11 @@
 
 #include "montypes.h"
 
-typedef struct {
+struct Mon_Str_ {
     Mon_Int length;
     Mon_Int hash;
     Mon_Char buf[];
-} Mon_Str;
+};
 
 Mon_Str* RtInternal_StrFromSZ(const Mon_Char* sz);
 Mon_Char* RtInternal_CharArrayFromStr(Mon_Str* str);

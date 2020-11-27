@@ -5,8 +5,10 @@
 # Usage:
 #	gencases <PATH_TO_MONGA_EXECUTABLE>
 
-MONGA_EXEC_PATH=$1
+MONGA_BIN_PATH=$1
 shift
+
+MONGA_EXEC_PATH=$MONGA_BIN_PATH/src/exec/monga
 
 function gen_cases_monga {
 	for f in $2/*; do
@@ -48,5 +50,5 @@ for f in tests/codegen_cases/*.mon; do
 
 	rm $f.ll &>/dev/null
 
-	scripts/bash/testcgen $MONGA_EXEC_PATH $f > $f.expected
+	scripts/bash/testcgen $MONGA_BIN_PATH $f > $f.expected
 done

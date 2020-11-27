@@ -10,6 +10,7 @@ declare void @RtInternal_EchoInteger(i64)
 declare void @RtInternal_EchoReal(double)
 declare void @RtInternal_EchoChar(i8)
 declare void @RtInternal_EchoString(%string*)
+declare i8* @RtInternal_GetAllocSize(i64)
 declare void @RtInternal_Init()
 
 define i32 @max(i32, i32) {

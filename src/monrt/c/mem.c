@@ -8,6 +8,8 @@
 #include "err.h"
 #include "montypes.h"
 
+#include "gc.h"
+
 #define SMALL_BUFFER_SIZE 32
 #define SMALL_BUFFER_COUNT 16
 
@@ -34,7 +36,7 @@ static void* Alloc(Mon_Intptr size) {
 }
 
 void* RtInternal_GcAlloc(Mon_Intptr size) {
-    return Alloc(size);
+    return GC_malloc(size);
 }
 
 void* RawAlloc(Mon_Intptr size) {
@@ -60,4 +62,5 @@ void RawFree(void* ptr) {
 
     free(ptr);
 }
-Mon_Int RtInternal_GetAllocSize(void* ptr);
+
+Mon_Intptr RtInternal_GetAllocSize(void* ptr);

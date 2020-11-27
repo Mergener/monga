@@ -12,12 +12,8 @@ function main() {
 
     var v: Vec2;
     @v;
-    v = new Vec2;
-    @v;
 
     var varr: Vec2array;
-    @varr;
-    varr = new Vec2[5];
     @varr;
 
     @5.6;

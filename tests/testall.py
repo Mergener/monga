@@ -8,7 +8,8 @@ if (len(sys.argv) != 2):
 	print(f"Usage: {sys.argv[0]} <pathToMongaExecutable>")
 	exit(-1)
 
-MONGA_PATH = sys.argv[1]
+MONGA_BIN_PATH = sys.argv[1]
+MONGA_PATH = os.path.join(MONGA_BIN_PATH, "src", "exec", "monga")
 CASES_PATH = os.path.dirname(os.path.realpath(__file__))
 os.chdir(os.path.join(CASES_PATH, ".."))
 
@@ -76,8 +77,11 @@ def test_reducedump(input_file_path, expected_out_path):
 	test_cmd([MONGA_PATH, '-r', input_file_path], expected_out_path)
 
 def test_codegen(input_file_path, expected_out_path):
-	global MONGA_PATH
-	test_cmd(["scripts/bash/testcgen", MONGA_PATH, input_file_path], expected_out_path)
+	global MONGA_BIN_PATH
+	if input_file_path.endswith(".ll"):
+		return
+
+	test_cmd(["scripts/bash/testcgen", MONGA_BIN_PATH, input_file_path], expected_out_path)
 
 def test_each(path, test_name, test_func):
 	global done

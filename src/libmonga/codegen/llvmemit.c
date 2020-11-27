@@ -715,3 +715,44 @@ void LlvmEndCall(LlvmGenContext* ctx) {
 
     LlvmEmit(ctx, ")\n");
 }
+
+LlvmValue LlvmBeginFuncDecl(LlvmGenContext* ctx,
+                            const char* funcName,
+                            LlvmTypeRef retTypeRef,
+                            bool define) {
+    MON_CANT_BE_NULL(ctx);
+    MON_CANT_BE_NULL(funcName);
+
+    LlvmEmit(ctx, "");
+    if (define) {
+        LlvmEmit(ctx, "define ");
+    } else {
+        LlvmEmit(ctx, "declare ");
+    }
+
+    LlvmEmitTyperef(ctx, retTypeRef);
+    LlvmEmit(ctx, " @%s(", funcName);
+
+    ctx->emittingFnDeclFirstArg = true;
+
+    return ValNamedGlobal(funcName);
+}
+
+void LlvmFuncDeclEmitArg(LlvmGenContext* ctx,
+                         LlvmTypeRef argType) {
+    MON_CANT_BE_NULL(ctx);
+
+    if (!ctx->emittingFnDeclFirstArg) {
+        LlvmEmit(ctx, ", ");
+    } else {
+        ctx->emittingFnDeclFirstArg = false;
+    }
+
+    LlvmEmitTyperef(ctx, argType);
+}
+
+void LlvmEndFuncDecl(LlvmGenContext* ctx) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmEmit(ctx, ")\n");
+}

@@ -2,8 +2,9 @@
 
 #include <stdio.h>
 #include <signal.h>
+#include "gc.h"
 
-static void OnSigsegv(int sig) {
+static void OnNullRef(int sig) {
     fprintf(stderr, "Null reference exception!\n");
     exit(EXIT_FAILURE);
 }
@@ -14,7 +15,12 @@ static void InitFailure() {
 }
 
 void RtInternal_Init() {
-    if (signal(SIGSEGV, OnSigsegv) == SIG_ERR) {
+    if (signal(SIGSEGV, OnNullRef) == SIG_ERR) {
         InitFailure();
     }
+    if (signal(SIGILL, OnNullRef) == SIG_ERR) {
+        InitFailure();
+    }
+
+    GC_init();
 }

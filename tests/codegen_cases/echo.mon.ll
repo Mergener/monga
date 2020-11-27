@@ -10,6 +10,7 @@ declare void @RtInternal_EchoInteger(i64)
 declare void @RtInternal_EchoReal(double)
 declare void @RtInternal_EchoChar(i8)
 declare void @RtInternal_EchoString(%string*)
+declare i8* @RtInternal_GetAllocSize(i64)
 declare void @RtInternal_Init()
 
 %Vec2 = type { float, float }
@@ -30,42 +31,26 @@ define void @main() {
 	%t.4 = load %Vec2*, %Vec2** %t.3
 	%t.5 = bitcast %Vec2* %t.4 to i8*
 	call void @RtInternal_EchoObject(i8* %t.5)
-	%t.6 = call i8* @RtInternal_GcAlloc(i64 8)
-	%t.7 = bitcast i8* %t.6 to %Vec2*
-	store %Vec2* %t.7, %Vec2** %t.3
+	%t.6 = alloca %Vec2**
 
-	%t.8 = load %Vec2*, %Vec2** %t.3
-	%t.9 = bitcast %Vec2* %t.8 to i8*
-	call void @RtInternal_EchoObject(i8* %t.9)
-	%t.10 = alloca %Vec2**
-
-	store %Vec2** null, %Vec2*** %t.10
-	%t.11 = load %Vec2**, %Vec2*** %t.10
-	%t.12 = bitcast %Vec2** %t.11 to i8*
-	call void @RtInternal_EchoArray(i8* %t.12)
-	%t.13 = sext i32 5 to i64
-	%t.14 = mul i64 %t.13, 8
-	%t.15 = call i8* @RtInternal_GcAlloc(i64 %t.14)
-	%t.16 = bitcast i8* %t.15 to %Vec2**
-	store %Vec2** %t.16, %Vec2*** %t.10
-
-	%t.17 = load %Vec2**, %Vec2*** %t.10
-	%t.18 = bitcast %Vec2** %t.17 to i8*
-	call void @RtInternal_EchoArray(i8* %t.18)
+	store %Vec2** null, %Vec2*** %t.6
+	%t.7 = load %Vec2**, %Vec2*** %t.6
+	%t.8 = bitcast %Vec2** %t.7 to i8*
+	call void @RtInternal_EchoArray(i8* %t.8)
 	call void @RtInternal_EchoReal(double 5.600000)
 	call void @RtInternal_EchoChar(i8 100)
 	call void @RtInternal_EchoChar(i8 10)
 	call void @RtInternal_EchoChar(i8 101)
-	%t.19 = alloca %string*
+	%t.9 = alloca %string*
 
-	store %string* null, %string** %t.19
-	%t.20 = load %string*, %string** %t.19
-	call void @RtInternal_EchoString(%string* %t.20)
-	%t.21 = call %string* @RtInternal_StrFromSZ(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @str.0, i32 0, i32 0))
-	store %string* %t.21, %string** %t.19
+	store %string* null, %string** %t.9
+	%t.10 = load %string*, %string** %t.9
+	call void @RtInternal_EchoString(%string* %t.10)
+	%t.11 = call %string* @RtInternal_StrFromSZ(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @str.0, i32 0, i32 0))
+	store %string* %t.11, %string** %t.9
 
-	%t.22 = load %string*, %string** %t.19
-	call void @RtInternal_EchoString(%string* %t.22)
+	%t.12 = load %string*, %string** %t.9
+	call void @RtInternal_EchoString(%string* %t.12)
 	ret void
 }
 

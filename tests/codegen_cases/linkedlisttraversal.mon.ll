@@ -3,7 +3,14 @@ source_filename = "tests/codegen_cases/linkedlisttraversal.mon"
 %string = type { i32, i32 }
 
 declare %string* @RtInternal_StrFromSZ(i8*)
-declare i8* @RtInternal_GcAlloc(i32)
+declare i8* @RtInternal_GcAlloc(i64)
+declare void @RtInternal_EchoArray(i8*)
+declare void @RtInternal_EchoObject(i8*)
+declare void @RtInternal_EchoInteger(i64)
+declare void @RtInternal_EchoReal(double)
+declare void @RtInternal_EchoChar(i8)
+declare void @RtInternal_EchoString(%string*)
+declare i8* @RtInternal_GetAllocSize(i64)
 declare void @RtInternal_Init()
 
 %Node = type { %Node*, i8 }
@@ -17,7 +24,7 @@ define %Node* @makeNode(%Node*, i8) {
 	%t.2 = alloca %Node*
 
 	store %Node* null, %Node** %t.2
-	%t.3 = call i8* @RtInternal_GcAlloc(i32 16)
+	%t.3 = call i8* @RtInternal_GcAlloc(i64 16)
 	%t.4 = bitcast i8* %t.3 to %Node*
 	store %Node* %t.4, %Node** %t.2
 

@@ -105,14 +105,26 @@ MON_PRIVATE LlvmValue ValSSA(int ssaId);
 
 MON_PRIVATE LlvmValue ValNull();
 
-MON_PRIVATE LlvmValue ValGlobal(int globalId);
-
 MON_PRIVATE LlvmValue ValLiteral(Mon_Literal lit);
 
 MON_PRIVATE LlvmValue LlvmEmitBitcast(LlvmGenContext* ctx, 
                                       LlvmTypeRef srcType, 
                                       LlvmValue srcVal,
                                       LlvmTypeRef destType);
+
+MON_PRIVATE LlvmValue LlvmBeginFuncDecl(LlvmGenContext* ctx,
+                                        const char* funcName,
+                                        LlvmTypeRef retTypeRef,
+                                        bool define);
+
+MON_PRIVATE void LlvmFuncDeclEmitArg(LlvmGenContext* ctx,
+                                     LlvmTypeRef argType);
+
+MON_PRIVATE void LlvmEndFuncDecl(LlvmGenContext* ctx);
+
+MON_PRIVATE LlvmValue LlvmBeginFuncImpl(LlvmGenContext* ctx);
+
+MON_PRIVATE LlvmValue LlvmEndFuncImpl(LlvmGenContext* ctx);
 
 /**
  *  Begins emitting a call instruction.
@@ -153,34 +165,34 @@ MON_PRIVATE void LlvmEmitLoad(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue s
 MON_PRIVATE void LlvmEmitTyperef(LlvmGenContext* ctx, LlvmTypeRef typeRef);
 
 MON_PRIVATE LlvmValue LlvmEmitFpext(LlvmGenContext* ctx, 
-                                      LlvmTypeRef expType, 
-                                      LlvmValue expLoc, 
-                                      LlvmTypeRef destType);
+                                    LlvmTypeRef expType, 
+                                    LlvmValue expLoc, 
+                                    LlvmTypeRef destType);
 
 MON_PRIVATE LlvmValue LlvmEmitFptrunc(LlvmGenContext* ctx, 
-                                        LlvmTypeRef expType, 
-                                        LlvmValue expLoc, 
-                                        LlvmTypeRef destType);
-
-MON_PRIVATE LlvmValue LlvmEmitFptosi(LlvmGenContext* ctx, 
-                                       LlvmTypeRef expType, 
-                                       LlvmValue expLoc, 
-                                       LlvmTypeRef destType);
-
-MON_PRIVATE LlvmValue LlvmEmitSitofp(LlvmGenContext* ctx, 
-                                        LlvmTypeRef expType, 
-                                        LlvmValue expLoc, 
-                                        LlvmTypeRef destType);
-
-MON_PRIVATE LlvmValue LlvmEmitSext(LlvmGenContext* ctx, 
                                       LlvmTypeRef expType, 
                                       LlvmValue expLoc, 
                                       LlvmTypeRef destType);
 
+MON_PRIVATE LlvmValue LlvmEmitFptosi(LlvmGenContext* ctx, 
+                                     LlvmTypeRef expType, 
+                                     LlvmValue expLoc, 
+                                     LlvmTypeRef destType);
+
+MON_PRIVATE LlvmValue LlvmEmitSitofp(LlvmGenContext* ctx, 
+                                     LlvmTypeRef expType, 
+                                     LlvmValue expLoc, 
+                                     LlvmTypeRef destType);
+
+MON_PRIVATE LlvmValue LlvmEmitSext(LlvmGenContext* ctx, 
+                                   LlvmTypeRef expType, 
+                                   LlvmValue expLoc, 
+                                   LlvmTypeRef destType);
+
 MON_PRIVATE LlvmValue LlvmEmitTrunc(LlvmGenContext* ctx, 
-                                        LlvmTypeRef expType, 
-                                        LlvmValue expLoc, 
-                                        LlvmTypeRef destType);
+                                    LlvmTypeRef expType, 
+                                    LlvmValue expLoc, 
+                                    LlvmTypeRef destType);
 
 MON_PRIVATE void LlvmEmitRet(LlvmGenContext* ctx, 
                              LlvmTypeRef retType,

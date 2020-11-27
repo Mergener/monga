@@ -2,10 +2,14 @@
 
 # Compiles monga source code into an executable.
 # Usage:
-#   domonga <PATH_TO_MONGA_EXECUTABLE> <outputFile> <sourceFile1> [<sourceFileN>...]
+#   domonga <PATH_TO_MONGA_BINARIES> <outputFile> <sourceFile1> [<sourceFileN>...]
 
-MONGA_PATH=$1
+MONGA_BIN=$1
 shift
+
+MONGA_EXEC_PATH=$MONGA_BIN/src/exec/monga
+MONRT_LIB_PATH=$MONGA_BIN/src/monrt
+GC_LIB_PATH=$MONGA_BIN/ext/bdwgc
 
 OUT_FILE=$1
 shift
@@ -55,7 +59,7 @@ done
 
 # monga > llvm
 
-$MONGA_PATH -o $files $MONRT ||
+$MONGA_EXEC_PATH -o $files $MONRT ||
 do_error
 
 # monga > asm
@@ -73,7 +77,7 @@ asm_files=""
 for f in $files; do
     asm_files="$asm_files $f.s"
 done
-clang -o $OUT_FILE $asm_files src/monrt/c/*.c -no-pie
+clang -o $OUT_FILE $asm_files -L$MONRT_LIB_PATH -lmonrt -L$GC_LIB_PATH -lgc -no-pie -pthread
 
 clean
 exit 0

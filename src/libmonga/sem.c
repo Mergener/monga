@@ -817,14 +817,25 @@ static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_As
                 return false;
             }
             
+
             Mon_AstTypeDef* lType = stmt->statement.assignment.lvalue->semantic.type;
             Mon_AstTypeDef* rType = stmt->statement.assignment.rvalue->semantic.type;
+            
 
             if (!IsTypeAssignableFrom(lType, rType)) {
                 LogError(ctx, &stmt->header, "Cannot assign value of type '%s' to lvalue of type '%s'.",
                     rType->typeName, lType->typeName);
                 return false;
             }
+
+            // Strings are immutable, do not allow assignment for individual
+            // element indices.
+            if (stmt->statement.assignment.lvalue->varKind == MON_VAR_INDEXED &&
+                GetUnderlyingType(stmt->statement.assignment.lvalue->var.indexed.indexedExpr->semantic.type) == BUILTIN_TABLE->types.tString) {
+                LogError(ctx, &stmt->header, "Cannot change individual characters of strings as they are immutable.");
+                return false;
+            }
+
             return true;
 
         case MON_STMT_RETURN:

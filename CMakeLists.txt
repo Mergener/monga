@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.18)
 project(monga)
 
 add_subdirectory(src)
+SET(BUILD_SHARED_LIBS OFF CACHE BOOL "Force Boehm to build static library.")
+add_subdirectory(ext/bdwgc EXCLUDE_FROM_ALL)
 
 if (MSVC)
     add_compile_options(/W4 /Wx)
@@ -21,5 +23,5 @@ add_test(NAME Montests
 
 if (${Python3_FOUND})
     add_test(NAME PythonTests
-             COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tests/testall.py" "${CMAKE_BINARY_DIR}/src/exec/monga")
+             COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tests/testall.py" "${CMAKE_BINARY_DIR}")
 endif()
