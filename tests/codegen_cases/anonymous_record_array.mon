@@ -7,4 +7,5 @@ type T = [{
 
 function main() {
     var t: T;
+    @t;
 }

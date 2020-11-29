@@ -26,5 +26,4 @@ function main() {
     @s;
     s = "Hello";
     @s;
-
 }

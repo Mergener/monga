@@ -1,0 +1,1 @@
+extern function Randint(min: int, max: int): int;

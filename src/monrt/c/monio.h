@@ -4,11 +4,11 @@
 #include "montypes.h"
 #include "monstr.h"
 
-void printInteger(int i);
-void printFloat(float f);
-void printString(const Mon_Str* str);
+void PrintInteger(int i);
+void PrintFloat(float f);
+void PrintString(const Mon_Str* str);
 
-Mon_Str* readString();
+Mon_Str* Input();
 
 void RtInternal_EchoInteger(Mon_Long integer);
 void RtInternal_EchoReal(Mon_Double real);

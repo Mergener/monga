@@ -1,10 +1,11 @@
-extern function readInt(): int;
+# Reads a line of input from the standard input stream.
+extern function Input(): string;
 
 # Prints a 32-bit integer to stdout.
-extern function printInteger(i: int);
+extern function PrintInteger(i: int);
 
 # Prints a 64-bit float to stdout.
-extern function printFloat(f: float);
+extern function PrintFloat(f: float);
 
 # Prints a string to stdout.
-extern function printString(s: string);
+extern function PrintString(s: string);
