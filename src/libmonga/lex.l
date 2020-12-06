@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "mon_alloc.h"
+#include "mon_literal.h"
 #include "strutils.h"
 
 #include "grammar.tab.h"
@@ -32,10 +33,11 @@ static Mon_TkVal MakeIdentifier(const char* name, size_t length);
 \"([^\\\"]|\\.)*\" {
     Mon_TkColumn += yyleng;
 
-    int len;
-    ProcessStringLiteral(yytext, &yylval.literal.string.arr, &len);
-    yylval.literal.string.len = len;
-    yylval.literal.literalKind = MON_LIT_STR;
+    char* arr;
+    size_t len;
+    ProcessStringLiteral(yytext + 1, yyleng - 2, &arr, &len);
+
+    yylval.literal = Mon_LiteralString(arr, len);
 
     return MON_TK_LIT_STRING;
 }

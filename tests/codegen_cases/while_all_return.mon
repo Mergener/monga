@@ -6,5 +6,5 @@ function foo(i: int): int {
 }
 
 function main() {
-    printInteger(foo(7));
+    @(foo(7));
 }

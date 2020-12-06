@@ -28,6 +28,6 @@ MON_PRIVATE char* DuplicateString(const char* s, size_t len);
  */
 MON_PRIVATE char ConvertControlCharacter(char c);
 
-MON_PRIVATE void ProcessStringLiteral(const char* s, char** outBuf, int* outLen);
+MON_PRIVATE void ProcessStringLiteral(const char* s, size_t len, char** outBuf, size_t* outLen);
 
 #endif // STRUTILS_H

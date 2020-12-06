@@ -7,3 +7,5 @@ extern function Strfind(a: string, content: string): int;
 extern function ParseInt(s: string): int;
 
 extern function ParseLong(s: string): long;
+
+extern function StrEquals(a: string, b: string): int;

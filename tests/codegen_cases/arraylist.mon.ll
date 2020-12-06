@@ -1,24 +1,27 @@
 source_filename = "tests/codegen_cases/arraylist.mon"
 
-%string = type { i32, i32 }
+%string = type { i64, i64 }
+%.array = type { i64 }
 
 declare %string* @RtInternal_StrFromSZ(i8*)
 declare i8* @RtInternal_GcAlloc(i64)
+declare %.array* @RtInternal_GcAllocArray(i64, i64)
+declare i64 @RtInternal_GetGcArrayElemCount(%.array*)
 declare void @RtInternal_EchoArray(i8*)
 declare void @RtInternal_EchoObject(i8*)
 declare void @RtInternal_EchoInteger(i64)
 declare void @RtInternal_EchoReal(double)
 declare void @RtInternal_EchoChar(i8)
 declare void @RtInternal_EchoString(%string*)
-declare i8* @RtInternal_GetAllocSize(i64)
+declare void @RtInternal_Hash(i8*, i32)
 declare void @RtInternal_Init()
 
-%TArrayList = type { i32*, i32, i32 }
+%TArrayList = type { %.array*, i32, i32 }
 
 define %TArrayList* @Al_Create() {
 	%t.0 = alloca %TArrayList*
-
 	store %TArrayList* null, %TArrayList** %t.0
+
 	%t.1 = call i8* @RtInternal_GcAlloc(i64 16)
 	%t.2 = bitcast i8* %t.1 to %TArrayList*
 	store %TArrayList* %t.2, %TArrayList** %t.0
@@ -30,17 +33,15 @@ define %TArrayList* @Al_Create() {
 	%t.5 = load %TArrayList*, %TArrayList** %t.0
 	%t.6 = getelementptr inbounds %TArrayList, %TArrayList* %t.5, i32 0, i32 0
 	%t.7 = sext i32 8 to i64
-	%t.8 = mul i64 %t.7, 4
-	%t.9 = call i8* @RtInternal_GcAlloc(i64 %t.8)
-	%t.10 = bitcast i8* %t.9 to i32*
-	store i32* %t.10, i32** %t.6
+	%t.8 = call %.array* @RtInternal_GcAllocArray(i64 4, i64 %t.7)
+	store %.array* %t.8, %.array** %t.6
+
+	%t.9 = load %TArrayList*, %TArrayList** %t.0
+	%t.10 = getelementptr inbounds %TArrayList, %TArrayList* %t.9, i32 0, i32 2
+	store i32 8, i32* %t.10
 
 	%t.11 = load %TArrayList*, %TArrayList** %t.0
-	%t.12 = getelementptr inbounds %TArrayList, %TArrayList* %t.11, i32 0, i32 2
-	store i32 8, i32* %t.12
-
-	%t.13 = load %TArrayList*, %TArrayList** %t.0
-	ret %TArrayList* %t.13
+	ret %TArrayList* %t.11
 }
 
 define void @Al_Resize(%TArrayList*, i32) {
@@ -49,84 +50,86 @@ define void @Al_Resize(%TArrayList*, i32) {
 	%t.1 = alloca i32
 	store i32 %1, i32* %t.1
 
-	%t.2 = alloca i32*
+	%t.2 = alloca %.array*
+	store %.array* null, %.array** %t.2
 
-	store i32* null, i32** %t.2
 	%t.3 = alloca i32
-
 	store i32 0, i32* %t.3
-	%t.4 = alloca i32
 
+	%t.4 = alloca i32
 	store i32 0, i32* %t.4
+
 	%t.5 = load i32, i32* %t.1
 	%t.6 = sext i32 %t.5 to i64
-	%t.7 = mul i64 %t.6, 4
-	%t.8 = call i8* @RtInternal_GcAlloc(i64 %t.7)
-	%t.9 = bitcast i8* %t.8 to i32*
-	store i32* %t.9, i32** %t.2
+	%t.7 = call %.array* @RtInternal_GcAllocArray(i64 4, i64 %t.6)
+	store %.array* %t.7, %.array** %t.2
 
-	%t.10 = load i32, i32* %t.1
-	%t.11 = load %TArrayList*, %TArrayList** %t.0
-	%t.12 = getelementptr inbounds %TArrayList, %TArrayList* %t.11, i32 0, i32 1
-	%t.13 = load i32, i32* %t.12
-	%t.14 = icmp slt i32 %t.10, %t.13
-	br i1 %t.14, label %l.0, label %l.1
+	%t.8 = load i32, i32* %t.1
+	%t.9 = load %TArrayList*, %TArrayList** %t.0
+	%t.10 = getelementptr inbounds %TArrayList, %TArrayList* %t.9, i32 0, i32 1
+	%t.11 = load i32, i32* %t.10
+	%t.12 = icmp slt i32 %t.8, %t.11
+	br i1 %t.12, label %l.0, label %l.1
 l.0:
-	%t.15 = load i32, i32* %t.1
+	%t.13 = load i32, i32* %t.1
 	br label %l.3
 l.3:
 	br label %l.2
 l.1:
-	%t.16 = load %TArrayList*, %TArrayList** %t.0
-	%t.17 = getelementptr inbounds %TArrayList, %TArrayList* %t.16, i32 0, i32 1
-	%t.18 = load i32, i32* %t.17
+	%t.14 = load %TArrayList*, %TArrayList** %t.0
+	%t.15 = getelementptr inbounds %TArrayList, %TArrayList* %t.14, i32 0, i32 1
+	%t.16 = load i32, i32* %t.15
 	br label %l.4
 l.4:
 	br label %l.2
 l.2:
-	%t.19 = phi i32 [%t.15, %l.3], [%t.18, %l.4]
-	store i32 %t.19, i32* %t.4
+	%t.17 = phi i32 [%t.13, %l.3], [%t.16, %l.4]
+	store i32 %t.17, i32* %t.4
 
 	store i32 0, i32* %t.3
 
-	%t.20 = load i32, i32* %t.3
-	%t.21 = load i32, i32* %t.4
-	%t.22 = icmp slt i32 %t.20, %t.21
-	br i1 %t.22, label %l.6, label %l.5
+	%t.18 = load i32, i32* %t.3
+	%t.19 = load i32, i32* %t.4
+	%t.20 = icmp slt i32 %t.18, %t.19
+	br i1 %t.20, label %l.6, label %l.5
 l.6:
-	%t.23 = load i32, i32* %t.3
-	%t.24 = sext i32 %t.23 to i64
-	%t.25 = load i32*, i32** %t.2
-	%t.26 = getelementptr i32, i32* %t.25, i64 %t.24
+	%t.21 = load i32, i32* %t.3
+	%t.22 = sext i32 %t.21 to i64
+	%t.23 = load %.array*, %.array** %t.2
+	%t.24 = getelementptr %.array, %.array* %t.23, i64 1
+	%t.25 = bitcast %.array* %t.24 to i32*
+	%t.26 = getelementptr i32, i32* %t.25, i64 %t.22
 	%t.27 = load i32, i32* %t.3
 	%t.28 = sext i32 %t.27 to i64
 	%t.29 = load %TArrayList*, %TArrayList** %t.0
 	%t.30 = getelementptr inbounds %TArrayList, %TArrayList* %t.29, i32 0, i32 0
-	%t.31 = load i32*, i32** %t.30
-	%t.32 = getelementptr i32, i32* %t.31, i64 %t.28
-	%t.33 = load i32, i32* %t.32
-	store i32 %t.33, i32* %t.26
+	%t.31 = load %.array*, %.array** %t.30
+	%t.32 = getelementptr %.array, %.array* %t.31, i64 1
+	%t.33 = bitcast %.array* %t.32 to i32*
+	%t.34 = getelementptr i32, i32* %t.33, i64 %t.28
+	%t.35 = load i32, i32* %t.34
+	store i32 %t.35, i32* %t.26
 
-	%t.34 = load i32, i32* %t.3
-	%t.35 = add i32 %t.34, 1
-	store i32 %t.35, i32* %t.3
+	%t.36 = load i32, i32* %t.3
+	%t.37 = add i32 %t.36, 1
+	store i32 %t.37, i32* %t.3
 
 	br label %l.7
 l.7:
-	%t.36 = load i32, i32* %t.3
-	%t.37 = load i32, i32* %t.4
-	%t.38 = icmp slt i32 %t.36, %t.37
-	br i1 %t.38, label %l.6, label %l.5
+	%t.38 = load i32, i32* %t.3
+	%t.39 = load i32, i32* %t.4
+	%t.40 = icmp slt i32 %t.38, %t.39
+	br i1 %t.40, label %l.6, label %l.5
 l.5:
-	%t.39 = load %TArrayList*, %TArrayList** %t.0
-	%t.40 = getelementptr inbounds %TArrayList, %TArrayList* %t.39, i32 0, i32 2
-	%t.41 = load i32, i32* %t.1
-	store i32 %t.41, i32* %t.40
+	%t.41 = load %TArrayList*, %TArrayList** %t.0
+	%t.42 = getelementptr inbounds %TArrayList, %TArrayList* %t.41, i32 0, i32 2
+	%t.43 = load i32, i32* %t.1
+	store i32 %t.43, i32* %t.42
 
-	%t.42 = load %TArrayList*, %TArrayList** %t.0
-	%t.43 = getelementptr inbounds %TArrayList, %TArrayList* %t.42, i32 0, i32 0
-	%t.44 = load i32*, i32** %t.2
-	store i32* %t.44, i32** %t.43
+	%t.44 = load %TArrayList*, %TArrayList** %t.0
+	%t.45 = getelementptr inbounds %TArrayList, %TArrayList* %t.44, i32 0, i32 0
+	%t.46 = load %.array*, %.array** %t.2
+	store %.array* %t.46, %.array** %t.45
 
 	ret void
 }
@@ -161,18 +164,20 @@ l.1:
 	%t.17 = sext i32 %t.16 to i64
 	%t.18 = load %TArrayList*, %TArrayList** %t.0
 	%t.19 = getelementptr inbounds %TArrayList, %TArrayList* %t.18, i32 0, i32 0
-	%t.20 = load i32*, i32** %t.19
-	%t.21 = getelementptr i32, i32* %t.20, i64 %t.17
-	%t.22 = load i32, i32* %t.1
-	store i32 %t.22, i32* %t.21
+	%t.20 = load %.array*, %.array** %t.19
+	%t.21 = getelementptr %.array, %.array* %t.20, i64 1
+	%t.22 = bitcast %.array* %t.21 to i32*
+	%t.23 = getelementptr i32, i32* %t.22, i64 %t.17
+	%t.24 = load i32, i32* %t.1
+	store i32 %t.24, i32* %t.23
 
-	%t.23 = load %TArrayList*, %TArrayList** %t.0
-	%t.24 = getelementptr inbounds %TArrayList, %TArrayList* %t.23, i32 0, i32 1
 	%t.25 = load %TArrayList*, %TArrayList** %t.0
 	%t.26 = getelementptr inbounds %TArrayList, %TArrayList* %t.25, i32 0, i32 1
-	%t.27 = load i32, i32* %t.26
-	%t.28 = add i32 %t.27, 1
-	store i32 %t.28, i32* %t.24
+	%t.27 = load %TArrayList*, %TArrayList** %t.0
+	%t.28 = getelementptr inbounds %TArrayList, %TArrayList* %t.27, i32 0, i32 1
+	%t.29 = load i32, i32* %t.28
+	%t.30 = add i32 %t.29, 1
+	store i32 %t.30, i32* %t.26
 
 	ret void
 }
@@ -184,8 +189,8 @@ define void @Al_RemoveIdx(%TArrayList*, i32) {
 	store i32 %1, i32* %t.1
 
 	%t.2 = alloca i32
-
 	store i32 0, i32* %t.2
+
 	%t.3 = load i32, i32* %t.1
 	%t.4 = icmp slt i32 %t.3, 0
 	br i1 %t.4, label %l.0, label %l.2
@@ -240,30 +245,34 @@ l.6:
 	%t.36 = sext i32 %t.35 to i64
 	%t.37 = load %TArrayList*, %TArrayList** %t.0
 	%t.38 = getelementptr inbounds %TArrayList, %TArrayList* %t.37, i32 0, i32 0
-	%t.39 = load i32*, i32** %t.38
-	%t.40 = getelementptr i32, i32* %t.39, i64 %t.36
-	%t.41 = load i32, i32* %t.2
-	%t.42 = add i32 %t.41, 1
-	%t.43 = sext i32 %t.42 to i64
-	%t.44 = load %TArrayList*, %TArrayList** %t.0
-	%t.45 = getelementptr inbounds %TArrayList, %TArrayList* %t.44, i32 0, i32 0
-	%t.46 = load i32*, i32** %t.45
-	%t.47 = getelementptr i32, i32* %t.46, i64 %t.43
-	%t.48 = load i32, i32* %t.47
-	store i32 %t.48, i32* %t.40
+	%t.39 = load %.array*, %.array** %t.38
+	%t.40 = getelementptr %.array, %.array* %t.39, i64 1
+	%t.41 = bitcast %.array* %t.40 to i32*
+	%t.42 = getelementptr i32, i32* %t.41, i64 %t.36
+	%t.43 = load i32, i32* %t.2
+	%t.44 = add i32 %t.43, 1
+	%t.45 = sext i32 %t.44 to i64
+	%t.46 = load %TArrayList*, %TArrayList** %t.0
+	%t.47 = getelementptr inbounds %TArrayList, %TArrayList* %t.46, i32 0, i32 0
+	%t.48 = load %.array*, %.array** %t.47
+	%t.49 = getelementptr %.array, %.array* %t.48, i64 1
+	%t.50 = bitcast %.array* %t.49 to i32*
+	%t.51 = getelementptr i32, i32* %t.50, i64 %t.45
+	%t.52 = load i32, i32* %t.51
+	store i32 %t.52, i32* %t.42
 
-	%t.49 = load i32, i32* %t.2
-	%t.50 = add i32 %t.49, 1
-	store i32 %t.50, i32* %t.2
+	%t.53 = load i32, i32* %t.2
+	%t.54 = add i32 %t.53, 1
+	store i32 %t.54, i32* %t.2
 
 	br label %l.7
 l.7:
-	%t.51 = load i32, i32* %t.2
-	%t.52 = load %TArrayList*, %TArrayList** %t.0
-	%t.53 = getelementptr inbounds %TArrayList, %TArrayList* %t.52, i32 0, i32 1
-	%t.54 = load i32, i32* %t.53
-	%t.55 = icmp slt i32 %t.51, %t.54
-	br i1 %t.55, label %l.6, label %l.5
+	%t.55 = load i32, i32* %t.2
+	%t.56 = load %TArrayList*, %TArrayList** %t.0
+	%t.57 = getelementptr inbounds %TArrayList, %TArrayList* %t.56, i32 0, i32 1
+	%t.58 = load i32, i32* %t.57
+	%t.59 = icmp slt i32 %t.55, %t.58
+	br i1 %t.59, label %l.6, label %l.5
 l.5:
 	ret void
 }
@@ -292,10 +301,12 @@ l.1:
 	%t.12 = sext i32 %t.11 to i64
 	%t.13 = load %TArrayList*, %TArrayList** %t.0
 	%t.14 = getelementptr inbounds %TArrayList, %TArrayList* %t.13, i32 0, i32 0
-	%t.15 = load i32*, i32** %t.14
-	%t.16 = getelementptr i32, i32* %t.15, i64 %t.12
-	%t.17 = load i32, i32* %t.16
-	ret i32 %t.17
+	%t.15 = load %.array*, %.array** %t.14
+	%t.16 = getelementptr %.array, %.array* %t.15, i64 1
+	%t.17 = bitcast %.array* %t.16 to i32*
+	%t.18 = getelementptr i32, i32* %t.17, i64 %t.12
+	%t.19 = load i32, i32* %t.18
+	ret i32 %t.19
 }
 
 define void @Al_Print(%TArrayList*) {
@@ -303,16 +314,16 @@ define void @Al_Print(%TArrayList*) {
 	store %TArrayList* %0, %TArrayList** %t.0
 
 	%t.1 = alloca i32
-
 	store i32 0, i32* %t.1
+
 	%t.2 = load %TArrayList*, %TArrayList** %t.0
 	%t.3 = getelementptr inbounds %TArrayList, %TArrayList* %t.2, i32 0, i32 1
 	%t.4 = load i32, i32* %t.3
 	store i32 %t.4, i32* %t.1
 
 	%t.5 = alloca i32
-
 	store i32 0, i32* %t.5
+
 	store i32 0, i32* %t.5
 
 	%t.6 = load i32, i32* %t.5
@@ -323,27 +334,29 @@ l.1:
 	%t.9 = load %TArrayList*, %TArrayList** %t.0
 	%t.10 = load i32, i32* %t.5
 	%t.11 = call i32 @Al_Get(%TArrayList* %t.9, i32 %t.10)
-	call void @printInteger(i32 %t.11)
+	%t.12 = sext i32 %t.11 to i64
+	call void @RtInternal_EchoInteger(i64 %t.12)
 
-	%t.12 = load i32, i32* %t.5
-	%t.13 = add i32 %t.12, 1
-	store i32 %t.13, i32* %t.5
+	%t.13 = load i32, i32* %t.5
+	%t.14 = add i32 %t.13, 1
+	store i32 %t.14, i32* %t.5
 
 	br label %l.2
 l.2:
-	%t.14 = load i32, i32* %t.5
-	%t.15 = load i32, i32* %t.1
-	%t.16 = icmp slt i32 %t.14, %t.15
-	br i1 %t.16, label %l.1, label %l.0
+	%t.15 = load i32, i32* %t.5
+	%t.16 = load i32, i32* %t.1
+	%t.17 = icmp slt i32 %t.15, %t.16
+	br i1 %t.17, label %l.1, label %l.0
 l.0:
 	ret void
 }
 
 define void @main() {
 	call void @RtInternal_Init()
-	%t.0 = alloca %TArrayList*
 
+	%t.0 = alloca %TArrayList*
 	store %TArrayList* null, %TArrayList** %t.0
+
 	%t.1 = call %TArrayList* @Al_Create()
 	store %TArrayList* %t.1, %TArrayList** %t.0
 
@@ -381,6 +394,5 @@ define void @main() {
 	ret void
 }
 
-declare void @printInteger(i32)
 
 

@@ -1,5 +1,5 @@
 function main() {
     var s: string;
     s = "test";
-    printString(s);
+    @(s);
 }

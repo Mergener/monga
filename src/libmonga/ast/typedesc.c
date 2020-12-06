@@ -130,9 +130,6 @@ int Mon_GetPrimitiveSize(Mon_PrimitiveTypeCode typeCode) {
 
         case MON_PRIMITIVE_VOID:
             return 0;
-        
-        case MON_PRIMITIVE_INTPTR:
-            return sizeof(intptr_t);
     }
     MON_UNREACHABLE();
     return 0;

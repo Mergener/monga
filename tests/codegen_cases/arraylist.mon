@@ -83,7 +83,7 @@ function Al_Print(al: TArrayList) {
     var i: int;
     i = 0;
     while (i < count) {
-        printInteger(Al_Get(al, i));
+        @Al_Get(al, i);
 
         i = i + 1;
     }    

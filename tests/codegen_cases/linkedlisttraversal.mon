@@ -13,7 +13,7 @@ function makeNode(next: Node, value: byte): Node {
 
 function printList(head: Node) {
     while (head != null) {
-        printInteger(head.value);
+        @(head.value);
         head = head.next;
     }
 }

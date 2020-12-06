@@ -2,7 +2,7 @@ function main() {
     var i: int;
     i = 10;
     while (i > 0) {
-        printInteger(i);
+        @(i);
         i = i - 1;
     }
 }

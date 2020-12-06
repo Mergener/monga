@@ -2,23 +2,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "err.h"
 #include "mem.h"
 
-static int Hash(const Mon_Char* key, Mon_Int len) {
-    // Uses djb2 hash algorithm.
-    uint32_t hash = 5381;
-    Mon_Int c;
-    const Mon_Char* end = key + len;
-
-    while (key != end) {
-        hash = ((hash << 5) + hash) + c;
-        c = *key;
-        key++;
-    }
-
-    return (Mon_Int)hash;
+Mon_TSize RtInternal_Hash(const Mon_Char* key, Mon_TSize len) {
+    return RtHash(key, len);
 }
 
 static Mon_Str* NewString(const Mon_Char* cstr, int len) {
@@ -28,7 +18,7 @@ static Mon_Str* NewString(const Mon_Char* cstr, int len) {
 
     Mon_Str* ret = RtInternal_GcAlloc(sizeof(Mon_Char) * len + sizeof(Mon_Char) + sizeof(Mon_Str));
 
-    ret->hash = Hash(ret->buf, len);
+    ret->hash = RtInternal_Hash(ret->buf, len);
     ret->length = len;
     memcpy(ret->buf, cstr, sizeof(Mon_Char) * len);
     ret->buf[ret->length] = '\0';
@@ -50,7 +40,7 @@ Mon_Str* RtInternal_StrFromSZ(const Mon_Char* sz) {
     memcpy(ret->buf, sz, len * sizeof(Mon_Char));
     ret->buf[len] = '\0';
     ret->length = len;
-    ret->hash = Hash(ret->buf, len);
+    ret->hash = RtHash(ret->buf, len);
 
     return ret;
 }
@@ -67,7 +57,7 @@ Mon_Char* RtInternal_CharArrayFromStr(Mon_Str* str) {
     return buffer;
 }
 
-Mon_Str* Substr(Mon_Str* str, Mon_Int begin, Mon_Int len) {
+Mon_Str* Substr(Mon_Str* str, Mon_TSize begin, Mon_TSize len) {
     if (str == NULL) {
         FatalError(RT_ERR_NULLARG);
     }
@@ -105,6 +95,10 @@ Mon_Str* Strconcat(Mon_Str* stra, Mon_Str* strb) {
     
     buf[combinedLen] = '\0';
 
+    if (buf != stackBuf) {
+        RawFree(buf);
+    }
+
     return NewString(buf, combinedLen);
 }
 
@@ -136,4 +130,16 @@ int Strfind(Mon_Str* s, Mon_Str* content) {
 
 Mon_Str* Strrepl(Mon_Str* s) {
     return NULL;
+}
+
+Mon_Int StrEquals(Mon_Str* a, Mon_Str* b) {
+    if (a == NULL || b == NULL) {
+        FatalError(RT_ERR_NULLARG);
+    }
+
+    if (a->hash != b->hash || a->length != b->length) {
+        return 0;
+    }
+
+    return strncmp(a->buf, b->buf, a->length) == 0;
 }

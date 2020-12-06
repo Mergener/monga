@@ -2,9 +2,12 @@
 
 # Compiles monga source code into an executable.
 # Usage:
-#   domonga <PATH_TO_MONGA_BINARIES> <outputFile> <sourceFile1> [<sourceFileN>...]
+#   domonga <PATH_TO_MONGA_BINARIES> <PATH_TO_MONRT_SOURCES> <outputFile> <sourceFile1> [<sourceFileN>...]
 
 MONGA_BIN=$1
+shift
+
+MONRT_SOURCES_PATH=$1
 shift
 
 MONGA_EXEC_PATH=$MONGA_BIN/src/exec/monga
@@ -22,14 +25,14 @@ fi
 ARGS="$@"
 
 MONRT=""
-for f in "src/monrt/monga/*.mon"; do
+for f in "$MONRT_SOURCES_PATH/*.mon"; do
     MONRT="$MONRT $f"
 done
 
 function clean {
     for arg in $ARGS; do
-        rm_if_exists "$arg.opt.ll"
-        rm_if_exists "$arg.s"
+        #rm_if_exists "$arg.opt.ll"
+        #rm_if_exists "$arg.s"
         rm_if_exists "$arg.o"
     done
     for f in $MONRT; do

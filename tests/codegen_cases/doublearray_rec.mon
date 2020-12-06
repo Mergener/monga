@@ -8,7 +8,7 @@ function printDoubleArray(d: doublearray, index: int, size: int) {
         return;
     }
 
-    printFloat(d[index]);
+    @(d[index]);
     printDoubleArray(d, index + 1, size);
 }
 

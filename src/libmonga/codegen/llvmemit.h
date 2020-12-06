@@ -3,6 +3,8 @@
 
 #include <mon_defines.h>
 
+#include <inttypes.h>
+
 #include "../sem/types.h"
 
 typedef struct LlvmGenContext_ LlvmGenContext;
@@ -91,7 +93,9 @@ typedef enum {
 
 MON_PRIVATE LlvmTypeRef MakeTypeRef(const char* name, int indirection, bool builtin);
 
-MON_PRIVATE LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int indirection);
+MON_PRIVATE LlvmTypeRef TypeToTypeRef(const Mon_AstTypeDef* type, int indirection);
+
+MON_PRIVATE void LlvmEmitArrayRef(LlvmGenContext* ctx, LlvmTypeRef arrayElementType, size_t arrSize, int arrIndir);
 
 /** Creates a new LLVM global location (prefixed with @). */
 MON_PRIVATE LlvmValue ValNamedGlobal(const char* globalName);
@@ -239,8 +243,7 @@ MON_PRIVATE LlvmValue LlvmEmitPhi(LlvmGenContext* ctx,
                                   LlvmValue bLabel,
                                   LlvmValue bValue);
 
-MON_PRIVATE void LlvmEmitString(LlvmGenContext* ctx,
-                                int stringId,
-                                const char* str);
+MON_PRIVATE void LlvmEmitStringLiteral(LlvmGenContext* ctx,
+                                       const char* strLiteral);
 
 #endif // LLVMUTILS_H

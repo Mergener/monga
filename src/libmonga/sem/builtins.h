@@ -23,6 +23,7 @@
 #define TYPENAME_VOID    "void"
 #define TYPENAME_STRING  "string"
 #define TYPENAME_INTPTR  "intptr"
+#define TYPENAME_TSIZE   "tsize"
 //
 
 typedef struct {
@@ -42,6 +43,7 @@ typedef struct {
         Mon_AstTypeDef* tVoid;
         Mon_AstTypeDef* tString;
         Mon_AstTypeDef* tIntPtr;
+        Mon_AstTypeDef* tSize;
     } types;        
 
 } BuiltinTable;

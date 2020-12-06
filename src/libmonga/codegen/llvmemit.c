@@ -22,7 +22,7 @@ LlvmValue ValNull() {
     return ret;
 }
 
-LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _indir) {
+LlvmTypeRef TypeToTypeRef(const Mon_AstTypeDef* type, int _indir) {
     MON_CANT_BE_NULL(type);
 
     LlvmTypeRef ret;
@@ -30,7 +30,10 @@ LlvmTypeRef TypeToTypeRef(LlvmGenContext* ctx, const Mon_AstTypeDef* type, int _
 
     type = GetUnderlyingType(type);
     if (type->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY) {
-        return TypeToTypeRef(ctx, type->typeDesc->typeDesc.array.semantic.innerTypeDef, _indir + 1);
+        ret._typeName = ".array";
+        ret._indir++;
+        ret._builtin = false;
+        return ret;
     }
 
     if (IsRefType(type)) {
@@ -160,8 +163,20 @@ void LlvmEmitValue(LlvmGenContext* ctx, LlvmValue loc) {
             switch (loc.literal.literalKind) {
                 case MON_LIT_STR: {
                     int id = AddOrGetStringLiteralId(ctx, loc.literal.string.arr);
-                    LlvmEmit(ctx, "getelementptr inbounds ([%d x i8], [%d x i8]* @str.%d, i32 0, i32 0)", 
-                        loc.literal.string.len + 1, loc.literal.string.len + 1, id);
+                    LlvmTypeRef sizeTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tSize, 0);
+                    LlvmTypeRef charTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tChar, 0);
+                    LlvmTypeRef stringTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tString, 0);
+
+                    LlvmEmit(ctx, "bitcast ({ ");
+                    LlvmEmitTyperef(ctx, sizeTypeRef);
+                    LlvmEmit(ctx, ", ");
+                    LlvmEmitTyperef(ctx, sizeTypeRef);
+                    LlvmEmit(ctx, ", ");
+                    LlvmEmitArrayRef(ctx, charTypeRef, loc.literal.string.len + 1, 0);
+                    LlvmEmit(ctx, " }* @str.%d to ", id);
+                    LlvmEmitTyperef(ctx, stringTypeRef);
+                    LlvmEmit(ctx, ")");
+
                     break;
                 }
 
@@ -221,6 +236,19 @@ void LlvmEmitAlloca(LlvmGenContext* ctx, LlvmTypeRef type, LlvmValue loc) {
     LlvmEmit(ctx, " = alloca ");
     LlvmEmitTyperef(ctx, type);
     LlvmEmit(ctx, "\n");
+}
+
+void LlvmEmitArrayRef(LlvmGenContext* ctx, LlvmTypeRef arrayElementType, size_t arrSize, int arrIndir) {
+    MON_CANT_BE_NULL(ctx);
+
+    LlvmEmit(ctx, "[%zu x ", arrSize);
+    LlvmEmitTyperef(ctx, arrayElementType);
+    LlvmEmit(ctx, "]");
+
+    while (arrIndir > 0) {
+        LlvmEmit(ctx, "*");
+        arrIndir--;
+    }
 }
 
 void LlvmEmitTyperef(LlvmGenContext* ctx, LlvmTypeRef typeRef) {
@@ -642,12 +670,12 @@ LlvmValue LlvmEmitPhi(LlvmGenContext* ctx,
     return ret;
 }
 
-void LlvmEmitString(LlvmGenContext* ctx, int id, const char* s) {
+void LlvmEmitStringLiteral(LlvmGenContext* ctx,
+                           const char* s) {
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(s);
 
-    LlvmEmit(ctx, "@str.%d = private unnamed_addr constant [%d x i8] c\"", 
-             id, strlen(s) + 1);
+    LlvmEmit(ctx, "c\"");
 
     while (*s != '\0') {
         if (!iscntrl(*s)) {
@@ -658,7 +686,7 @@ void LlvmEmitString(LlvmGenContext* ctx, int id, const char* s) {
         s++;
     }
 
-    LlvmEmit(ctx, "\\00\", align 1\n");
+    LlvmEmit(ctx, "\\00\"");
 }
 
 LlvmValue LlvmBeginCallExp(LlvmGenContext* ctx,

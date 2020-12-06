@@ -1,4 +1,5 @@
 function main() {
     var c: char;
     c = '\n';
+    @c;
 }

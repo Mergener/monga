@@ -7,8 +7,8 @@ function main() {
     ba = new ByteArray[32];
 
     if (ba[0] == null) {
-        printString("True");
+        @("True");
     } else {
-        printString("False");
+        @("False");
     }
 }

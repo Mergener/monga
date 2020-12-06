@@ -8,5 +8,5 @@ function main() {
     var s3: string;
     s3 = Strconcat(s1, s2);
 
-    printString(s3);
+    @(s3);
 }

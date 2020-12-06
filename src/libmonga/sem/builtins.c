@@ -2,11 +2,13 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "scope.h"
 #include "types.h"
 #include "mon_ast.h"
 #include "mon_alloc.h"
+#include "montypes.h"
 
 static BuiltinTable s_BuiltinTable;
 static bool s_BuiltinTableInitialized = false;
@@ -64,6 +66,24 @@ static bool ConstructBuiltinTypes() {
 
     strTypeDesc->typeDescKind = MON_TYPEDESC_SPECIAL;
 
+    Mon_AstTypeDesc* intPtrTypeDesc = Mon_Alloc(sizeof(Mon_AstTypeDesc));
+    if (intPtrTypeDesc == NULL) {
+        Mon_Free(nullTypeDesc);
+        Mon_Free(errTypeDesc);
+        Mon_Free(strTypeDesc);
+        return false;
+    }
+    intPtrTypeDesc->typeDescKind = MON_TYPEDESC_ALIAS;
+
+    Mon_AstTypeDesc* tSizeTypeDesc = Mon_Alloc(sizeof(Mon_AstTypeDesc));
+    if (tSizeTypeDesc == NULL) {
+        Mon_Free(nullTypeDesc);
+        Mon_Free(errTypeDesc);
+        Mon_Free(strTypeDesc);
+        Mon_Free(intPtrTypeDesc);
+        return false;
+    }   
+
     struct {
         const char* typeName;
         Mon_AstTypeDef** tablePtr;
@@ -77,7 +97,8 @@ static bool ConstructBuiltinTypes() {
         { TYPENAME_FLOAT32, &s_BuiltinTable.types.tFloat, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_FLOAT32) },
         { TYPENAME_FLOAT64, &s_BuiltinTable.types.tDouble, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_FLOAT64) },
         { TYPENAME_VOID, &s_BuiltinTable.types.tVoid, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_VOID) },
-        { TYPENAME_INTPTR, &s_BuiltinTable.types.tIntPtr, Mon_AstTypeDescNewPrimitive(MON_PRIMITIVE_INTPTR) },
+        { TYPENAME_INTPTR, &s_BuiltinTable.types.tIntPtr, intPtrTypeDesc },
+        { TYPENAME_TSIZE, &s_BuiltinTable.types.tSize, tSizeTypeDesc },
         { TYPENAME_NULL, &s_BuiltinTable.types.tNull, nullTypeDesc },
         { TYPENAME_ERROR, &s_BuiltinTable.types.tError, errTypeDesc },
         { TYPENAME_STRING, &s_BuiltinTable.types.tString, strTypeDesc }
@@ -100,6 +121,22 @@ static bool ConstructBuiltinTypes() {
         }
 
         *(types[i].tablePtr) = type;
+    }
+
+    if (sizeof(Mon_Intptr) == sizeof(Mon_Int)) {
+        intPtrTypeDesc->typeDesc.alias.aliasedTypeName = TYPENAME_INT32;
+        intPtrTypeDesc->typeDesc.alias.semantic.aliasedType = s_BuiltinTable.types.tInt;
+    } else {
+        intPtrTypeDesc->typeDesc.alias.aliasedTypeName = TYPENAME_INT64;
+        intPtrTypeDesc->typeDesc.alias.semantic.aliasedType = s_BuiltinTable.types.tLong;
+    }
+
+    if (sizeof(Mon_TSize) == sizeof(Mon_Int)) {
+        tSizeTypeDesc->typeDesc.alias.aliasedTypeName = TYPENAME_INT32;
+        tSizeTypeDesc->typeDesc.alias.semantic.aliasedType = s_BuiltinTable.types.tInt;
+    } else {
+        tSizeTypeDesc->typeDesc.alias.aliasedTypeName = TYPENAME_INT64;
+        tSizeTypeDesc->typeDesc.alias.semantic.aliasedType = s_BuiltinTable.types.tLong;
     }
 
     return true;

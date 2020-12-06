@@ -5,8 +5,8 @@ function main() {
     ia = null;
 
     if (ia == null) {
-        printInteger(1);
+        @(1);
     } else {
-        printInteger(0);
+        @(0);
     }
 }

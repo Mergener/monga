@@ -3,12 +3,26 @@
 
 #include "montypes.h"
 #include "monstr.h"
+#include "mem.h"
 
-void PrintInteger(int i);
-void PrintFloat(float f);
-void PrintString(const Mon_Str* str);
+#include <stdio.h>
 
 Mon_Str* Input();
+
+typedef struct {
+    FILE* handle;
+    Mon_Int isClosed;
+} FileStream;
+
+typedef Mon_Long FilePos;
+
+FileStream* OpenFile(const Mon_Str* path, const Mon_Str* mode);
+RtArray* ReadFileBytes(FileStream* stream, Mon_Int nbytes);
+Mon_Str* ReadFileString(FileStream* stream, Mon_Int nbytes);
+Mon_Str* ReadFileLine(FileStream* stream);
+FilePos FileStreamTell(const FileStream* stream);
+void FileStreamSeek(FileStream* stream, FilePos pos);
+void CloseFile(FileStream* stream);
 
 void RtInternal_EchoInteger(Mon_Long integer);
 void RtInternal_EchoReal(Mon_Double real);

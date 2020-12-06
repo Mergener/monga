@@ -58,12 +58,11 @@ char ConvertControlCharacter(char c) {
     }
 }
 
-void ProcessStringLiteral(const char* s, char** outBuf, int* outLen) {
+void ProcessStringLiteral(const char* s, size_t len, char** outBuf, size_t* outLen) {
     MON_CANT_BE_NULL(s);
     MON_CANT_BE_NULL(outBuf);
     MON_CANT_BE_NULL(outLen);
 
-    int len = strlen(s);
     char* newStr = Mon_Alloc(len + 1);
     if (newStr == NULL) {
         *outBuf = NULL;
@@ -71,24 +70,21 @@ void ProcessStringLiteral(const char* s, char** outBuf, int* outLen) {
         return;
     }
 
-    // Ignore double quotes
-    int i = 0;
-    int j = 0;
-    if (s[0] == '\"') {
-        len -= 2;
-        i++;
-    }
+    size_t i = 0,
+           j = 0;
 
-    for (; s[i] != '\0'; ++i) {
+    while (s[i] != '\0' && i < len) {
+        
         if (s[i] != '\\') {
             newStr[j] = s[i];
         } else {
-            len--;
-            ++i;
+            --len; ++i;
             newStr[j] = ConvertControlCharacter(s[i]);
         }
-        ++j;
+
+        ++j; ++i;
     }
+
     *outBuf = newStr;
     (*outBuf)[len] = '\0';
     *outLen = len;

@@ -2,6 +2,7 @@
 #define MONTYPES_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef struct Mon_Str_ Mon_Str;
 typedef intptr_t    Mon_Intptr;
@@ -12,6 +13,7 @@ typedef int32_t     Mon_Int;
 typedef int64_t     Mon_Long;
 typedef float       Mon_Float;
 typedef double      Mon_Double;
+typedef size_t      Mon_TSize;
 
 Mon_Int ParseInt(const Mon_Str* str);
 Mon_Long ParseLong(const Mon_Str* str);

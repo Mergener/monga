@@ -7,13 +7,13 @@ function main() {
     var f64: double;
 
     i8  = 2;
-    printInteger(i8);
+    @(i8);
     i16 = 4;
-    printInteger(i16);
+    @(i16);
     i64 = 2147483647;
     i32 = i64;
-    printInteger(i32);    
+    @(i32);    
     f32 = i32 as float;
     f64 = f32 as double;
-    printFloat(f32);
+    @(f32);
 }

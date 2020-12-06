@@ -10,5 +10,5 @@ function foo(i: int): int {
 }
 
 function main() {
-    printInteger(foo(13));
+    @foo(13);
 }

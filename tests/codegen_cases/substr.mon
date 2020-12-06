@@ -3,5 +3,5 @@ function main() {
 
     s = "Hello, Hello, world! world!";
 
-    printString(Substr(s, 7, 13));
+    @(Substr(s, 7, 13));
 }

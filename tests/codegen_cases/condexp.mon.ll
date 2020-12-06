@@ -1,16 +1,19 @@
 source_filename = "tests/codegen_cases/condexp.mon"
 
-%string = type { i32, i32 }
+%string = type { i64, i64 }
+%.array = type { i64 }
 
 declare %string* @RtInternal_StrFromSZ(i8*)
 declare i8* @RtInternal_GcAlloc(i64)
+declare %.array* @RtInternal_GcAllocArray(i64, i64)
+declare i64 @RtInternal_GetGcArrayElemCount(%.array*)
 declare void @RtInternal_EchoArray(i8*)
 declare void @RtInternal_EchoObject(i8*)
 declare void @RtInternal_EchoInteger(i64)
 declare void @RtInternal_EchoReal(double)
 declare void @RtInternal_EchoChar(i8)
 declare void @RtInternal_EchoString(%string*)
-declare i8* @RtInternal_GetAllocSize(i64)
+declare void @RtInternal_Hash(i8*, i32)
 declare void @RtInternal_Init()
 
 define i32 @max(i32, i32) {
@@ -40,15 +43,19 @@ l.2:
 
 define void @main() {
 	call void @RtInternal_Init()
+
 	%t.0 = call i32 @max(i32 6, i32 3)
 	%t.1 = sext i32 %t.0 to i64
 	call void @RtInternal_EchoInteger(i64 %t.1)
+
 	%t.2 = call i32 @max(i32 3, i32 6)
 	%t.3 = sext i32 %t.2 to i64
 	call void @RtInternal_EchoInteger(i64 %t.3)
+
 	%t.4 = call i32 @max(i32 5, i32 0)
 	%t.5 = sext i32 %t.4 to i64
 	call void @RtInternal_EchoInteger(i64 %t.5)
+
 	ret void
 }
 

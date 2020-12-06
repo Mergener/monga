@@ -102,10 +102,10 @@ static void DestroyLocal(LocalVariableData* d) {
 int AddOrGetStringLiteralId(LlvmGenContext* ctx, const char* s) {
     int id = 0;
     MON_VECTOR_FOREACH(&ctx->stringLiterals, const char*, it,
-        id++;
         if (it == s || (strcmp(it, s) == 0)) {
             return id;
         }
+        id++;
     );
 
     if (Mon_VectorPush(&ctx->stringLiterals, s) != MON_SUCCESS) {

@@ -35,7 +35,7 @@ static LlvmValue CompileLocal(LlvmGenContext* ctx, const char* name, Mon_AstType
 
     LocalVariableData* d = AddLocal(ctx, name, type);
 
-    LlvmEmitAlloca(ctx, TypeToTypeRef(ctx, type, 0), d->location);
+    LlvmEmitAlloca(ctx, TypeToTypeRef(type, 0), d->location);
 
     return d->location;
 }
@@ -152,7 +152,7 @@ static void CompileComparison(LlvmGenContext* ctx, Mon_AstCond* cond, LlvmValue 
     }
 
     // Comparison kind selected, emit the comparison and branch instructions.
-    LlvmTypeRef lTypeRef = TypeToTypeRef(ctx, lType, 0);
+    LlvmTypeRef lTypeRef = TypeToTypeRef(lType, 0);
     LlvmValue boolexpr = LlvmEmitComparison(ctx, lTypeRef, lExpLoc, rExpLoc, comparKind);
     LlvmEmitCondBranch(ctx, boolexpr, trueLabel, falseLabel);
 }
@@ -189,7 +189,7 @@ static LlvmValue CompileBinop(LlvmGenContext* ctx,
     MON_CANT_BE_NULL(l);
     MON_CANT_BE_NULL(r);
 
-    LlvmTypeRef targetTypeRef = TypeToTypeRef(ctx, targetType, 0);
+    LlvmTypeRef targetTypeRef = TypeToTypeRef(targetType, 0);
 
     LlvmValue lLoc = CompileExp(ctx, l, targetType);
     LlvmValue rLoc = CompileExp(ctx, r, targetType);
@@ -282,15 +282,15 @@ static LlvmValue CompileFloatToFloat(LlvmGenContext* ctx,
     if (expTypeCode == MON_PRIMITIVE_FLOAT32 &&
         destTypeCode == MON_PRIMITIVE_FLOAT64) {
         // Extend floating point
-        return LlvmEmitFpext(ctx, TypeToTypeRef(ctx, expType, 0), 
-                            expLoc, TypeToTypeRef(ctx, destType, 0));
+        return LlvmEmitFpext(ctx, TypeToTypeRef(expType, 0), 
+                            expLoc, TypeToTypeRef(destType, 0));
     }
 
     if (expTypeCode == MON_PRIMITIVE_FLOAT64 &&
         destTypeCode == MON_PRIMITIVE_FLOAT32) {
         // Truncate floating point
-        return LlvmEmitFptrunc(ctx, TypeToTypeRef(ctx, expType, 0), 
-                              expLoc, TypeToTypeRef(ctx, destType, 0));        
+        return LlvmEmitFptrunc(ctx, TypeToTypeRef(expType, 0), 
+                              expLoc, TypeToTypeRef(destType, 0));        
     }
 
     MON_UNREACHABLE();
@@ -322,11 +322,11 @@ static LlvmValue CompileIntToInt(LlvmGenContext* ctx,
         return expLoc;
     }
     if (expSize < destSize) {
-        return LlvmEmitSext(ctx, TypeToTypeRef(ctx, expType, 0), 
-                            expLoc, TypeToTypeRef(ctx, destType, 0));
+        return LlvmEmitSext(ctx, TypeToTypeRef(expType, 0), 
+                            expLoc, TypeToTypeRef(destType, 0));
     }
-    return LlvmEmitTrunc(ctx, TypeToTypeRef(ctx, expType, 0), 
-                         expLoc, TypeToTypeRef(ctx, destType, 0));
+    return LlvmEmitTrunc(ctx, TypeToTypeRef(expType, 0), 
+                         expLoc, TypeToTypeRef(destType, 0));
 }
 
 static LlvmValue CompileConversion(LlvmGenContext* ctx, 
@@ -354,9 +354,9 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
         expType->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY &&
         GetUnderlyingType(expType->typeDesc->typeDesc.array.semantic.innerTypeDef) == BUILTIN_TABLE->types.tChar) {
         
-        LlvmTypeRef stringTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tString, 0);
+        LlvmTypeRef stringTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tString, 0);
         LlvmValue ret = LlvmBeginCallExp(ctx, NAMEOF(RtInternal_StrFromSZ), stringTypeRef);
-        LlvmCallEmitArg(ctx, TypeToTypeRef(ctx, BUILTIN_TABLE->types.tByte, 1), expLoc);
+        LlvmCallEmitArg(ctx, TypeToTypeRef(BUILTIN_TABLE->types.tByte, 1), expLoc);
         LlvmEndCall(ctx);
         return ret;
     }
@@ -386,8 +386,8 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
             return CompileIntToInt(ctx, expType, expLoc, destType);
         }
 
-        return LlvmEmitSitofp(ctx, TypeToTypeRef(ctx, expType, 0),
-                              expLoc, TypeToTypeRef(ctx, destType, 0));
+        return LlvmEmitSitofp(ctx, TypeToTypeRef(expType, 0),
+                              expLoc, TypeToTypeRef(destType, 0));
     }
 
     if (IsFloatingPointType(destType)) {
@@ -398,8 +398,8 @@ static LlvmValue CompileConversion(LlvmGenContext* ctx,
             return CompileFloatToFloat(ctx, expType, expLoc, destType);
         }
 
-        return LlvmEmitFptosi(ctx, TypeToTypeRef(ctx, expType, 0),
-                              expLoc, TypeToTypeRef(ctx, destType, 0));
+        return LlvmEmitFptosi(ctx, TypeToTypeRef(expType, 0),
+                              expLoc, TypeToTypeRef(destType, 0));
     }
 
     if (expType->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_CHAR) {
@@ -447,30 +447,40 @@ static LlvmValue CompileNew(LlvmGenContext* ctx, Mon_AstTypeDef* type, Mon_AstEx
     MON_CANT_BE_NULL(ctx);
     MON_CANT_BE_NULL(type);
 
+    type = GetUnderlyingType(type);
+
     LlvmValue sizeExpLoc;
+    LlvmTypeRef tSizeTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tSize, 0);
+    LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tByte, 1);
 
     if (sizeExp != NULL) {
-        LlvmValue loc = CompileExp(ctx, sizeExp, BUILTIN_TABLE->types.tIntPtr);
-        Mon_Literal lit;
-        lit.integer = GetTypeSize(type->typeDesc->typeDesc.array.semantic.innerTypeDef);
-        lit.literalKind = MON_LIT_INT;
-        sizeExpLoc = LlvmEmitBinop(ctx, TypeToTypeRef(ctx, BUILTIN_TABLE->types.tIntPtr, 0), loc, ValLiteral(lit), LLVM_BINOP_MUL);
-    } else {
-        Mon_Literal lit;
-        lit.integer = GetRecordDescSize(type->typeDesc);
-        lit.literalKind = MON_LIT_INT;
-        sizeExpLoc = ValLiteral(lit);
+        // 'Array' new
+        LlvmTypeRef arrayTypeRef = MakeTypeRef(".array", 1, false);
+
+        // Compute array element count
+        LlvmValue sizeExpLoc = CompileExp(ctx, sizeExp, BUILTIN_TABLE->types.tSize);
+
+        LlvmValue expLoc = LlvmBeginCallExp(ctx, NAMEOF(RtInternal_GcAllocArray), arrayTypeRef);
+
+        // First arg is the size of each element
+        LlvmCallEmitArg(ctx, tSizeTypeRef, ValLiteral(Mon_LiteralInt(GetTypeSize(type->typeDesc->typeDesc.array.semantic.innerTypeDef))));
+        // Second arg is the number of elements
+        LlvmCallEmitArg(ctx, tSizeTypeRef, sizeExpLoc);
+
+        LlvmEndCall(ctx);
+        return expLoc;
     }
 
-    // Gc Alloc
-    LlvmTypeRef intPtrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tIntPtr, 0);
-    LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tByte, 1);
+    // 'Object' new
+    Mon_Literal lit = Mon_LiteralInt(GetTypeSize(type));
+    lit.integer = GetRecordDescSize(type->typeDesc);
+    lit.literalKind = MON_LIT_INT;
+    sizeExpLoc = ValLiteral(lit);
     LlvmValue ptrVal = LlvmBeginCallExp(ctx, NAMEOF(RtInternal_GcAlloc), bytePtrTypeRef);
-    LlvmCallEmitArg(ctx, intPtrTypeRef, sizeExpLoc);
+    LlvmCallEmitArg(ctx, tSizeTypeRef, sizeExpLoc);
     LlvmEndCall(ctx);
     LlvmValue expLoc = LlvmEmitBitcast(ctx, bytePtrTypeRef,
-                                       ptrVal, TypeToTypeRef(ctx, type, 0));
-
+                                        ptrVal, TypeToTypeRef(type, 0));
     return expLoc;
 }
 
@@ -489,7 +499,7 @@ static LlvmValue CompileUnop(LlvmGenContext* ctx,
             Mon_Literal litZero;
             litZero.integer = 0;
             litZero.literalKind = MON_LIT_INT;
-            ret = LlvmEmitBinop(ctx, TypeToTypeRef(ctx, exp->semantic.type, 0),
+            ret = LlvmEmitBinop(ctx, TypeToTypeRef(exp->semantic.type, 0),
                                 ValLiteral(litZero), expLoc, LLVM_BINOP_SUB);
             return ret;
         }
@@ -498,7 +508,24 @@ static LlvmValue CompileUnop(LlvmGenContext* ctx,
             break;
 
         case MON_UNOP_LEN: {
-            break;
+            if (GetUnderlyingType(exp->semantic.type) == BUILTIN_TABLE->types.tString) {
+                LlvmTypeRef strTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tString, 0);
+                LlvmTypeRef tSizeTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tSize, 0);
+
+                LlvmValue ptr = LlvmEmitGetStructElementPtr(ctx, strTypeRef,
+                                                            expLoc, 0);
+
+                LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
+                LlvmEmitLoad(ctx, tSizeTypeRef, ptr, ret);
+                
+                return ret;
+            }
+            // Expression is an array.
+            LlvmTypeRef arrayTypeRef = TypeToTypeRef(exp->semantic.type, 0);
+            LlvmValue ret = LlvmBeginCallExp(ctx, NAMEOF(RtInternal_GetGcArrayElemCount), TypeToTypeRef(BUILTIN_TABLE->types.tSize, 0));
+            LlvmCallEmitArg(ctx, arrayTypeRef, expLoc);
+            LlvmEndCall(ctx);
+            return ret;
         }
     }
 
@@ -537,7 +564,7 @@ static LlvmValue CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef
             LlvmEmitBranch(ctx, endLabel);
             LlvmEmitLabel(ctx, endLabel);
 
-            expLoc = LlvmEmitPhi(ctx, TypeToTypeRef(ctx, exp->semantic.type, 0), 
+            expLoc = LlvmEmitPhi(ctx, TypeToTypeRef(exp->semantic.type, 0), 
                                  trueLabelEnd, trueValue, 
                                  falseLabelEnd, falseValue);
             break;
@@ -561,7 +588,7 @@ static LlvmValue CompileExp(LlvmGenContext* ctx, Mon_AstExp* exp, Mon_AstTypeDef
         case MON_EXP_VAR: {
             LlvmValue varLoc = CompileVar(ctx, exp->exp.varExpr);
             LlvmValue ret = ValLocal(ctx->blockCtx.nextLocalId++);
-            LlvmEmitLoad(ctx, TypeToTypeRef(ctx, exp->semantic.type, 0), varLoc, ret);
+            LlvmEmitLoad(ctx, TypeToTypeRef(exp->semantic.type, 0), varLoc, ret);
             expLoc = ret;
             break;
         }
@@ -616,7 +643,7 @@ static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
 
             LlvmValue expLoc = CompileExp(ctx, var->var.field.expr, type);
             
-            LlvmTypeRef typeRef = TypeToTypeRef(ctx, type, 0);
+            LlvmTypeRef typeRef = TypeToTypeRef(type, 0);
 
             // Discover field index
             int fieldIdx = Mon_VectorGetIndex(&type->typeDesc->typeDesc.record.fields,
@@ -631,12 +658,26 @@ static LlvmValue CompileVar(LlvmGenContext* ctx, Mon_AstVar* var) {
         }
 
         case MON_VAR_INDEXED: {
-            Mon_AstTypeDef* elementType = var->semantic.type;
-
             LlvmValue indexExp = CompileExp(ctx, var->var.indexed.indexExpr, 
                                             BUILTIN_TABLE->types.tLong);
             LlvmValue indexedExp = CompileExp(ctx, var->var.indexed.indexedExpr, var->var.indexed.indexedExpr->semantic.type);
-            return LlvmEmitGetArrayElementPtr(ctx, TypeToTypeRef(ctx, elementType, 0), indexedExp, indexExp);
+
+            LlvmTypeRef arrayTypeRef = TypeToTypeRef(GetUnderlyingType(var->var.indexed.indexedExpr->semantic.type), 0);
+
+            Mon_AstTypeDef* elementType = var->semantic.type;
+
+            // 'indexedExp' points to an 'array' type, which is a region of memory containing
+            // the array header followed by the array contents. We want a pointer to the array contents.
+            arrayTypeRef = TypeToTypeRef(var->var.indexed.indexedExpr->semantic.type, -1);
+
+            // Content ptr will be '1' offset away from array start
+            LlvmValue arrayContentPtr = LlvmEmitGetArrayElementPtr(ctx, arrayTypeRef, indexedExp, ValLiteral(Mon_LiteralInt(1)));
+            
+            // Now, bitcast and get the pointer to the desired element.
+            arrayTypeRef._indir++;
+            LlvmValue bitcastedPtr = LlvmEmitBitcast(ctx, arrayTypeRef, arrayContentPtr, TypeToTypeRef(elementType, 1));
+
+            return LlvmEmitGetArrayElementPtr(ctx, TypeToTypeRef(elementType, 0), bitcastedPtr, indexExp);
         }
     }
 
@@ -675,6 +716,7 @@ static bool CompileIf(LlvmGenContext* ctx,
             LlvmEmitLabel(ctx, elseLabel);
             CompileBlock(ctx, elseBlock);
             LlvmEmitBranch(ctx, endLabel);
+            LlvmEmitLabel(ctx, endLabel);
             return false;
         }
 
@@ -744,8 +786,8 @@ static void CompileEcho(LlvmGenContext* ctx, Mon_AstExp* echoedExp) {
 
     LlvmValue expLoc = CompileExp(ctx, echoedExp, echoedExp->semantic.type);
     Mon_AstTypeDef* expType = GetUnderlyingType(echoedExp->semantic.type);
-    LlvmTypeRef expTypeRef = TypeToTypeRef(ctx, expType, 0);
-    LlvmTypeRef voidTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tVoid, 0);
+    LlvmTypeRef expTypeRef = TypeToTypeRef(expType, 0);
+    LlvmTypeRef voidTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tVoid, 0);
 
     if (expType == BUILTIN_TABLE->types.tString) {
 
@@ -756,19 +798,19 @@ static void CompileEcho(LlvmGenContext* ctx, Mon_AstExp* echoedExp) {
     } else if (expType->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY &&
               GetUnderlyingType(expType->typeDesc->typeDesc.array.semantic.innerTypeDef) == BUILTIN_TABLE->types.tChar) {
 
-        LlvmValue strExpLoc = LlvmBeginCallExp(ctx, NAMEOF(RtInternal_StrFromSZ), TypeToTypeRef(ctx, BUILTIN_TABLE->types.tString, 0));
-        LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tByte, 1);
+        LlvmValue strExpLoc = LlvmBeginCallExp(ctx, NAMEOF(RtInternal_StrFromSZ), TypeToTypeRef(BUILTIN_TABLE->types.tString, 0));
+        LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tByte, 1);
         LlvmCallEmitArg(ctx, bytePtrTypeRef, expLoc);
         LlvmEndCall(ctx);
 
         LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoString), voidTypeRef);
-        LlvmCallEmitArg(ctx, TypeToTypeRef(ctx, BUILTIN_TABLE->types.tString, 0), strExpLoc);
+        LlvmCallEmitArg(ctx, TypeToTypeRef(BUILTIN_TABLE->types.tString, 0), strExpLoc);
         LlvmEndCall(ctx);        
     
     } else if (IsRefType(expType)) {
 
         // Cast to byte pointer
-        LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tByte, 1);
+        LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tByte, 1);
         LlvmValue bitcastedPointer = LlvmEmitBitcast(ctx, expTypeRef, expLoc, bytePtrTypeRef);
 
         if (expType->typeDesc->typeDescKind == MON_TYPEDESC_ARRAY) {
@@ -786,13 +828,13 @@ static void CompileEcho(LlvmGenContext* ctx, Mon_AstExp* echoedExp) {
         if (expType->typeDesc->typeDesc.primitive.typeCode == MON_PRIMITIVE_CHAR) {
 
             LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoChar), voidTypeRef);
-            LlvmCallEmitArg(ctx, TypeToTypeRef(ctx, BUILTIN_TABLE->types.tChar, 0), expLoc);
+            LlvmCallEmitArg(ctx, TypeToTypeRef(BUILTIN_TABLE->types.tChar, 0), expLoc);
             LlvmEndCall(ctx);
 
         } else if (IsFloatingPointType(expType)) {
 
             expLoc = CompileConversion(ctx, expType, expLoc, BUILTIN_TABLE->types.tDouble);
-            LlvmTypeRef doubleTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tDouble, 0);
+            LlvmTypeRef doubleTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tDouble, 0);
             LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoReal), voidTypeRef);
             LlvmCallEmitArg(ctx, doubleTypeRef, expLoc);
             LlvmEndCall(ctx);           
@@ -800,7 +842,7 @@ static void CompileEcho(LlvmGenContext* ctx, Mon_AstExp* echoedExp) {
         } else {
 
             expLoc = CompileConversion(ctx, expType, expLoc, BUILTIN_TABLE->types.tLong);
-            LlvmTypeRef longTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tLong, 0);
+            LlvmTypeRef longTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tLong, 0);
             LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_EchoInteger), voidTypeRef);
             LlvmCallEmitArg(ctx, longTypeRef, expLoc);
             LlvmEndCall(ctx);       
@@ -843,7 +885,7 @@ static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt) {
             LlvmValue expLoc = CompileExp(ctx, stmt->statement.assignment.rvalue,
                                              stmt->statement.assignment.lvalue->semantic.type);                                                
 
-            LlvmEmitStore(ctx, TypeToTypeRef(ctx, stmt->statement.assignment.lvalue->semantic.type, 0), 
+            LlvmEmitStore(ctx, TypeToTypeRef(stmt->statement.assignment.lvalue->semantic.type, 0), 
                           varLoc, expLoc);
 
             LlvmEmit(ctx, "\n");
@@ -854,7 +896,7 @@ static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt) {
             if (stmt->statement.returnStmt.returnedExpression != NULL) {
                 LlvmValue retExpLoc = CompileExp(ctx, stmt->statement.returnStmt.returnedExpression,
                                                     ctx->enclosingFunction->semantic.returnType);
-                LlvmEmitRet(ctx, TypeToTypeRef(ctx, ctx->enclosingFunction->semantic.returnType, 0), retExpLoc);
+                LlvmEmitRet(ctx, TypeToTypeRef(ctx->enclosingFunction->semantic.returnType, 0), retExpLoc);
             } else {
                 LlvmEmitRetVoid(ctx);
             }
@@ -872,14 +914,15 @@ static bool CompileStatement(LlvmGenContext* ctx, Mon_AstStatement* stmt) {
 
         case MON_STMT_ECHO:
             CompileEcho(ctx, stmt->statement.echo.echoedExp);
+            LlvmEmit(ctx, "\n");
             break;
 
         case MON_STMT_VARDEF: {
             LlvmValue addr = CompileLocal(ctx, stmt->statement.varDef->varName, stmt->statement.varDef->semantic.type);
-            LlvmEmit(ctx, "\n");
             // Store default value of variable
-            LlvmEmitStore(ctx, TypeToTypeRef(ctx, stmt->statement.varDef->semantic.type, 0),
+            LlvmEmitStore(ctx, TypeToTypeRef(stmt->statement.varDef->semantic.type, 0),
                           addr, GetDefaultValue(stmt->statement.varDef->semantic.type));
+            LlvmEmit(ctx, "\n");
             break;
         }
 
@@ -925,7 +968,7 @@ static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
         }
     }
 
-    LlvmTypeRef retTypeRef = TypeToTypeRef(ctx, retType, 0);
+    LlvmTypeRef retTypeRef = TypeToTypeRef(retType, 0);
     if (retType != BUILTIN_TABLE->types.tVoid) {
         // Function returns something, assign it to an LlvmValue.
         retLoc = LlvmBeginCallExp(ctx, call->semantic.callee->funcName, retTypeRef);
@@ -937,7 +980,7 @@ static LlvmValue CompileCall(LlvmGenContext* ctx, Mon_AstCall* call) {
     for (int i = 0; i < argsCount; ++i) {
         Mon_AstParam* paramDef = Mon_VectorGet(&call->semantic.callee->parameters, i);
 
-        LlvmCallEmitArg(ctx, TypeToTypeRef(ctx, paramDef->semantic.type, 0), argsBuf[i]);
+        LlvmCallEmitArg(ctx, TypeToTypeRef(paramDef->semantic.type, 0), argsBuf[i]);
     }
 
     if (argsBuf != NULL) {
@@ -978,12 +1021,12 @@ static void CompileFunctionSignature(LlvmGenContext* ctx, Mon_AstFuncDef* func, 
         LlvmEmit(ctx, "declare ");
     }
 
-    LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, func->semantic.returnType, 0));
+    LlvmEmitTyperef(ctx, TypeToTypeRef(func->semantic.returnType, 0));
     LlvmEmit(ctx, " @%s(", func->funcName);
     int count = Mon_VectorCount(&func->parameters);
     for (int i = 0; i < count; ++i) {
         Mon_AstParam* p = Mon_VectorGet(&func->parameters, i);
-        LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, p->semantic.type, 0));
+        LlvmEmitTyperef(ctx, TypeToTypeRef(p->semantic.type, 0));
                 
         if (i != count - 1) {
             LlvmEmit(ctx, ", ");
@@ -1011,8 +1054,7 @@ static void CompileFunctionImpl(LlvmGenContext* ctx, Mon_AstFuncDef* func) {
     int i = 0;
     MON_VECTOR_FOREACH(&func->parameters, Mon_AstParam*, p,
         int locid = CompileLocal(ctx, p->name, p->semantic.type).locid;
-        LlvmEmitStore(ctx, 
-                     TypeToTypeRef(ctx, p->semantic.type, 0), 
+        LlvmEmitStore(ctx, TypeToTypeRef(p->semantic.type, 0), 
                      ValLocal(locid), 
                      ValSSA(i++));
     );
@@ -1022,7 +1064,10 @@ static void CompileFunctionImpl(LlvmGenContext* ctx, Mon_AstFuncDef* func) {
     }
 
     if (func->semantic.isEntryPoint) {
-        LlvmEmit(ctx, "\tcall void @" NAMEOF(RtInternal_Init) "()\n");
+        // This is the main function, initialize the Monga runtime here.
+        LlvmBeginCallStmt(ctx, NAMEOF(RtInternal_Init), TypeToTypeRef(BUILTIN_TABLE->types.tVoid, 0));
+        LlvmEndCall(ctx);
+        LlvmEmit(ctx, "\n");
     }
 
     ctx->enclosingFunction = func;
@@ -1054,7 +1099,7 @@ static void CompileType(LlvmGenContext* ctx, Mon_AstTypeDef* type) {
             int count = Mon_VectorCount(&type->typeDesc->typeDesc.record.fields);
             for (int i = 0; i < count; ++i) {
                 Mon_AstField* f = Mon_VectorGet(&type->typeDesc->typeDesc.record.fields, i);
-                LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, f->semantic.type, 0));
+                LlvmEmitTyperef(ctx, TypeToTypeRef(f->semantic.type, 0));
                 if (i != count - 1) {
                     LlvmEmit(ctx, ", ");
                 }
@@ -1071,7 +1116,7 @@ static void CompileGlobalVar(LlvmGenContext* ctx, Mon_AstVarDef* def) {
     MON_CANT_BE_NULL(def);
 
     LlvmEmit(ctx, "@%s = internal global ", def->varName);
-    LlvmEmitTyperef(ctx, TypeToTypeRef(ctx, def->semantic.type, 0));
+    LlvmEmitTyperef(ctx, TypeToTypeRef(def->semantic.type, 0));
     LlvmEmit(ctx, " ");
     LlvmEmitValue(ctx, GetDefaultValue(def->semantic.type));
     LlvmEmit(ctx, "\n");
@@ -1113,21 +1158,32 @@ static void GenModulePreamble(LlvmGenContext* ctx) {
 
     LlvmEmit(ctx, "source_filename = \"%s\"\n\n", ctx->targetAst->moduleName);
 
-    // Runtime typedefs
-    LlvmEmit(ctx, "%%" TYPENAME_STRING " = type { i32, i32 }\n\n");
+    // Type references used in module preamble
+    LlvmTypeRef voidTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tVoid, 0);
+    LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tByte, 1);
+    LlvmTypeRef longTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tLong, 0);
+    LlvmTypeRef doubleTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tDouble, 0);
+    LlvmTypeRef stringTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tString, 0);
+    LlvmTypeRef charTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tChar, 0);
+    LlvmTypeRef intTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tInt, 0);
+    LlvmTypeRef tsizeTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tSize, 0);
+    LlvmTypeRef arrayTypeRef = MakeTypeRef(".array", 1, 0);
+
+    LlvmEmit(ctx, "%%" TYPENAME_STRING " = type { ");
+    LlvmEmitTyperef(ctx, tsizeTypeRef);
+    LlvmEmit(ctx, ", ");
+    LlvmEmitTyperef(ctx, tsizeTypeRef);
+    LlvmEmit(ctx, " }\n");
+    
+    LlvmEmit(ctx, "%%.array = type { ");
+    LlvmEmitTyperef(ctx, tsizeTypeRef);
+    LlvmEmit(ctx, " }\n");
+
+    LlvmEmit(ctx, "\n");
 
     // Generate internal runtime function headers:
     // All functions below are implemented at C level and are not to
     // be directly referenced by the programmer.
-
-    // Type references used in internal function declarations
-    LlvmTypeRef intptrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tIntPtr, 0);
-    LlvmTypeRef voidTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tVoid, 0);
-    LlvmTypeRef bytePtrTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tByte, 1);
-    LlvmTypeRef longTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tLong, 0);
-    LlvmTypeRef doubleTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tDouble, 0);
-    LlvmTypeRef stringTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tString, 0);
-    LlvmTypeRef charTypeRef = TypeToTypeRef(ctx, BUILTIN_TABLE->types.tChar, 0);
 
     // StrFromSz -- string construction
     LlvmBeginFuncDecl(ctx, NAMEOF(RtInternal_StrFromSZ),  stringTypeRef, false);
@@ -1136,7 +1192,18 @@ static void GenModulePreamble(LlvmGenContext* ctx) {
 
     // GcAlloc() -- object allocation
     LlvmBeginFuncDecl(ctx, NAMEOF(RtInternal_GcAlloc),  bytePtrTypeRef, false);
-    LlvmFuncDeclEmitArg(ctx, intptrTypeRef);
+    LlvmFuncDeclEmitArg(ctx, tsizeTypeRef);
+    LlvmEndFuncDecl(ctx);
+
+    // GcAllocArray() -- array allocation
+    LlvmBeginFuncDecl(ctx, NAMEOF(RtInternal_GcAllocArray),  arrayTypeRef, false);
+    LlvmFuncDeclEmitArg(ctx, tsizeTypeRef);
+    LlvmFuncDeclEmitArg(ctx, tsizeTypeRef);
+    LlvmEndFuncDecl(ctx);
+
+    // GetGcArrayElemCount -- get array length
+    LlvmBeginFuncDecl(ctx, NAMEOF(RtInternal_GetGcArrayElemCount),  tsizeTypeRef, false);
+    LlvmFuncDeclEmitArg(ctx, arrayTypeRef);
     LlvmEndFuncDecl(ctx);
 
     // Echo functions
@@ -1164,9 +1231,10 @@ static void GenModulePreamble(LlvmGenContext* ctx) {
     LlvmFuncDeclEmitArg(ctx, stringTypeRef);
     LlvmEndFuncDecl(ctx);
 
-    // Len
-    LlvmBeginFuncDecl(ctx, NAMEOF(RtInternal_GetAllocSize), bytePtrTypeRef, false);
-    LlvmFuncDeclEmitArg(ctx, intptrTypeRef);
+    // Hash
+    LlvmBeginFuncDecl(ctx, NAMEOF(RtInternal_Hash), voidTypeRef, false);
+    LlvmFuncDeclEmitArg(ctx, bytePtrTypeRef);
+    LlvmFuncDeclEmitArg(ctx, intTypeRef);
     LlvmEndFuncDecl(ctx);
 
     // Init() -- runtime initialization
@@ -1183,8 +1251,33 @@ static void GenModulePreamble(LlvmGenContext* ctx) {
 static void CompileStringLiterals(LlvmGenContext* ctx) {
     int id = 0;
 
+    LlvmTypeRef sizeTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tSize, 0);
+    LlvmTypeRef charTypeRef = TypeToTypeRef(BUILTIN_TABLE->types.tChar, 0);
+
     MON_VECTOR_FOREACH(&ctx->stringLiterals, const char*, s,
-        LlvmEmitString(ctx, id, s);
+        Mon_TSize len = strlen(s);
+        Mon_TSize hash = RtHash(s, len);
+
+        // Write type descriptor
+        LlvmEmit(ctx, "@str.%d = private constant { ", id);
+        LlvmEmitTyperef(ctx, sizeTypeRef);
+        LlvmEmit(ctx, ", ");
+        LlvmEmitTyperef(ctx, sizeTypeRef);
+        LlvmEmit(ctx, ", ");
+        LlvmEmitArrayRef(ctx, charTypeRef, len + 1, 0);
+        LlvmEmit(ctx, " }");
+
+        // Write literal value
+        LlvmEmit(ctx, " { ");
+        LlvmEmitTyperef(ctx, sizeTypeRef);
+        LlvmEmit(ctx, " %zu, ", len);
+        LlvmEmitTyperef(ctx, sizeTypeRef);
+        LlvmEmit(ctx, " %zu, ", hash);
+        LlvmEmitArrayRef(ctx, charTypeRef, len + 1, 0);
+        LlvmEmit(ctx, " ");
+        LlvmEmitStringLiteral(ctx, s);
+        LlvmEmit(ctx, " }\n");
+
         id++;
     );
 }

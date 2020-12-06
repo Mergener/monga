@@ -686,7 +686,7 @@ static bool ResolveExpression(SemAnalysisCtx* ctx, Mon_AstExp* exp) {
                     return true;
                 }
                 case MON_LIT_STR: {
-                    type = FindOrCreateArrayType(ctx, BUILTIN_TABLE->types.tChar);
+                    type = BUILTIN_TABLE->types.tString;
                     exp->semantic.type = type;
                     return true;
                 }
@@ -816,11 +816,9 @@ static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_As
                 !ResolveVar(ctx, stmt->statement.assignment.lvalue)) {
                 return false;
             }
-            
 
             Mon_AstTypeDef* lType = stmt->statement.assignment.lvalue->semantic.type;
-            Mon_AstTypeDef* rType = stmt->statement.assignment.rvalue->semantic.type;
-            
+            Mon_AstTypeDef* rType = stmt->statement.assignment.rvalue->semantic.type;            
 
             if (!IsTypeAssignableFrom(lType, rType)) {
                 LogError(ctx, &stmt->header, "Cannot assign value of type '%s' to lvalue of type '%s'.",
@@ -841,7 +839,7 @@ static bool ResolveStatement(SemAnalysisCtx* ctx, Mon_AstStatement* stmt, Mon_As
         case MON_STMT_RETURN:
             if (stmt->statement.returnStmt.returnedExpression == NULL) {
                 // Empty return case
-                if (enclosingFunction->semantic.returnType != FindType(BUILTIN_SCOPE, "void", false)) {
+                if (enclosingFunction->semantic.returnType != BUILTIN_TABLE->types.tVoid) {
                     LogError(ctx, &stmt->header, "Function %s cannot have an empty return statement (must return value of type %s).",
                              enclosingFunction->funcName, enclosingFunction->semantic.returnType->typeName);
                     return false;
@@ -945,7 +943,7 @@ static bool ResolveFunctionDeclaration(SemAnalysisCtx* ctx, Mon_AstFuncDef* func
 
     // Try to register function in scope.
     if (!TryRegisterSymbol(ctx, &funcDef->header, NewFuncSymbol(funcDef))) {
-        return false;
+        ret = false;
     }
 
     // Keep index of function symbol.

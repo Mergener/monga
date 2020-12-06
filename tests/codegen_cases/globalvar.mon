@@ -1,11 +1,11 @@
 var i: int;
 
 function foo() {
-    printInteger(i);
+    @(i);
 }
 
 function main() {
-    printInteger(i);
+    @(i);
     i = 5;
     foo();
     i = 3;

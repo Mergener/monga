@@ -30,7 +30,6 @@ bool IsIntegerType(const Mon_AstTypeDef* type) {
     }
 
     switch (type->typeDesc->typeDesc.primitive.typeCode) {
-        case MON_PRIMITIVE_INTPTR:
         case MON_PRIMITIVE_INT8:
         case MON_PRIMITIVE_INT16:
         case MON_PRIMITIVE_INT32:
@@ -67,7 +66,6 @@ bool IsFloatingPointType(const Mon_AstTypeDef* type) {
         case MON_PRIMITIVE_INT16:
         case MON_PRIMITIVE_INT32:
         case MON_PRIMITIVE_INT64:
-        case MON_PRIMITIVE_INTPTR:
         case MON_PRIMITIVE_VOID:
             return false;
     }
@@ -181,7 +179,7 @@ Mon_AstTypeDef* GetUnopResultType(const Mon_AstTypeDef* type, Mon_UnopKind unop)
     }
 
     if (unop == MON_UNOP_LEN) {
-        return IsIndexableType(type) ? BUILTIN_TABLE->types.tInt : NULL;
+        return IsIndexableType(type) ? BUILTIN_TABLE->types.tSize : NULL;
     }
 
     if (!IsNumericType(type)) {
